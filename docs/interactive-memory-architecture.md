@@ -743,6 +743,231 @@ Used by
 └── Recommendation R-19
 ```
 
+
+
+## 4-hour implementation architecture
+
+The demo implementation keeps **lifetime history**, **current memory state**, and **LLM working context** separate. This prevents both database reads and LLM context from growing with the full history.
+
+```mermaid
+flowchart TD
+    PROD["Production telemetry"] --> BUF["Non-blocking queue / buffer"]
+    BUF --> RAW["Tinybird raw telemetry"]
+    RAW --> WIN["Rolling feature windows"]
+    WIN --> GATE{"Meaningful slope change<br/>or 15s cadence?"}
+    GATE -- Yes --> LIQ4["Liquid AI<br/>batch last N windows"]
+    GATE -- No --> WIN
+    WIN --> TM4["Trajectory Matcher"]
+    LIQ4 --> TM4
+    TM4 --> MUE4["Memory Update Engine"]
+
+    MUE4 --> LOG4["memory_events<br/>immutable lifetime log"]
+    LOG4 --> ACTIVE4["active_memory_state<br/>incrementally maintained current state"]
+
+    ACTIVE4 --> CB4["Context Builder<br/>retrieve → filter → rank → pack"]
+    CB4 --> BUD4["Fixed memory token budget"]
+    BUD4 --> AG4["Agent / LLM"]
+    AG4 --> OUT4["Action + Outcome"]
+    OUT4 --> MUE4
+
+    MUE4 -. "external knowledge stale?" .-> CACHE4{"Nimble cache<br/>(dependency, subject)<br/>TTL valid?"}
+    CACHE4 -- Yes --> ACTIVE4
+    CACHE4 -- No --> NIM4["Nimble Search / Extract"]
+    NIM4 --> MUE4
+```
+
+### 1. Keep current memory state incremental
+
+Do **not** rebuild current state by grouping the entire `memory_events` history on every request.
+
+```text
+memory_events
+immutable append-only history
+10 → 1K → 100K → millions
+          │
+          │ incrementally maintain on write
+          ▼
+active_memory_state
+current version/status of each memory
+          │
+          │ reads
+          ▼
+Context Builder
+```
+
+The implementation should use the Tinybird-supported incremental/materialized pattern available in the environment for `active_memory_state`. The architectural requirement is: **update current state when memory events arrive; never replay all historical mutations during normal retrieval.**
+
+This gives us two separate scaling guarantees:
+
+```text
+Lifetime history grows
+       ↓
+Incremental current state
+(no full-history replay on read)
+       ↓
+Candidate retrieval
+       ↓
+Fixed memory token budget
+(no growing LLM memory context)
+```
+
+### 2. Batch and gate Liquid AI classification
+
+Do not call Liquid for every 2–3 second telemetry tick.
+
+```text
+Tinybird windows
+      ↓
+Has a meaningful feature/slope changed?
+      │
+   NO ├────→ keep collecting
+      │
+  YES ▼
+Batch last N windows
+      ↓
+Liquid classification
+```
+
+For the demo, classify on either a meaningful feature/slope change or a fixed cadence such as ~15 seconds. This keeps classification responsive while avoiding repeated inference over nearly identical windows.
+
+### 3. Cache Nimble revalidation
+
+Nimble is invoked when external knowledge is missing or stale, not every time a similar incident occurs.
+
+Cache key:
+
+```text
+(dependency, subject)
+```
+
+Decision:
+
+```text
+Need external knowledge
+        ↓
+Find current Knowledge object
+        ↓
+lastValidatedAt + TTL > now?
+       /                 \
+     YES                  NO
+      │                    │
+use stored             Nimble Search
+knowledge              + Extract
+                           │
+                           ▼
+                     new Evidence
+                           │
+                           ▼
+                  Memory Update Engine
+```
+
+The existing `lastValidatedAt` field therefore serves both memory freshness and external-lookup caching.
+
+### 4. Trajectory similarity: simple now, ANN later
+
+For the hackathon, candidate sets are small enough that deterministic linear-scan similarity is simpler to implement and debug.
+
+```text
+Current trajectory
+      ↓
+candidate historical trajectories
+      ↓
+normalize features
+      ↓
+cosine / weighted temporal similarity
+      ↓
+rank matches
+```
+
+When the case library grows beyond hundreds/thousands of trajectories, replace broad linear scanning with an approximate-nearest-neighbor/vector index for candidate generation. Keep exact/weighted temporal validation after candidate retrieval.
+
+**Do not spend hackathon build time implementing ANN.**
+
+### 5. Decouple ingestion from analysis
+
+Telemetry ingestion must not wait for Liquid, Nimble, or an LLM.
+
+```mermaid
+flowchart LR
+    APP4["App / simulator"] --> Q4["Queue / buffer"]
+    Q4 --> TB4["Tinybird ingest"]
+    Q4 --> WORK4["Analysis worker"]
+    WORK4 --> L4["Liquid / Matcher / Agent"]
+    L4 --> MEM4["Memory updates"]
+```
+
+For the demo, this can be a simple in-process asynchronous queue. The important invariant is:
+
+> **Slow inference must never block telemetry ingestion.**
+
+### 6. Optional: precompute hot briefings
+
+Only if core functionality is complete, precompute compact briefings for the top 2–3 likely failure classes during idle time.
+
+```text
+Idle time
+   ↓
+top failure classes
+   ↓
+retrieve + validate likely memory
+   ↓
+cached briefing
+   ↓
+risk threshold crossed
+   ↓
+fast escalation
+```
+
+This is a latency optimization, not required for correctness.
+
+### Build priority
+
+| Priority | Build now | Why |
+|---|---|---|
+| P0 | Incremental `active_memory_state` | Read path does not replay lifetime history |
+| P0 | Batched/gated Liquid calls | Avoid wasteful per-tick inference |
+| P1 | Nimble TTL cache | Avoid repeated external research |
+| P1 | Non-blocking ingestion buffer | Slow inference cannot block telemetry |
+| P2 | Precomputed briefings | Demo latency optimization |
+| Later | ANN trajectory index | Scale candidate retrieval beyond small case library |
+
+### What “stays flat” actually means
+
+There are **two different growth problems**, and DéjàVu bounds both:
+
+```text
+DATABASE READ PATH
+
+memory_events       100 → 10K → 1M+
+                         │
+                         ▼
+              active_memory_state
+              incrementally maintained
+                         │
+                         ▼
+                  candidate query
+
+
+LLM MEMORY CONTEXT
+
+Institutional Memory 100 → 10K → 1M+
+                         │
+                         ▼
+                   Context Builder
+                         │
+                         ▼
+             MAX_MEMORY_CONTEXT_TOKENS
+                         │
+                         ▼
+               bounded memory context
+              ───────────────────────
+```
+
+The technically precise claim is:
+
+> **DéjàVu maintains incrementally queryable current memory and a fixed memory-context token budget even as lifetime institutional history grows.**
+
+
 # Sponsor responsibilities
 
 | Sponsor / Component | Responsibility |
