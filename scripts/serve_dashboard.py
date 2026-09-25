@@ -5,14 +5,14 @@ import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from src.dejavu.clients.tinybird import TinybirdClient
 ROOT=Path(__file__).resolve().parents[1]
-SQL="""SELECT run_id, simulated_at, scenario, total_memories, context_tokens, context_budget, created_at FROM dejavu_agent_runs ORDER BY parseDateTimeBestEffortOrNull(simulated_at), parseDateTimeBestEffortOrNull(created_at)"""
+SQL="""SELECT run_id, simulated_at, scenario, total_memories, context_tokens, context_budget, created_at FROM dejavu_agent_runs ORDER BY parseDateTimeBestEffortOrNull(simulated_at), parseDateTimeBestEffortOrNull(created_at)"""\n\ndef dashboard_rows(rows):\n    """Keep only the latest recorded run for each demo scenario."""\n    latest={}\n    for row in rows:\n        scenario=row.get("scenario")\n        if not scenario:\n            continue\n        current=latest.get(scenario)\n        stamp=(row.get("created_at") or "",row.get("run_id") or "")\n        current_stamp=((current or {}).get("created_at") or "",(current or {}).get("run_id") or "")\n        if current is None or stamp >= current_stamp:\n            latest[scenario]=row\n    return sorted(latest.values(),key=lambda r:(r.get("simulated_at") or "",r.get("scenario") or ""))
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/","/index.html"):
             body=(ROOT/"dashboard/context-window.svg.html").read_bytes(); self.send_response(200); self.send_header("Content-Type","text/html; charset=utf-8")
         elif self.path=="/api/dashboard":
             try:
-                body=json.dumps(TinybirdClient().rows(SQL)).encode(); self.send_response(200); self.send_header("Content-Type","application/json")
+                body=json.dumps(dashboard_rows(TinybirdClient().rows(SQL))).encode(); self.send_response(200); self.send_header("Content-Type","application/json")
             except Exception as e:
                 body=json.dumps({"error":str(e)}).encode(); self.send_response(500); self.send_header("Content-Type","application/json")
         else:
