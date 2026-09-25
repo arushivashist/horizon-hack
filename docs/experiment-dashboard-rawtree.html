@@ -137,7 +137,7 @@
   .rt-live.bad .rt-dot { background:var(--bad); }
   .rt-stat { display:inline-flex; align-items:center; min-height:28px; padding:0 9px; border:1px solid var(--line); border-radius:7px; background:var(--inset); white-space:nowrap; }
   #rt-updated { color:var(--muted); white-space:nowrap; margin-left:2px; }
-  .rt-refresh { padding:5px 11px; min-height:30px; font:600 12px var(--mono); white-space:nowrap; }
+  .rt-refresh { padding:5px 11px; min-height:30px; font:600 12px var(--mono); white-space:nowrap; }\n  .demo-card { border-color:var(--mem); }\n  .demo-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }\n  .demo-badge { font:600 11px var(--mono); color:var(--mem); border:1px solid var(--mem); border-radius:999px; padding:4px 8px; }\n  .demo-grid { display:grid; grid-template-columns:minmax(280px,.9fr) minmax(360px,1.4fr); gap:18px; align-items:start; }\n  .demo-steps { display:grid; gap:7px; }\n  .demo-step { padding:8px 10px; border-left:2px solid var(--line); background:var(--inset); border-radius:0 7px 7px 0; }\n  .demo-step.done { border-left-color:var(--mem); }\n  .demo-step b { display:block; font:600 12px var(--mono); }\n  .demo-step span { color:var(--muted); font-size:12px; }\n  .demo-chart { min-height:230px; }\n  @media (max-width:760px) { .demo-grid { grid-template-columns:1fr; } }
   @media (max-width: 760px) { .rt-live { align-items:flex-start; flex-direction:column; } .rt-stats { flex-wrap:wrap; } }
 </style>
 
@@ -561,4 +561,42 @@ async function refreshRawTree() {
 document.getElementById("rt-refresh").addEventListener("click", refreshRawTree);
 refreshRawTree();
 setInterval(refreshRawTree, 5000);
-</script>
+
+// Live Day-22 demo. Every point is read back from RawTree.
+function renderLiveDemo(points) {
+  const steps=document.getElementById("demo-steps"), chart=document.getElementById("demo-chart");
+  if(!points.length) return;
+  document.getElementById("demo-status").textContent="LIVE · "+points.length+"/7 STEPS";
+  steps.replaceChildren();
+  for(const p of points){
+    const row=h("div","demo-step done");
+    row.appendChild(h("b",null,"["+p.step+"] "+p.title));
+    row.appendChild(h("span",null,p.detail));
+    steps.appendChild(row);
+  }
+  chart.replaceChildren();
+  const W=620,H=220,L=50,R=35,T=20,B=42,maxCtx=1200;
+  const svg=el("svg",{viewBox:"0 0 "+W+" "+H},chart);
+  const x=n=>L+(Number(n)-1)*(W-L-R)/6;
+  const y=v=>T+(maxCtx-Number(v))*(H-T-B)/maxCtx;
+  [0,300,600,900,1200].forEach(v=>{el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),class:"grid"},svg);txt(svg,L-8,y(v)+4,"t-tick",String(v),"end");});
+  el("line",{x1:L,x2:W-R,y1:y(1200),y2:y(1200),class:"cap"},svg);
+  const d=points.map((p,i)=>(i?"L":"M")+x(p.step).toFixed(1)+","+y(p.context_tokens).toFixed(1)).join(" ");
+  el("path",{d:d,class:"l-mem"},svg);
+  points.forEach(p=>{el("circle",{cx:x(p.step),cy:y(p.context_tokens),r:4,class:"f-mem"},svg);txt(svg,x(p.step),H-16,"t-tick",String(p.step),"middle");});
+  txt(svg,L,T-7,"t-mut","Working context tokens");
+  const last=points[points.length-1];
+  txt(svg,W-R,y(last.context_tokens)-8,"t-ink",last.context_tokens+" / 1200","end");
+  const note=document.getElementById("demo-note");
+  note.textContent="Context "+last.context_tokens+"/1200 tokens · memories "+last.memory_count+". The graph advances from RawTree as the terminal script runs.";
+}
+async function refreshLiveDemo(){
+  try{
+    const r=await fetch("/api/live-demo",{cache:"no-store"});
+    if(!r.ok) throw new Error(await r.text());
+    const d=await r.json(); renderLiveDemo(d.points||[]);
+  }catch(e){ document.getElementById("demo-status").textContent="LIVE DEMO OFFLINE"; }
+}
+refreshLiveDemo();
+setInterval(refreshLiveDemo,1000);
+\n</script>
