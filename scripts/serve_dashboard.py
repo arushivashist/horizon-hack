@@ -35,6 +35,14 @@ WHERE experiment_id = '{EXPERIMENT_ID}'
 LIMIT 1
 """
 
+
+LIVE_DEMO_SQL = """
+SELECT record_id, run_id, scenario, simulated_at, step, title, detail,
+       context_tokens, memory_count, created_at
+FROM dejavu_live_demo_points
+ORDER BY parseDateTimeBestEffortOrNull(created_at), step
+"""
+
 MUTATIONS_SQL = """
 SELECT mutation_id, operation, target_id, reason, evidence_ids, scenario, simulated_at, created_at
 FROM dejavu_memory_events
@@ -78,6 +86,22 @@ class Handler(BaseHTTPRequestHandler):
                 summary = client.rows(EXPERIMENT_SUMMARY_SQL)
                 body = json.dumps({"source":"RawTree","experiment_id":EXPERIMENT_ID,
                                    "series":series,"summary":summary[0] if summary else {}}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+            except Exception as e:
+                body = json.dumps({"error":str(e)}).encode()
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+        elif self.path == "/api/live-demo":
+            try:
+                client = TinybirdClient()
+                rows = client.rows(LIVE_DEMO_SQL)
+                if rows:
+                    latest_run = max(rows, key=lambda r: (r.get("created_at") or "", r.get("run_id") or "")).get("run_id")
+                    rows = [r for r in rows if r.get("run_id") == latest_run]
+                    dedup = {int(r.get("step", 0)): r for r in rows}
+                    rows = [dedup[k] for k in sorted(dedup)]
+                body = json.dumps({"source":"RawTree","points":rows}).encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
             except Exception as e:
