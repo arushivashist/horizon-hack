@@ -21,8 +21,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Ingest and verify Day 4 and Day 9 in RawTree
+      - name: Ingest and verify scenario snapshots in RawTree
         run: python scripts/ingest_tinybird.py
+      - name: Ingest preserved 30-day Claude experiment into RawTree
+        run: python scripts/ingest_experiment_rawtree.py
   sponsor-pipeline:
     needs: rawtree-ingest
     runs-on: ubuntu-latest
