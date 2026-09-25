@@ -19,9 +19,12 @@ def incident_memory_row(row):
 def run_pipeline(now,situation,live_events=None,use_sponsors=True,scenario="demo"):
     tb=TinybirdClient(); safe_now=now.replace("'","")
     # Deduplicate CI snapshot ingestion and never expose records not visible at simulated time.
-    raw_rows=tb.rows(f"SELECT event_id,event_type,service,timestamp,visible_at,payload FROM dejavu_incidents WHERE parseDateTimeBestEffortOrNull(visible_at) <= parseDateTimeBestEffort('{safe_now}') ORDER BY parseDateTimeBestEffortOrNull(visible_at)")
+    raw_rows=tb.rows("SELECT event_id,event_type,service,timestamp,visible_at,payload FROM dejavu_incidents ORDER BY visible_at")
+    # RawTree stores these mock timestamps as strings. Enforce simulated-time visibility in the agent
+    # after the SQL read; ISO-8601 UTC timestamps are lexicographically ordered.
+    visible_rows=[row for row in raw_rows if row.get("visible_at","") <= safe_now]
     # CI may ingest the same snapshot repeatedly; keep one copy of each stable event_id.
-    incident_rows=list({row["event_id"]:row for row in raw_rows}.values())
+    incident_rows=list({row["event_id"]:row for row in visible_rows}.values())
     memories=[incident_memory_row(x) for x in incident_rows]
     engine=MemoryUpdateEngine(memories)
     budget=int(os.getenv("MAX_MEMORY_CONTEXT_TOKENS","1200"))
