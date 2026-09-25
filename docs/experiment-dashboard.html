@@ -111,7 +111,7 @@
   footer { color: var(--muted); font-size: 14px; }
 </style>
 
-<main class="wrap">
+<main class="wrap">\n  <div class="rt-live" id="rt-live"><div class="rt-left"><i class="rt-dot"></i><strong id="rt-status">Connecting to RawTree…</strong></div><div class="rt-stats"><span id="rt-mem">Memories —</span><span id="rt-ctx">Context —</span><span id="rt-budget">Budget —</span><span id="rt-updated"></span></div></div>
   <header>
     <div class="eyebrow">Long Horizon Agents Hackathon · Northstar Commerce · 30 simulated days · Claude Opus 5</div>
     <h1>Two agents, one on-call month</h1>
@@ -420,4 +420,7 @@ async function refreshRawTree() {
 refreshRawTree();
 setInterval(refreshRawTree, 5000);
 
+
+async function refreshRawTree(){const bar=document.getElementById("rt-live");try{const r=await fetch("/api/dashboard",{cache:"no-store"});if(!r.ok)throw Error(await r.text());const d=await r.json(),runs=d.runs||[];if(!runs.length)throw Error("No agent runs yet");const x=runs[runs.length-1];document.getElementById("rt-status").textContent="LIVE · RawTree connected";document.getElementById("rt-mem").textContent="Memories "+(x.total_memories??"—");document.getElementById("rt-ctx").textContent="Context "+(x.context_tokens??"—")+" tokens";document.getElementById("rt-budget").textContent="Budget "+(x.context_budget??"—")+" tokens";document.getElementById("rt-updated").textContent="Updated "+new Date().toLocaleTimeString();bar.className="rt-live ok"}catch(e){document.getElementById("rt-status").textContent="RawTree disconnected";document.getElementById("rt-updated").textContent=e.message;bar.className="rt-live bad"}}
+refreshRawTree();setInterval(refreshRawTree,5000);
 </script>
