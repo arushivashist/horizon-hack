@@ -54,8 +54,22 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/html; charset=utf-8")
         elif self.path == "/api/dashboard":
             try:
-                rows = TinybirdClient().rows(SQL)
-                body = json.dumps(dashboard_rows(rows)).encode()
+                client = TinybirdClient()
+                runs = dashboard_rows(client.rows(RUNS_SQL))
+                try:
+                    memories = client.rows(MEMORIES_SQL)
+                except Exception:
+                    memories = []
+                try:
+                    mutations = client.rows(MUTATIONS_SQL)
+                except Exception:
+                    mutations = []
+                body = json.dumps({
+                    "source": "RawTree",
+                    "runs": runs,
+                    "memories": memories,
+                    "mutations": mutations,
+                }).encode()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/json")
             except Exception as e:
