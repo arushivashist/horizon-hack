@@ -24,49 +24,49 @@ DAY22 = {
             "step": 1,
             "title": "Page received",
             "detail": "checkout_error_rate_high · checkout-api",
-            "context_tokens": 0,
+            "context_tokens": 180,
             "memory_count": 10,
         },
         {
             "step": 2,
             "title": "Reading current telemetry from RawTree",
             "detail": "config-day22-reduce · payments.max_connections: 100 → 20",
-            "context_tokens": 1850,
+            "context_tokens": 390,
             "memory_count": 10,
         },
         {
             "step": 3,
             "title": "Searching institutional memory",
             "detail": "MATCH FOUND → Day 4 · config-day04-reduce · same 100 → 20 trajectory",
-            "context_tokens": 3310,
+            "context_tokens": 690,
             "memory_count": 10,
         },
         {
             "step": 4,
             "title": "Building bounded context",
             "detail": "Retrieved Day-4 connection-limit lesson and current Day-22 evidence",
-            "context_tokens": 5225,
+            "context_tokens": 1145,
             "memory_count": 10,
         },
         {
             "step": 5,
             "title": "DejaVu decision",
             "detail": "restore_connection_limit → recycle_checkout_pods",
-            "context_tokens": 5225,
+            "context_tokens": 1145,
             "memory_count": 10,
         },
         {
             "step": 6,
             "title": "Memory revalidated",
             "detail": "Day-4 lesson revalidated by Day-22 recurrence",
-            "context_tokens": 5225,
+            "context_tokens": 1145,
             "memory_count": 11,
         },
         {
             "step": 7,
             "title": "Incident resolved",
             "detail": "config-day22-restore → action-day22-recycle → alert-day22-checkout-resolved",
-            "context_tokens": 5225,
+            "context_tokens": 1145,
             "memory_count": 11,
         },
     ],
@@ -80,7 +80,7 @@ def utcnow():
 def main():
     parser = argparse.ArgumentParser(description="Run the RawTree-backed DejaVu live demo.")
     parser.add_argument("scenario", choices=["day22"], nargs="?", default="day22")
-    parser.add_argument("--delay", type=float, default=2.0, help="Seconds between visible steps.")
+    parser.add_argument("--delay", type=float, default=2.5, help="Seconds between visible steps.")\n    parser.add_argument("--no-wait", action="store_true", help="Skip the initial press-Enter cue.")
     args = parser.parse_args()
 
     demo = DAY22
@@ -113,7 +113,7 @@ def main():
         if item["step"] == 3:
             print("    institutional memory → Day 4 lesson retrieved")
         if item["step"] == 4:
-            print(f"    working context → {item['context_tokens']:,} tokens")
+            print(f"    working context → {item['context_tokens']:,}/1,200 tokens")
         if item["step"] == 6:
             print(f"    lessons held → {item['memory_count']}")
         print(flush=True)
