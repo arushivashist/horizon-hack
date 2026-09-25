@@ -17,7 +17,6 @@ jobs:
     env:
       TINYBIRD_TOKEN: ${{ secrets.TINYBIRD_TOKEN }}
       NIMBLE_API_KEY: ${{ secrets.NIMBLE_API_KEY }}
-      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
