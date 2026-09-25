@@ -102,6 +102,26 @@
   .prop p { font-size: 13px; color: var(--muted); }
   .how { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 14px; }
   .col h3.naive-h { color: var(--naive); } .col h3.mem-h { color: var(--mem); }
+  .arch { margin: 0; display: grid; gap: 10px; }
+  .arch .scroll svg { min-width: 820px; }
+  .arch figcaption { font-size: 13px; color: var(--muted); }
+  .ab { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .ab.nv { stroke: var(--naive); } .ab.mm { stroke: var(--mem); } .ab.dash { stroke-dasharray: 5 4; stroke: var(--faint); }
+  .ab.ck { fill: var(--inset); stroke: var(--mem); }
+  .aseg { fill: var(--inset); stroke: var(--line); stroke-width: 1; }
+  .aseg.nvf { fill: var(--naive); fill-opacity: .18; stroke: var(--naive); }
+  .aseg.mmf { fill: var(--mem); fill-opacity: .22; stroke: var(--mem); }
+  .aseg.dash { stroke-dasharray: 4 3; }
+  .at { fill: var(--ink); font: 600 13px var(--sans); }
+  .as { fill: var(--muted); font: 400 12px var(--sans); }
+  .am { fill: var(--muted); font: 500 11px var(--mono); }
+  .alane-n { fill: var(--naive); font: 600 14px var(--sans); }
+  .alane-m { fill: var(--mem); font: 600 14px var(--sans); }
+  .aok { fill: var(--good); font: 500 12px var(--sans); } .ano { fill: var(--bad); font: 500 12px var(--sans); }
+  .aln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  .aln.mm { stroke: var(--mem); } .aln.bad { stroke: var(--bad); }
+  .ahd { fill: var(--ink); } .ahd.mm { fill: var(--mem); } .ahd.bad { fill: var(--bad); }
+  .adiv { stroke: var(--line); stroke-width: 1; }
   .caveat { font-size: 14px; color: var(--muted); border-left: 2px solid var(--line); padding-left: 10px; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); align-items: center; }
   .legend span { display: inline-flex; align-items: center; gap: 8px; }
@@ -169,6 +189,82 @@
   <section class="card">
     <h2>How the memory agent manages memory</h2>
     <p class="sub">Same model, same tools, same 39 pages. The only difference is what each agent carries from one page to the next. Numbers are from the two traced 30-day runs.</p>
+    <figure class="arch">
+      <div class="scroll">
+        <svg viewBox="0 0 1000 624" role="img" aria-label="Architecture of both agents. The naive agent appends every page to one conversation that it re-reads on every call and squashes into a summary past 30,000 tokens. The memory agent starts each page with only instructions, its memory and the alert, deletes the page conversation when the page closes, and saves lessons only after they pass safety checks, into a capped memory and an append-only log that the next page reads.">
+          <defs><marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahd "/></marker><marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahd mm"/></marker><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahd bad"/></marker></defs>
+
+          <text class="alane-n" x="20" y="30">Naive agent · history + summaries</text>
+          <rect class="ab" x="20" y="80" width="120" height="56" rx="8"/>
+          <text class="at" x="80" y="104" text-anchor="middle">New alert</text><text class="as" x="80" y="122" text-anchor="middle">page N</text>
+          <rect class="ab nv" x="180" y="58" width="400" height="100" rx="8"/>
+          <text class="at" x="380" y="80" text-anchor="middle">One conversation for the whole month</text>
+          <rect class="aseg" x="192" y="94" width="80" height="44" rx="4"/><text class="as" x="232" y="120" text-anchor="middle">page 1</text>
+          <rect class="aseg" x="280" y="94" width="80" height="44" rx="4"/><text class="as" x="320" y="120" text-anchor="middle">page 2</text>
+          <rect class="aseg" x="368" y="94" width="60" height="44" rx="4"/><text class="as" x="398" y="120" text-anchor="middle">…</text>
+          <rect class="aseg nvf" x="436" y="94" width="132" height="44" rx="4"/><text class="as" x="502" y="120" text-anchor="middle">page N, all of it</text>
+          <rect class="ab" x="620" y="80" width="180" height="56" rx="8"/>
+          <text class="at" x="710" y="104" text-anchor="middle">Model re-reads</text><text class="as" x="710" y="122" text-anchor="middle">everything, every call</text>
+          <rect class="ab" x="840" y="80" width="140" height="56" rx="8"/>
+          <text class="at" x="910" y="113" text-anchor="middle">Answer</text>
+          <path class="aln" d="M140,108 L178,108" marker-end="url(#aa)"/>
+          <path class="aln" d="M580,108 L618,108" marker-end="url(#aa)"/>
+          <path class="aln" d="M800,108 L838,108" marker-end="url(#aa)"/>
+          <rect class="ab nv" x="330" y="196" width="220" height="50" rx="8"/>
+          <text class="at" x="440" y="217" text-anchor="middle">Summarizer</text><text class="as" x="440" y="235" text-anchor="middle">squashes it into one summary</text>
+          <path class="aln" d="M440,158 L440,194" marker-end="url(#aa)"/>
+          <text class="am" x="450" y="181">past 30k tokens</text>
+          <path class="aln" d="M330,221 L230,221 L230,160" marker-end="url(#aa)"/>
+          <text class="as" x="222" y="200" text-anchor="end">summary replaces</text><text class="as" x="222" y="215" text-anchor="end">the history</text>
+          <text class="ano" x="590" y="214">✗ nothing is checked before it stays in view</text>
+          <text class="ano" x="590" y="234">✗ no record of why it believes something</text>
+
+          <line class="adiv" x1="20" y1="274" x2="980" y2="274"/>
+
+          <text class="alane-m" x="20" y="310">Memory agent · explicit, checked memory</text>
+          <rect class="ab" x="20" y="360" width="120" height="56" rx="8"/>
+          <text class="at" x="80" y="384" text-anchor="middle">New alert</text><text class="as" x="80" y="402" text-anchor="middle">page N</text>
+          <rect class="ab mm" x="180" y="326" width="200" height="156" rx="8"/>
+          <text class="at" x="280" y="346" text-anchor="middle">Fresh page context</text>
+          <rect class="aseg" x="192" y="356" width="176" height="24" rx="4"/><text class="as" x="280" y="372" text-anchor="middle">instructions</text>
+          <rect class="aseg mmf" x="192" y="384" width="176" height="24" rx="4"/><text class="as" x="280" y="400" text-anchor="middle">memory: ≤15 short lessons</text>
+          <rect class="aseg" x="192" y="412" width="176" height="24" rx="4"/><text class="as" x="280" y="428" text-anchor="middle">the new alert</text>
+          <rect class="aseg dash" x="192" y="440" width="176" height="30" rx="4"/><text class="as" x="280" y="459" text-anchor="middle">this page's work, ≤15 queries</text>
+          <rect class="ab" x="420" y="360" width="150" height="56" rx="8"/>
+          <text class="at" x="495" y="384" text-anchor="middle">Model</text><text class="as" x="495" y="402" text-anchor="middle">investigates</text>
+          <rect class="ab" x="610" y="360" width="140" height="56" rx="8"/>
+          <text class="at" x="680" y="384" text-anchor="middle">Answer</text><text class="as" x="680" y="402" text-anchor="middle">page closes</text>
+          <rect class="ab dash" x="790" y="360" width="190" height="56" rx="8"/>
+          <text class="at" x="885" y="384" text-anchor="middle">Page conversation</text><text class="as" x="885" y="402" text-anchor="middle">deleted</text>
+          <path class="aln" d="M140,388 L178,388" marker-end="url(#aa)"/>
+          <path class="aln" d="M380,388 L418,388" marker-end="url(#aa)"/>
+          <path class="aln" d="M570,388 L608,388" marker-end="url(#aa)"/>
+          <path class="aln" d="M750,388 L788,388" marker-end="url(#aa)"/>
+
+          <rect class="ab ck" x="540" y="466" width="230" height="124" rx="8"/>
+          <text class="at" x="655" y="487" text-anchor="middle">Safety checks on every write</text>
+          <text class="aok" x="556" y="510">✓ cites pages it closed</text>
+          <text class="aok" x="556" y="530">✓ written after the page closes</text>
+          <text class="ano" x="556" y="552">✗ instructions, links, keys</text>
+          <text class="ano" x="556" y="574">✗ over 400 chars or slots full</text>
+          <path class="aln mm" d="M680,416 L680,464" marker-end="url(#am)"/>
+          <text class="am" x="690" y="445">propose lessons</text>
+          <path class="aln bad" d="M540,530 L495,530 L495,418" marker-end="url(#ar)"/>
+          <text class="ano" x="487" y="500" text-anchor="end">refused, told why:</text><text class="ano" x="487" y="516" text-anchor="end">shorten, merge or retire</text>
+
+          <rect class="ab mm" x="820" y="466" width="160" height="56" rx="8"/>
+          <text class="at" x="900" y="490" text-anchor="middle">Memory</text><text class="as" x="900" y="508" text-anchor="middle">≤12 lessons + 3 notes</text>
+          <rect class="ab" x="820" y="534" width="160" height="56" rx="8"/>
+          <text class="at" x="900" y="558" text-anchor="middle">Append-only log</text><text class="as" x="900" y="576" text-anchor="middle">replay any day</text>
+          <path class="aln mm" d="M770,494 L818,494" marker-end="url(#am)"/>
+          <text class="am" x="794" y="486" text-anchor="middle">ok</text>
+          <path class="aln" d="M770,562 L818,562" marker-end="url(#aa)"/>
+          <path class="aln mm" d="M980,494 L992,494 L992,612 L280,612 L280,484" marker-end="url(#am)"/>
+          <text class="as" x="636" y="606" text-anchor="middle">the next page reads only this memory</text>
+        </svg>
+      </div>
+      <figcaption>Top: the naive agent's context is the whole month, re-read on every call and squashed into a summary past 30k tokens. Bottom: the memory agent starts every page with only instructions, a small memory and the alert; the page's conversation is deleted when it closes, and a lesson survives only if it passes the checks.</figcaption>
+    </figure>
     <div class="props">
       <div class="prop"><span class="pname">Reads less at every step</span><span class="pval"><span class="big">6.3k</span><span class="vs">tokens per call vs 16.7k naive</span></span><p>About 2.6 times less to read and reason over on each call.</p></div>
       <div class="prop"><span class="pname">Doesn't grow with time</span><span class="pval"><span class="big">3.4k &rarr; 4.4k</span><span class="vs">vs 13.9k &rarr; 21.8k naive</span></span><p>Tokens at the start of a page, first week vs last week. The naive agent keeps climbing.</p></div>
