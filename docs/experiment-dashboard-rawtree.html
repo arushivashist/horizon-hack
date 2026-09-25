@@ -129,16 +129,29 @@
   .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
   a { color: var(--naive); text-underline-offset: 3px; }
   footer { color: var(--muted); font-size: 14px; }
-  .rt-live { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font:500 12px var(--mono); }
-  .rt-left, .rt-stats { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .rt-dot { width:8px; height:8px; border-radius:50%; background:var(--faint); display:inline-block; }
+  .rt-live { display:flex; justify-content:space-between; align-items:center; gap:16px; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 12px; font:500 12px var(--mono); box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .rt-left, .rt-stats { display:flex; align-items:center; gap:8px; min-width:0; }
+  .rt-left { white-space:nowrap; }
+  .rt-dot { width:8px; height:8px; border-radius:50%; background:var(--faint); display:inline-block; flex:none; }
   .rt-live.ok .rt-dot { background:var(--good); }
   .rt-live.bad .rt-dot { background:var(--bad); }
-  .rt-refresh { padding:5px 10px; font:500 12px var(--mono); }
+  .rt-stat { display:inline-flex; align-items:center; min-height:28px; padding:0 9px; border:1px solid var(--line); border-radius:7px; background:var(--inset); white-space:nowrap; }
+  #rt-updated { color:var(--muted); white-space:nowrap; margin-left:2px; }
+  .rt-refresh { padding:5px 11px; min-height:30px; font:600 12px var(--mono); white-space:nowrap; }
+  @media (max-width: 760px) { .rt-live { align-items:flex-start; flex-direction:column; } .rt-stats { flex-wrap:wrap; } }
 </style>
 
 <main class="wrap">
-  <div class="rt-live" id="rt-live"><div class="rt-left"><i class="rt-dot"></i><strong id="rt-status">Connecting to RawTree…</strong></div><div class="rt-stats"><span id="rt-mem">Memories —</span><span id="rt-ctx">Context —</span><span id="rt-budget">Budget —</span><span id="rt-updated"></span><button class="rt-refresh" id="rt-refresh" type="button">↻ Refresh</button></div></div>
+  <div class="rt-live" id="rt-live">
+    <div class="rt-left"><i class="rt-dot"></i><strong id="rt-status">Connecting to RawTree…</strong></div>
+    <div class="rt-stats">
+      <span class="rt-stat" id="rt-mem">Memories —</span>
+      <span class="rt-stat" id="rt-ctx">Context —</span>
+      <span class="rt-stat" id="rt-budget">Budget —</span>
+      <span id="rt-updated"></span>
+      <button class="rt-refresh" id="rt-refresh" type="button">↻ Refresh</button>
+    </div>
+  </div>
   <header>
     <div class="eyebrow">Long Horizon Agents Hackathon · Northstar Commerce · 30 simulated days · Claude Opus 5</div>
     <h1>Two agents, one on-call month</h1>
