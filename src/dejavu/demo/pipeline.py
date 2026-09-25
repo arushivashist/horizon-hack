@@ -13,7 +13,8 @@ def incident_memory_row(row):
     text=json.dumps(p).lower()
     fc="connection_pool_exhaustion" if "connection_pool_timeout" in text or "pool" in text else ("slow_downstream" if "upstream_timeout" in text or "payrail" in text else "unknown")
     dep="payrail" if "payrail" in text else None
-    return {"id":p.get("ticket_id",row.get("event_id","unknown")),"kind":"incident","service":row.get("service",""),"failure_class":fc,"dependency":dep,"status":"active","confidence":1.0,"payload":p}
+    compact={k:p.get(k) for k in ("ticket_id","title","summary","root_cause","resolution","symptoms") if p.get(k) is not None}
+    return {"id":p.get("ticket_id",row.get("event_id","unknown")),"kind":"incident","service":row.get("service",""),"failure_class":fc,"dependency":dep,"status":"active","confidence":1.0,"payload":compact}
 
 def run_pipeline(now,situation,live_events=None,use_sponsors=True,scenario="demo"):
     tb=TinybirdClient(); safe_now=now.replace("'","")
