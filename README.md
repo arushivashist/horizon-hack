@@ -4,6 +4,12 @@ Sep 25, 2026
 
 By 4:30, ship a 30-day on-call simulation that measures three agent memory designs, built on Tinybird with a Liquid first responder. The demo answers one question in 3 minutes: does explicit state beat history?
 
+## Concept
+
+![How the pieces fit: Nimble, Tinybird, Liquid and Claude around the on-call test](docs/architecture.png)
+
+The full visual explainer, covering the test, the three memory designs and the prototype's results, is at [docs/state-vs-history.png](docs/state-vs-history.png). Open [docs/state-vs-history.html](docs/state-vs-history.html) in a browser for the page itself.
+
 ## Before kickoff (9:30 to 11:00)
 
 Set up accounts and settle the rules now. Write no project code until 11:00.

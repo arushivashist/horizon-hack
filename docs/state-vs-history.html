@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body { margin: 0; }</style>
+<title>State vs. History</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #f3f5f7;
+    --surface: #ffffff;
+    --box: #f6f8fa;
+    --inner: #edf1f5;
+    --ink: #17212b;
+    --muted: #5a6672;
+    --line: #c9d1d9;
+    --cause: #c2410c;
+    --hist: #a9bfe3;
+    --summary: #3e63a8;
+    --memory: #0f8a78;
+    --notes: #a65fa6;
+    --result: #aeb7c0;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0f151b;
+      --surface: #161e26;
+      --box: #1b242d;
+      --inner: #222d38;
+      --ink: #e6ebf0;
+      --muted: #9aa6b2;
+      --line: #34424f;
+      --cause: #f07a3e;
+      --hist: #3a5580;
+      --summary: #86a6e6;
+      --memory: #38c4ae;
+      --notes: #d192d1;
+      --result: #5b6773;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0f151b;
+    --surface: #161e26;
+    --box: #1b242d;
+    --inner: #222d38;
+    --ink: #e6ebf0;
+    --muted: #9aa6b2;
+    --line: #34424f;
+    --cause: #f07a3e;
+    --hist: #3a5580;
+    --summary: #86a6e6;
+    --memory: #38c4ae;
+    --notes: #d192d1;
+    --result: #5b6773;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.6 var(--sans);
+    padding-inline: 16px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 40px 64px; display: grid; gap: 56px; }
+  header { display: grid; gap: 12px; max-width: 68ch; }
+  .eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  h1 { font: 700 clamp(30px, 5vw, 44px)/1.12 var(--sans); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+  h2 { font: 600 24px/1.25 var(--sans); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+  h3 { margin: 0; font: 600 17px/1.3 var(--sans); }
+  p { margin: 0; }
+  .lead { font-size: 18px; color: var(--muted); }
+  section { display: grid; gap: 16px; }
+  section > p { max-width: 68ch; }
+
+  figure { margin: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 14px; }
+  figcaption { font-size: 14px; color: var(--muted); max-width: 80ch; }
+  .scroll { overflow-x: auto; }
+  .scroll svg { display: block; width: 100%; min-width: 760px; height: auto; }
+
+  /* diagram marks */
+  .bx { fill: var(--box); stroke: var(--line); stroke-width: 1.5; }
+  .bx.dash { stroke: var(--muted); stroke-dasharray: 5 4; }
+  .bx.key { stroke: var(--ink); stroke-width: 2; }
+  .inner { fill: var(--inner); stroke: none; }
+  .t { fill: var(--ink); font: 600 14px var(--sans); }
+  .t2 { fill: var(--ink); font: 600 13px var(--sans); }
+  .s { fill: var(--muted); font: 400 12px var(--sans); }
+  .m { fill: var(--muted); font: 500 11px var(--mono); }
+  .v { fill: var(--ink); font: 600 18px var(--mono); }
+  .ln { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  .ln-thin { stroke: var(--muted); stroke-width: 1.2; fill: none; }
+  .ah { fill: var(--ink); }
+  .ax { stroke: var(--muted); stroke-width: 1.2; }
+  .cause-l { stroke: var(--cause); stroke-width: 2; }
+  .cause-f { fill: var(--cause); }
+  .cause-t { fill: var(--cause); font: 600 12px var(--mono); }
+  .decoy-l { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 4 4; }
+  .decoy-f { fill: var(--muted); }
+  .limit { stroke: var(--cause); stroke-width: 1.5; stroke-dasharray: 6 4; }
+  .limit-t { fill: var(--cause); font: 500 11px var(--mono); }
+  .curve { stroke: var(--summary); stroke-width: 2.5; fill: none; stroke-linejoin: round; }
+  .curve-t { fill: var(--summary); font: 500 11px var(--mono); }
+  .div { stroke: var(--line); stroke-width: 1.2; stroke-dasharray: 5 5; }
+  .base { stroke: var(--muted); stroke-width: 1; }
+  .seg { stroke: var(--surface); stroke-width: 1; }
+  .sh { fill: var(--hist); }
+  .ss { fill: var(--summary); }
+  .sm { fill: var(--memory); }
+  .sn { fill: var(--notes); }
+  .sr { fill: var(--result); }
+  .n-base { fill: var(--summary); font: 600 15px var(--sans); }
+  .n-note { fill: var(--notes); font: 600 15px var(--sans); }
+  .n-comb { fill: var(--memory); font: 600 15px var(--sans); }
+
+  /* cards */
+  .cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+  .cards > li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 10px; align-content: start; }
+  .cards p { font-size: 15px; }
+  .k { display: block; font: 500 11px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .c-base { color: var(--summary); }
+  .c-note { color: var(--notes); }
+  .c-comb { color: var(--memory); }
+  .cards.plug { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .plug strong { font-weight: 600; }
+  .plug p { color: var(--muted); }
+
+  /* results */
+  .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 560px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+  thead th { font: 600 13px var(--sans); color: var(--muted); }
+  thead th.c-base { color: var(--summary); }
+  thead th.c-note { color: var(--notes); }
+  thead th.c-comb { color: var(--memory); }
+  tbody th { font-weight: 500; }
+  td { font-family: var(--mono); font-size: 15px; }
+  .note { font-size: 14px; color: var(--muted); }
+  .stories { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .stories li { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 6px; align-content: start; }
+  .stories strong { font-weight: 600; }
+  .stories span { color: var(--muted); font-size: 15px; }
+  a { color: var(--summary); text-underline-offset: 3px; }
+  a:focus-visible { outline: 2px solid var(--summary); outline-offset: 2px; border-radius: 2px; }
+  footer { font-size: 15px; color: var(--muted); }
+</style>
+
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Long Horizon Agents Hackathon · Sep 25, 2026</div>
+    <h1>Does explicit state beat history?</h1>
+    <p class="lead">We built a fake online store with weeks of on-call pages, planted problems with known causes, and let three agents with different memory designs investigate. Here is how it works and what we found so far.</p>
+  </header>
+
+  <section>
+    <h2>How it all fits together</h2>
+    <p>Every alert becomes a page. A small Liquid model clears known false alarms; everything else goes to the Claude agent, which investigates with SQL and has to name the exact deploy or config change behind the problem. A grader checks the answer against a key the agent never sees.</p>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 960 460" role="img" aria-label="Architecture. Nimble feeds real outage history to the world generator, which loads telemetry into Tinybird. Alerts page a Liquid first responder, which dismisses known noise and passes everything else to the Claude agent. The agent queries Tinybird with SQL, saves and reads back its memory in Tinybird, and logs every call there. Its answer goes to a grader that checks a hidden answer key; scores go to Tinybird, which feeds the dashboard.">
+          <defs>
+            <marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker>
+          </defs>
+
+          <rect class="bx" x="20" y="30" width="180" height="66" rx="8"/>
+          <text class="t" x="110" y="58" text-anchor="middle">Nimble</text>
+          <text class="s" x="110" y="78" text-anchor="middle">real status-page history</text>
+
+          <rect class="bx" x="20" y="176" width="180" height="74" rx="8"/>
+          <text class="t" x="110" y="204" text-anchor="middle">World generator</text>
+          <text class="s" x="110" y="222" text-anchor="middle">30 days, planted causes,</text>
+          <text class="s" x="110" y="238" text-anchor="middle">decoys, false alarms</text>
+
+          <rect class="bx" x="20" y="376" width="180" height="68" rx="8"/>
+          <text class="t" x="110" y="404" text-anchor="middle">Dashboard</text>
+          <text class="s" x="110" y="424" text-anchor="middle">context chart · replay</text>
+
+          <rect class="bx" x="270" y="20" width="220" height="330" rx="8"/>
+          <text class="t" x="380" y="46" text-anchor="middle">Tinybird</text>
+          <rect class="inner" x="286" y="62" width="188" height="76" rx="6"/>
+          <text class="t2" x="380" y="92" text-anchor="middle">telemetry tables</text>
+          <text class="s" x="380" y="112" text-anchor="middle">cut off at "now"</text>
+          <rect class="inner" x="286" y="158" width="188" height="76" rx="6"/>
+          <text class="t2" x="380" y="188" text-anchor="middle">memory log</text>
+          <text class="s" x="380" y="208" text-anchor="middle">every edit, replay any day</text>
+          <rect class="inner" x="286" y="254" width="188" height="76" rx="6"/>
+          <text class="t2" x="380" y="284" text-anchor="middle">agent events</text>
+          <text class="s" x="380" y="304" text-anchor="middle">every call, query, score</text>
+
+          <rect class="bx" x="580" y="30" width="200" height="66" rx="8"/>
+          <text class="t" x="680" y="58" text-anchor="middle">Liquid first responder</text>
+          <text class="s" x="680" y="78" text-anchor="middle">small model, clears noise</text>
+
+          <rect class="bx key" x="580" y="150" width="200" height="110" rx="8"/>
+          <text class="t" x="680" y="180" text-anchor="middle">Claude agent</text>
+          <text class="s" x="680" y="202" text-anchor="middle">runs one memory design:</text>
+          <text class="m" x="680" y="222" text-anchor="middle">history + summaries</text>
+          <text class="m" x="680" y="240" text-anchor="middle">notebook · combined</text>
+
+          <rect class="bx" x="580" y="376" width="200" height="68" rx="8"/>
+          <text class="t" x="680" y="404" text-anchor="middle">Grader</text>
+          <text class="s" x="680" y="424" text-anchor="middle">right · decoy · miss</text>
+
+          <rect class="bx" x="830" y="42" width="110" height="42" rx="8"/>
+          <text class="t2" x="885" y="68" text-anchor="middle">Dismiss</text>
+
+          <rect class="bx dash" x="830" y="376" width="110" height="68" rx="8"/>
+          <text class="t2" x="885" y="402" text-anchor="middle">Answer key</text>
+          <text class="s" x="885" y="420" text-anchor="middle">hidden from</text>
+          <text class="s" x="885" y="435" text-anchor="middle">the agent</text>
+
+          <path class="ln" d="M110,96 L110,174" marker-end="url(#ah1)"/>
+          <text class="s" x="120" y="140">outage history</text>
+          <path class="ln" d="M200,200 L284,112" marker-end="url(#ah1)"/>
+          <text class="s" x="252" y="172" text-anchor="middle">loads</text>
+
+          <path class="ln" d="M474,80 L578,62" marker-end="url(#ah1)"/>
+          <text class="s" x="526" y="62" text-anchor="middle">alert → page</text>
+          <path class="ln" d="M780,63 L828,63" marker-end="url(#ah1)"/>
+          <text class="s" x="804" y="55" text-anchor="middle">noise</text>
+          <path class="ln" d="M680,96 L680,148" marker-end="url(#ah1)"/>
+          <text class="s" x="690" y="126">everything else</text>
+
+          <path class="ln" d="M578,170 L476,124" marker-end="url(#ah1)"/>
+          <text class="s" x="544" y="144" text-anchor="middle">SQL queries</text>
+          <path class="ln" d="M578,196 L476,196" marker-end="url(#ah1)"/>
+          <text class="s" x="527" y="188" text-anchor="middle">saves memory</text>
+          <path class="ln" d="M476,216 L578,216" marker-end="url(#ah1)"/>
+          <text class="s" x="527" y="234" text-anchor="middle">reads it back</text>
+          <path class="ln" d="M578,244 L476,290" marker-end="url(#ah1)"/>
+          <text class="s" x="534" y="287" text-anchor="middle">logs every call</text>
+
+          <path class="ln" d="M680,260 L680,374" marker-end="url(#ah1)"/>
+          <text class="s" x="690" y="322">answer: event ID</text>
+          <path class="ln" d="M828,410 L782,410" marker-end="url(#ah1)"/>
+          <text class="s" x="805" y="402" text-anchor="middle">truth</text>
+          <path class="ln" d="M578,396 L476,322" marker-end="url(#ah1)"/>
+          <text class="s" x="516" y="382" text-anchor="middle">scores</text>
+          <path class="ln" d="M268,330 L202,390" marker-end="url(#ah1)"/>
+          <text class="s" x="252" y="392" text-anchor="middle">endpoints</text>
+        </svg>
+      </div>
+      <figcaption>Today's build. The morning prototype ran this same loop on a local database with no first responder; the sponsor tools slot into the spots shown.</figcaption>
+    </figure>
+    <ul class="cards plug">
+      <li><strong>Tinybird</strong><p>Holds the store's telemetry and cuts every query off at the page time. Keeps whatever each design carries forward (summaries, notes or lessons) as a log you can replay, and records every call and score for the dashboard.</p></li>
+      <li><strong>Liquid</strong><p>A small, cheap model in front of Claude that clears the nightly false alarms and does the end-of-day reviews, which took most of the calls in the prototype. Its test: the day-12 incident starts with the same alert name as the false alarm.</p></li>
+      <li><strong>Nimble</strong><p>Pulls a real payment provider's incident history from its public status page, so the outside outages follow real timing and wording. Stretch goal: a live status check the agent can call mid-investigation.</p></li>
+      <li><strong>Claude</strong><p>The investigator. It runs one of the three memory designs below, and that design is the only thing that changes between runs.</p></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What makes it hard</h2>
+    <p>Each planted problem has a delay, a decoy or a repeat that looks a little different. Remembering past pages helps; lazy pattern-matching fails.</p>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 900 312" role="img" aria-label="Day 4 timeline. At 2am a cost bot cuts the payments connection limit from 50 to 20. Nothing breaks until lunch traffic approaches the new limit around 11:06. A harmless checkout deploy lands at 11:16 as a decoy, and the alert fires at 11:36, nine and a half hours after the real cause.">
+          <text class="m" x="60" y="20">DAY 4 · SIMULATED</text>
+
+          <line class="ax" x1="60" y1="250" x2="300" y2="250"/>
+          <line class="ax" x1="340" y1="250" x2="860" y2="250"/>
+          <line class="ax" x1="306" y1="258" x2="314" y2="242"/>
+          <line class="ax" x1="322" y1="258" x2="330" y2="242"/>
+          <line class="ax" x1="60" y1="250" x2="60" y2="256"/>
+          <line class="ax" x1="180" y1="250" x2="180" y2="256"/>
+          <line class="ax" x1="300" y1="250" x2="300" y2="256"/>
+          <line class="ax" x1="340" y1="250" x2="340" y2="256"/>
+          <line class="ax" x1="600" y1="250" x2="600" y2="256"/>
+          <line class="ax" x1="860" y1="250" x2="860" y2="256"/>
+          <text class="m" x="60" y="271" text-anchor="middle">00:00</text>
+          <text class="m" x="180" y="271" text-anchor="middle">02:00</text>
+          <text class="m" x="296" y="271" text-anchor="middle">04:00</text>
+          <text class="m" x="344" y="271" text-anchor="middle">10:00</text>
+          <text class="m" x="600" y="271" text-anchor="middle">11:00</text>
+          <text class="m" x="860" y="271" text-anchor="middle">12:00</text>
+
+          <line class="cause-l" x1="180" y1="250" x2="180" y2="84"/>
+          <circle class="cause-f" cx="180" cy="250" r="5"/>
+          <text class="cause-t" x="180" y="40" text-anchor="middle">02:00 · cfg-004</text>
+          <text class="s" x="180" y="57" text-anchor="middle">cost bot cuts the payments</text>
+          <text class="s" x="180" y="73" text-anchor="middle">connection limit, 50 → 20</text>
+
+          <circle class="decoy-f" cx="242" cy="250" r="4"/>
+          <text class="m" x="242" y="238" text-anchor="middle">03:02 false alarm</text>
+
+          <line class="limit" x1="340" y1="146" x2="860" y2="146"/>
+          <text class="limit-t" x="346" y="139">new limit: 20 connections</text>
+          <polyline class="curve" points="340,211 470,189 557,170 600,166 643,159 687,153 730,140 773,135 817,128 860,125"/>
+          <text class="curve-t" x="352" y="228">connections payments needs</text>
+          <circle class="cause-f" cx="626" cy="162" r="4.5"/>
+          <text class="s" x="618" y="206" text-anchor="end">slowdown starts, 11:06</text>
+
+          <line class="decoy-l" x1="669" y1="250" x2="669" y2="58"/>
+          <circle class="decoy-f" cx="669" cy="250" r="4"/>
+          <text class="m" x="669" y="34" text-anchor="middle">11:16 · dep-008</text>
+          <text class="s" x="669" y="50" text-anchor="middle">harmless checkout deploy (the decoy)</text>
+
+          <line class="cause-l" x1="756" y1="250" x2="756" y2="100"/>
+          <circle class="cause-f" cx="756" cy="250" r="5"/>
+          <text class="cause-t" x="756" y="80" text-anchor="middle">11:36 · alert fires</text>
+          <text class="s" x="756" y="95" text-anchor="middle">agent gets paged</text>
+
+          <path class="ln-thin" d="M180,281 L180,289 L756,289 L756,281"/>
+          <text class="s" x="468" y="306" text-anchor="middle">9½ hours between the real cause and the page</text>
+        </svg>
+      </div>
+      <figcaption>The 2am cut only bites when lunch traffic approaches the new limit, and a harmless deploy lands 20 minutes before the alert, so the obvious suspect is wrong. The trick repeats on day 12 with inventory, whose first alert has the same name as the nightly false alarm.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>Three ways to remember</h2>
+    <p>All three agents use the same model, tools and query budget. The only difference is what each one remembers between steps and between incidents.</p>
+    <ul class="cards">
+      <li>
+        <h3 class="c-base">History + summaries</h3>
+        <p>One long conversation for the whole rotation: every page, query and result stays in view. When it gets too long, the agent writes itself a summary, and the summary replaces the old conversation. Most agents work this way today.</p>
+        <p><span class="k">Think of it as</span>An engineer who remembers everything until their head is full, then writes a recap and forgets the details.</p>
+        <p><span class="k">In testing</span>Accurate and cheap, but its memory kept growing until each summary reset it.</p>
+      </li>
+      <li>
+        <h3 class="c-note">Notebook</h3>
+        <p>Starts from a blank slate at every single step. The model sees only a short list of lessons it wrote itself, notes on the current incident, and the result of its last query, so it has to write down what each result taught it.</p>
+        <p><span class="k">Think of it as</span>An engineer with no memory who relies entirely on sticky notes.</p>
+        <p><span class="k">In testing</span>Tiny memory, but it forgot things mid-investigation, re-ran the same lookups and cost the most.</p>
+      </li>
+      <li>
+        <h3 class="c-comb">Combined</h3>
+        <p>Remembers everything within one incident, like the baseline. When the incident closes, that conversation is thrown away and only a few short lessons, each backed by a page it investigated, carry over to the next one.</p>
+        <p><span class="k">Think of it as</span>An engineer who focuses fully on the current incident, then jots a few notes in a runbook before moving on.</p>
+        <p><span class="k">In testing</span>Matched the baseline's accuracy and speed while keeping about a third as much in view.</p>
+      </li>
+    </ul>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 900 524" role="img" aria-label="What each agent sees across two pages. History plus summaries keeps every earlier page until it is squashed into a summary. The notebook sees only its memory, notes and latest result. The combined design sees everything from the current page plus a small memory that carries between pages.">
+          <text class="t2" x="365" y="38" text-anchor="middle">Page A</text>
+          <text class="t2" x="562" y="38" text-anchor="middle">Page B</text>
+          <text class="m" x="300" y="56" text-anchor="middle">step 1</text>
+          <text class="m" x="365" y="56" text-anchor="middle">step 2</text>
+          <text class="m" x="430" y="56" text-anchor="middle">step 3</text>
+          <text class="m" x="530" y="56" text-anchor="middle">step 1</text>
+          <text class="m" x="595" y="56" text-anchor="middle">step 2</text>
+          <line class="div" x1="480" y1="26" x2="480" y2="472"/>
+
+          <text class="n-base" x="20" y="120">History + summaries</text>
+          <text class="s" x="20" y="140">one long conversation,</text>
+          <text class="s" x="20" y="156">squashed into a summary</text>
+          <text class="s" x="20" y="172">when it gets long</text>
+          <rect class="seg sh" x="280" y="125" width="40" height="65"/>
+          <rect class="seg sr" x="280" y="112" width="40" height="13"/>
+          <rect class="seg sh" x="345" y="125" width="40" height="65"/>
+          <rect class="seg sr" x="345" y="99" width="40" height="26"/>
+          <rect class="seg sh" x="410" y="125" width="40" height="65"/>
+          <rect class="seg sr" x="410" y="86" width="40" height="39"/>
+          <rect class="seg ss" x="510" y="170.5" width="40" height="19.5"/>
+          <rect class="seg sr" x="510" y="157.5" width="40" height="13"/>
+          <rect class="seg ss" x="575" y="170.5" width="40" height="19.5"/>
+          <rect class="seg sr" x="575" y="144.5" width="40" height="26"/>
+          <line class="base" x1="270" y1="190" x2="625" y2="190"/>
+          <text class="s" x="553" y="208" text-anchor="middle">squashed into a summary</text>
+          <text class="m" x="660" y="150">largest context measured</text>
+          <text class="v" x="660" y="174">31–37k tokens</text>
+
+          <text class="n-note" x="20" y="260">Notebook</text>
+          <text class="s" x="20" y="280">starts blank every call,</text>
+          <text class="s" x="20" y="296">sees memory, notes and</text>
+          <text class="s" x="20" y="312">only its latest result</text>
+          <rect class="seg sm" x="280" y="317" width="40" height="13"/>
+          <rect class="seg sn" x="280" y="310.5" width="40" height="6.5"/>
+          <rect class="seg sr" x="280" y="297.5" width="40" height="13"/>
+          <rect class="seg sm" x="345" y="317" width="40" height="13"/>
+          <rect class="seg sn" x="345" y="306.6" width="40" height="10.4"/>
+          <rect class="seg sr" x="345" y="293.6" width="40" height="13"/>
+          <rect class="seg sm" x="410" y="317" width="40" height="13"/>
+          <rect class="seg sn" x="410" y="302.7" width="40" height="14.3"/>
+          <rect class="seg sr" x="410" y="289.7" width="40" height="13"/>
+          <rect class="seg sm" x="510" y="313.1" width="40" height="16.9"/>
+          <rect class="seg sn" x="510" y="309.2" width="40" height="3.9"/>
+          <rect class="seg sr" x="510" y="296.2" width="40" height="13"/>
+          <rect class="seg sm" x="575" y="313.1" width="40" height="16.9"/>
+          <rect class="seg sn" x="575" y="305.3" width="40" height="7.8"/>
+          <rect class="seg sr" x="575" y="292.3" width="40" height="13"/>
+          <line class="base" x1="270" y1="330" x2="625" y2="330"/>
+          <text class="s" x="365" y="348" text-anchor="middle">older results are gone</text>
+          <text class="m" x="660" y="290">largest context measured</text>
+          <text class="v" x="660" y="314">6–10k tokens</text>
+
+          <text class="n-comb" x="20" y="400">Combined</text>
+          <text class="s" x="20" y="420">full history within a page,</text>
+          <text class="s" x="20" y="436">only memory carries</text>
+          <text class="s" x="20" y="452">to the next page</text>
+          <rect class="seg sm" x="280" y="457" width="40" height="13"/>
+          <rect class="seg sr" x="280" y="444" width="40" height="13"/>
+          <rect class="seg sm" x="345" y="457" width="40" height="13"/>
+          <rect class="seg sr" x="345" y="431" width="40" height="26"/>
+          <rect class="seg sm" x="410" y="457" width="40" height="13"/>
+          <rect class="seg sr" x="410" y="418" width="40" height="39"/>
+          <rect class="seg sm" x="510" y="453.1" width="40" height="16.9"/>
+          <rect class="seg sr" x="510" y="440.1" width="40" height="13"/>
+          <rect class="seg sm" x="575" y="453.1" width="40" height="16.9"/>
+          <rect class="seg sr" x="575" y="427.1" width="40" height="26"/>
+          <line class="base" x1="270" y1="470" x2="625" y2="470"/>
+          <text class="s" x="553" y="488" text-anchor="middle">only lessons carried over</text>
+          <text class="m" x="660" y="430">largest context measured</text>
+          <text class="v" x="660" y="454">11k tokens</text>
+
+          <rect class="sh" x="270" y="500" width="12" height="12" rx="2"/>
+          <text class="s" x="288" y="510">earlier pages</text>
+          <rect class="ss" x="390" y="500" width="12" height="12" rx="2"/>
+          <text class="s" x="408" y="510">summary</text>
+          <rect class="sm" x="480" y="500" width="12" height="12" rx="2"/>
+          <text class="s" x="498" y="510">memory</text>
+          <rect class="sn" x="565" y="500" width="12" height="12" rx="2"/>
+          <text class="s" x="583" y="510">notes</text>
+          <rect class="sr" x="640" y="500" width="12" height="12" rx="2"/>
+          <text class="s" x="658" y="510">results from this page</text>
+        </svg>
+      </div>
+      <figcaption>Each bar is what the model sees at one step; bar heights are illustrative, the token counts on the right are measured. The baseline grows until it is squashed into a summary, the notebook stays tiny but forgets mid-investigation, and the combined design keeps the whole page, then carries only its lessons forward.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <h2>What we found</h2>
+    <p>All three got every page right. The combined design matched the baseline on the repeat incident with about a third of the context, while the notebook forgot mid-investigation and cost the most.</p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th></th><th class="c-base">History + summaries</th><th class="c-note">Notebook</th><th class="c-comb">Combined</th></tr>
+        </thead>
+        <tbody>
+          <tr><th>Pages right</th><td>14 / 14</td><td>14 / 14</td><td>14 / 14</td></tr>
+          <tr><th>Queries on the day-12 repeat</th><td>4–6</td><td>14–15</td><td>5</td></tr>
+          <tr><th>Largest context</th><td>31–37k tokens</td><td>6–10k tokens</td><td>11k tokens</td></tr>
+          <tr><th>Cost for 12 days</th><td>$0.92–1.89</td><td>$3.28–4.31</td><td>$1.66</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Claude Opus 5 on 12 simulated days (14 pages, 2 real incidents), run by the morning prototype. History + summaries and the notebook ran twice, so their cells show both runs.</p>
+    <ul class="stories">
+      <li><strong>The lesson that never got saved</strong><span>The notebook's memory filled up with notes about the nightly false alarm, so the day-4 lesson didn't fit and was dropped.</span></li>
+      <li><strong>Forgetting mid-investigation</strong><span>Seeing only its latest result, the notebook re-ran the same deploy and config lookup four times on day 12.</span></li>
+      <li><strong>The shortcut that skipped the check</strong><span>Both memory agents learned to clear the false alarm in two queries and stopped checking config changes at 3am. In one run the baseline did check, and flagged the day-4 outage 8 hours before it hit.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Today's build</h2>
+    <p>Stretch the world to 30 days and 10 incidents, run all three designs through the architecture above, and chart context size across the month: flat for the combined agent, a sawtooth for the baseline.</p>
+  </section>
+
+  <footer>Plan, prototype code and raw results: <a href="https://github.com/arushivashist/horizon-hack">github.com/arushivashist/horizon-hack</a></footer>
+</main>
