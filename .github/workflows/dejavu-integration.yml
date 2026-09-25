@@ -2,7 +2,7 @@ name: DejaVu Integration
 on:
   push:
     branches: [main]
-    paths: ['src/dejavu/**','scripts/**','tinybird/**','.github/workflows/dejavu-integration.yml']
+    paths: ['src/dejavu/**','scripts/**','.github/workflows/dejavu-integration.yml']
   workflow_dispatch:
 jobs:
   core:
@@ -12,23 +12,23 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - run: python scripts/run_integration.py
-  tinybird-ingest:
+  rawtree-ingest:
     runs-on: ubuntu-latest
     env:
-      TINYBIRD_TOKEN: ${{ secrets.TINYBIRD_TOKEN }}
-      TINYBIRD_URL: ${{ vars.TINYBIRD_URL }}
+      RAWTREE_API_KEY: ${{ secrets.TINYBIRD_TOKEN }}
+      RAWTREE_URL: https://api.rawtree.com
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - name: Ingest Day 4 and Day 9 mock data
+      - name: Ingest and verify Day 4 and Day 9 in RawTree
         run: python scripts/ingest_tinybird.py
   sponsor-pipeline:
-    needs: tinybird-ingest
+    needs: rawtree-ingest
     runs-on: ubuntu-latest
     env:
-      TINYBIRD_TOKEN: ${{ secrets.TINYBIRD_TOKEN }}
-      TINYBIRD_URL: ${{ vars.TINYBIRD_URL }}
+      RAWTREE_API_KEY: ${{ secrets.TINYBIRD_TOKEN }}
+      RAWTREE_URL: https://api.rawtree.com
       NIMBLE_API_KEY: ${{ secrets.NIMBLE_API_KEY }}
     steps:
       - uses: actions/checkout@v4
