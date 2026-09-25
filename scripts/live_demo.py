@@ -22,7 +22,7 @@ DAY22 = {
     "steps": [
         {
             "step": 1,
-            "title": "Page received",
+            "title": "New incident reported",
             "detail": "checkout_error_rate_high · checkout-api",
             "context_tokens": 180,
             "memory_count": 10,
