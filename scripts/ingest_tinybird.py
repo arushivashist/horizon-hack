@@ -4,7 +4,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from src.dejavu.demo.mockdata import load_agent_world
 
 TOKEN=os.environ["TINYBIRD_TOKEN"]
-HOST=os.getenv("TINYBIRD_URL","https://api.tinybird.co").rstrip("/")
+HOST=(os.getenv("TINYBIRD_URL") or "https://api.tinybird.co").rstrip("/")
 SCENARIOS=[("day04","2026-09-04T19:20:00Z"),("day09","2026-09-09T19:20:00Z")]
 
 def post_events(name, rows):
