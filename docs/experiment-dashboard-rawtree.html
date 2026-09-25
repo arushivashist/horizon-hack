@@ -129,9 +129,16 @@
   .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
   a { color: var(--naive); text-underline-offset: 3px; }
   footer { color: var(--muted); font-size: 14px; }
+  .rt-live { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font:500 12px var(--mono); }
+  .rt-left, .rt-stats { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .rt-dot { width:8px; height:8px; border-radius:50%; background:var(--faint); display:inline-block; }
+  .rt-live.ok .rt-dot { background:var(--good); }
+  .rt-live.bad .rt-dot { background:var(--bad); }
+  .rt-refresh { padding:5px 10px; font:500 12px var(--mono); }
 </style>
 
-<main class="wrap">\n  <div class="rt-live" id="rt-live"><div class="rt-left"><i class="rt-dot"></i><strong id="rt-status">Connecting to RawTree…</strong></div><div class="rt-stats"><span id="rt-mem">Memories —</span><span id="rt-ctx">Context —</span><span id="rt-budget">Budget —</span><span id="rt-updated"></span></div></div>
+<main class="wrap">
+  <div class="rt-live" id="rt-live"><div class="rt-left"><i class="rt-dot"></i><strong id="rt-status">Connecting to RawTree…</strong></div><div class="rt-stats"><span id="rt-mem">Memories —</span><span id="rt-ctx">Context —</span><span id="rt-budget">Budget —</span><span id="rt-updated"></span><button class="rt-refresh" id="rt-refresh" type="button">↻ Refresh</button></div></div>
   <header>
     <div class="eyebrow">Long Horizon Agents Hackathon · Northstar Commerce · 30 simulated days · Claude Opus 5</div>
     <h1>Two agents, one on-call month</h1>
@@ -350,6 +357,7 @@ function kpis() {
 let selected = null;
 const markers = {};
 function timeline(memorySeries = DATA.memory) {
+  document.getElementById("timeline").replaceChildren(); markers = {};
   const W = 1000, L = 60, R = 20, x = (d) => L + ((d - 1) / 30) * (W - L - R);
   const svg = el("svg", { viewBox: `0 0 ${W} 330`, role: "img", "aria-label": "Thirty-day timeline of pages, naive agent context and memory size." }, document.getElementById("timeline"));
   // naive context band
@@ -437,6 +445,7 @@ function select(id) {
 }
 
 function contextChart(naiveSeries = DATA.naive_context, memoryContextSeries = DATA.memory_context) {
+  document.getElementById("ctx").replaceChildren(); document.getElementById("ctx-legend").replaceChildren();
   const W = 1000, H = 340, L = 60, R = 190, T = 24, B = 40, x = (d) => L + ((d - 1) / 30) * (W - L - R);
   const n = naiveSeries, m = memoryContextSeries;
   const maxV = Math.max(...n.map((p) => p.v), DATA.totals.memory.max_context, ...(m || []).map((p) => p.v));
@@ -509,34 +518,34 @@ loadRawTreeExperimentCharts().catch((e) => {
   contextChart(DATA.naive_context, DATA.memory_context);
 });
 
-// Live RawTree overlay. The 30-day traced experiment remains the benchmark dataset;
-// these values are the durable agent state currently persisted in RawTree.
 async function refreshRawTree() {
-  const bar = document.getElementById("rawtree-live");
+  const bar = document.getElementById("rt-live");
+  const button = document.getElementById("rt-refresh");
+  if (button) { button.disabled = true; button.textContent = "↻ Refreshing…"; }
   try {
-    const res = await fetch("/api/dashboard", {cache:"no-store"});
-    if (!res.ok) throw new Error(await res.text());
-    const live = await res.json();
-    const runs = live.runs || [];
-    if (!runs.length) throw new Error("No dejavu_agent_runs rows yet");
-    const last = runs[runs.length - 1];
-    document.getElementById("live-mem").textContent = last.total_memories ?? "—";
-    document.getElementById("live-ctx").textContent = last.context_tokens == null ? "—" : Number(last.context_tokens).toLocaleString()+" tokens";
-    document.getElementById("live-budget").textContent = last.context_budget == null ? "—" : Number(last.context_budget).toLocaleString()+" tokens";
-    document.getElementById("live-scenario").textContent = String(last.scenario || "—").replace(/^day0?/i,"Day ");
-    document.getElementById("rawtree-status").textContent = "LIVE · RawTree connected";
-    document.getElementById("rawtree-updated").textContent = "Updated "+new Date().toLocaleTimeString();
-    bar.className = "livebar ok";
+    const [r] = await Promise.all([
+      fetch("/api/dashboard", {cache:"no-store"}),
+      loadRawTreeExperimentCharts()
+    ]);
+    if (!r.ok) throw new Error(await r.text());
+    const d = await r.json(), runs = d.runs || [];
+    if (!runs.length) throw new Error("No agent runs yet");
+    const x = runs[runs.length - 1];
+    document.getElementById("rt-status").textContent = "LIVE · RawTree connected";
+    document.getElementById("rt-mem").textContent = "Memories " + (x.total_memories ?? "—");
+    document.getElementById("rt-ctx").textContent = "Context " + (x.context_tokens ?? "—") + " tokens";
+    document.getElementById("rt-budget").textContent = "Budget " + (x.context_budget ?? "—") + " tokens";
+    document.getElementById("rt-updated").textContent = "Updated " + new Date().toLocaleTimeString();
+    bar.className = "rt-live ok";
   } catch (e) {
-    document.getElementById("rawtree-status").textContent = "RawTree disconnected";
-    document.getElementById("rawtree-updated").textContent = e.message;
-    bar.className = "livebar bad";
+    document.getElementById("rt-status").textContent = "RawTree disconnected";
+    document.getElementById("rt-updated").textContent = e.message;
+    bar.className = "rt-live bad";
+  } finally {
+    if (button) { button.disabled = false; button.textContent = "↻ Refresh"; }
   }
 }
+document.getElementById("rt-refresh").addEventListener("click", refreshRawTree);
 refreshRawTree();
 setInterval(refreshRawTree, 5000);
-
-
-async function refreshRawTree(){const bar=document.getElementById("rt-live");try{const r=await fetch("/api/dashboard",{cache:"no-store"});if(!r.ok)throw Error(await r.text());const d=await r.json(),runs=d.runs||[];if(!runs.length)throw Error("No agent runs yet");const x=runs[runs.length-1];document.getElementById("rt-status").textContent="LIVE · RawTree connected";document.getElementById("rt-mem").textContent="Memories "+(x.total_memories??"—");document.getElementById("rt-ctx").textContent="Context "+(x.context_tokens??"—")+" tokens";document.getElementById("rt-budget").textContent="Budget "+(x.context_budget??"—")+" tokens";document.getElementById("rt-updated").textContent="Updated "+new Date().toLocaleTimeString();bar.className="rt-live ok"}catch(e){document.getElementById("rt-status").textContent="RawTree disconnected";document.getElementById("rt-updated").textContent=e.message;bar.className="rt-live bad"}}
-refreshRawTree();setInterval(refreshRawTree,5000);
 </script>
