@@ -1,4 +1,6 @@
-import json
+import json, sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from src.dejavu.demo.scenarios import run_known_pool, run_vendor
 results={"known":run_known_pool(),"vendor":run_vendor()}
 print(json.dumps(results,indent=2))
