@@ -8,9 +8,21 @@ from src.dejavu.clients.tinybird import TinybirdClient
 
 ROOT = Path(__file__).resolve().parents[1]
 
-SQL = """
+RUNS_SQL = """
 SELECT run_id, simulated_at, scenario, total_memories, context_tokens, context_budget, created_at
 FROM dejavu_agent_runs
+ORDER BY parseDateTimeBestEffortOrNull(simulated_at), parseDateTimeBestEffortOrNull(created_at)
+"""
+
+MEMORIES_SQL = """
+SELECT memory_id, memory_json, scenario, simulated_at, created_at
+FROM dejavu_memories
+ORDER BY parseDateTimeBestEffortOrNull(simulated_at), parseDateTimeBestEffortOrNull(created_at)
+"""
+
+MUTATIONS_SQL = """
+SELECT mutation_id, operation, target_id, reason, evidence_ids, scenario, simulated_at, created_at
+FROM dejavu_memory_events
 ORDER BY parseDateTimeBestEffortOrNull(simulated_at), parseDateTimeBestEffortOrNull(created_at)
 """
 
