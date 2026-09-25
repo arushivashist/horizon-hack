@@ -1,0 +1,41 @@
+p-001 noise: dismiss -> correct (6 queries)
+p-002 noise: dismiss -> correct (5 queries)
+p-003 noise: dismiss -> correct (4 queries)
+p-004 noise: dismiss -> correct (3 queries)
+p-005 incident: resolve -> correct (4 queries)
+p-006 noise: dismiss -> correct (3 queries)
+p-007 noise: dismiss -> correct (3 queries)
+p-008 noise: dismiss -> correct (3 queries)
+p-009 noise: dismiss -> correct (3 queries)
+p-010 noise: dismiss -> correct (3 queries)
+p-011 noise: dismiss -> correct (3 queries)
+p-012 noise: dismiss -> correct (3 queries)
+p-013 noise: dismiss -> correct (4 queries)
+p-014 incident: resolve -> correct (4 queries)
+
+MEMORY NOW
+LESSONS (8 of 12 slots):
+[L1] Latency-only page (p99 up, errors flat) with no deploy/config change in the prior hours is usually background work. Triage: in parallel pull per-minute metrics ~15m around the spike + all deploys/configs since prior day; then alerts window and dependency metrics. Self-resolved + errors flat + no related change => dismiss in <6 queries. Don't blame an unrelated change (e.g. search replicas). (evidence: p-001, p-002)
+[L3] Fast path for suspected known-noise page: 2 parallel queries (per-minute metrics for alerting service ~15m around spike; deploys+config_changes for prior 2 days via UNION ALL), then one query bucketing dependents (checkout/web/postgres/payments/search/redis) into pre/spike/post in one GROUP BY. If shape matches a noise entry and dependents unchanged, dismiss in 3 queries. Works reliably (10x). (evidence: p-003, p-004, p-006, p-007, p-008, p-009, p-010, p-011, p-012)
+[L4] CONFIRMED 2x (p-005 cfg-004 payments 50->20; p-014 cfg-012 inventory 40->15): overnight 02:00 cost-optimizer-bot db_pool_max cuts cause a daytime outage once rps rises. Fingerprint: db_conn_in_use pegged at new cap, "slow db acquire"/"timed out waiting for db connection" logs, p99+errors ramp, checkout timeouts, web 502s. Fix = revert (cfg-013 12:30 restored 40). Check bot pool configs first. (evidence: p-004, p-005, p-014)
+[L5] Correlate page time with load, not change time: a 02:00 change can stay harmless until daytime rps rises (p-005 fired 11:36). Pull deploys+config_changes back ~24-36h; prefer the change whose new value matches an observed ceiling. Status: cfg-007 (09-06 02:00, checkout worker_threads 16->12) still caused no page through day 8 03:17 — likely benign, stop weighting it heavily. (evidence: p-005, p-008, p-009)
+[L6] Blame a change only if telemetry shows its fingerprint (metric pegged at new cap, matching log text, timing tied to load). A recent deploy/change in the alerting service is NOT enough: day-12 03:00 page had cfg-012 2h prior but conn was 3-4 and logs showed reindex — dismissed; same cfg-012 broke things 8h later at load (p-014). Silent: dep-016..032, cfg-008..011, cfg-013. (evidence: p-008, p-009, p-010, p-011, p-012, p-013, p-014)
+[L7] Compare the capped metric with the same clock hour the day before: p-014 inventory conn sat at 15 all morning while the prior day hit 16-26 at the same rps — proof the cap, not the app, is the ceiling. Beware red-herring deploys minutes before the ramp (dep-028 10:34 vs ramp 10:39); prefer the change whose new value equals the observed ceiling. (evidence: p-013, p-014)
+[L8] Fast path for a real pool-exhaustion page (4 queries): (1) per-minute metrics for alerting + caller service ~30m before now; (2) deploys+config_changes since prior day via UNION ALL; (3) hourly max/avg db_conn_in_use + rps + p99 for the service over the last ~36h; (4) logs since ramp grouped by service/level/normalized message. Fingerprint visible in all four => resolve. (evidence: p-014)
+[L9] Two pages in the same service on the same day can have different causes: day 12 inventory_p99_high at 03:02 was the nightly reindex noise (dismissed, p-013) while the 10:54 page was real pool exhaustion from cfg-012 (p-014). Never carry a dismissal forward — re-check errors, db_conn_in_use vs cap, and log text for each page. (evidence: p-013, p-014)
+KNOWN NOISE (1 of 3 slots):
+[N1] inventory_p99_high ~03:00-03:15, p99 ~110-135ms -> 1.0-1.3s, self-resolves ~03:12-03:14: nightly inventory reindex (logs service 'inventory-batch': "reindex job started"/"completed in 12m" — grep logs 02:55-03:17). Errors flat (~0.001); rps/db_conn(3-4)/CPU normal; checkout/web/payments/search/redis flat; postgres p99 8->40ms, 0 errors. Seen 13x thru day 12. Dismiss via L3 fast path. (evidence: p-003, p-006, p-007, p-008, p-009, p-010, p-011, p-012, p-013)
+
+78 write attempts, 24 refused; all logged in safe_memory_log.jsonl
+
+MEMORY AS OF DAY 5
+LESSONS (4 of 12 slots):
+[L1] Latency-only page (p99 up, errors flat) with no deploy/config change in the prior hours is usually background work. Triage: in parallel pull per-minute metrics ~15m around the spike + all deploys/configs since prior day; then alerts window and dependency metrics. Self-resolved + errors flat + no related change => dismiss in <6 queries. Don't blame an unrelated change (e.g. search replicas). (evidence: p-001, p-002)
+[L3] Fast path for suspected known-noise page: 2 parallel queries (per-minute metrics for alerting service ~15m around spike; all deploys+config_changes since prior day via UNION ALL), then one query comparing dependents (checkout/web/postgres/payments) spike vs pre-spike baseline in a single GROUP BY. If shape matches a noise entry and callers are unchanged, dismiss in 3 queries. Works reliably. (evidence: p-003, p-004, p-006)
+[L4] CONFIRMED (p-005): cfg-004 (09-03 02:00, payments db_pool_max 50->20, cost-optimizer-bot) caused a daytime outage; cfg-005 12:40 restored 50 and it recovered. Pattern: db_conn_in_use pegged at the exact new cap, "slow db acquire: waited Xms" logs, p99+errors ramp with load, cascading to checkout "upstream payments timeout" and web 502s. Check overnight bot pool configs first; fix = revert cap. (evidence: p-004, p-005)
+[L5] Correlate page time with load, not just change time: a low-traffic-hour config change (e.g. 02:00) can sit harmless for hours and only page once daytime rps rises (p-005 fired 11:36 for a 02:00 change). So always pull config_changes+deploys back ~24h, ordered, not just the last hour, and prefer the change whose new value matches an observed ceiling in the metrics. (evidence: p-005)
+KNOWN NOISE (1 of 3 slots):
+[N1] inventory_p99_high ~03:00-03:12, p99 ~110-130ms -> 1.0-1.25s, self-resolves by ~03:12-03:14: nightly inventory-batch reindex. Seen 5x. Errors flat (~0.001), rps/db_conn/CPU normal; checkout/web/payments p99+errors match pre-spike baseline; postgres p99 mildly up (8->40ms, 0 errors); no recent inventory deploy/config. Log marker often absent; metric shape suffices. Dismiss. (evidence: p-001, p-002, p-003, p-004, p-006)
+
+TOTALS: 14/14 correct, 51 queries, 99 model calls, largest context 11,978 tokens, $1.99
+exit 0

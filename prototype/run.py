@@ -50,9 +50,10 @@ You get woken for pages. Investigate with SQL (DuckDB dialect) over these tables
 
 Then close the page: resolve it with the event_id (from deploys or config_changes) that caused it, or dismiss it if it is not a real problem. You get at most 15 queries per page and each returns at most 50 rows, so aggregate (GROUP BY, date_trunc) rather than dumping rows. Stop investigating once the evidence is clear."""
 
-BASELINE_SYSTEM = SYSTEM + """
+BASELINE_ADDENDUM = """
 
 This conversation runs across your whole rotation: earlier pages and end-of-day handoff notes appear above. When it gets long, older parts are replaced by your own summary."""
+BASELINE_SYSTEM = SYSTEM + BASELINE_ADDENDUM
 
 NOTEBOOK_SYSTEM = SYSTEM + """
 
@@ -145,6 +146,8 @@ class LLM:
         self.client = client
         self.calls = self.tokens_in = self.tokens_out = self.max_context = self.last_context = 0
         self.cost = 0.0
+        self.tag = None  # set by the runner, so each traced call knows which wake-up it belongs to
+        self.trace = []  # context size of every call, for the flat-vs-sawtooth chart
 
     def __call__(self, system, messages, tools, cache_history=False, tool_choice=None):
         if self.cost > COST_CAP:
@@ -168,6 +171,7 @@ class LLM:
         written, read = u.cache_creation_input_tokens or 0, u.cache_read_input_tokens or 0
         self.last_context = u.input_tokens + written + read
         self.max_context = max(self.max_context, self.last_context)
+        self.trace.append({**(self.tag or {}), "context": self.last_context})
         self.calls += 1
         self.tokens_in += self.last_context
         self.tokens_out += u.output_tokens
@@ -185,8 +189,8 @@ def page_text(w):
 class Baseline:
     name = "baseline"
 
-    def __init__(self, llm, world, compact_at):
-        self.llm, self.world, self.compact_at = llm, world, compact_at
+    def __init__(self, llm, world, compact_at, system=BASELINE_SYSTEM):
+        self.llm, self.world, self.compact_at, self.system = llm, world, compact_at, system
         self.messages = []
         self.pending = []  # blocks for the next user turn: last tool results, handoff notes, the page
         self.summaries = []
@@ -202,7 +206,7 @@ class Baseline:
         self.steps, queries = [], 0
         for _ in range(MAX_CALLS):
             self.messages.append({"role": "user", "content": self.pending})
-            resp = self.llm(BASELINE_SYSTEM, self.messages, [QUERY, RESOLVE, DISMISS], cache_history=True)
+            resp = self.llm(self.system, self.messages, [QUERY, RESOLVE, DISMISS], cache_history=True)
             self.messages.append({"role": "assistant", "content": resp.content})
             results, outcome = [], None
             for b in resp.content:
@@ -222,7 +226,7 @@ class Baseline:
 
     def compact(self):
         self.messages.append({"role": "user", "content": self.pending + [{"type": "text", "text": SUMMARY_PROMPT}]})
-        resp = self.llm(BASELINE_SYSTEM, self.messages, [QUERY, RESOLVE, DISMISS],
+        resp = self.llm(self.system, self.messages, [QUERY, RESOLVE, DISMISS],
                         cache_history=True, tool_choice={"type": "none"})
         summary = "".join(b.text for b in resp.content if b.type == "text")
         self.summaries.append(summary)

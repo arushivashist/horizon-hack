@@ -1,0 +1,470 @@
+{
+ "totals": {
+  "pages": 39,
+  "correct": 39,
+  "queries": 200,
+  "calls": 296,
+  "max_context": 16110,
+  "cost": 6.41
+ },
+ "pages": [
+  {
+   "page_id": "p-001",
+   "when": "day 1, Tue 2026-09-01 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 latency stayed in its normal 67-84ms band all day (22:00 point was 67.7ms, below the daily mean); error_rate (~0.006), CPU (~0.40) and dependency latency were flat, logs show only 2 routine QUERY_SLOW warns and cache hits. No deployments; the only change was a log_level info->debug config tweak (cfg config-day01-search-service) with no perf effect. Warning-level threshold blip, no user impact.",
+   "result": "correct",
+   "queries": 6
+  },
+  {
+   "page_id": "p-002",
+   "when": "day 2, Wed 2026-09-02 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 latency at 22:10 (~89-101ms) is inside its normal 24h band (87-102ms, mean ~92ms); error_rate flat at ~0.004, cpu flat at 0.25, request_count normal, no error/warn logs, no inventory-service deploys or config changes (only an unrelated order-service tax-rounding deploy at 17:15). Single warning alert with no companion alerts = threshold blip, no real impact.",
+   "result": "correct",
+   "queries": 7
+  },
+  {
+   "page_id": "p-003",
+   "when": "day 3, Thu 2026-09-03 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 latency over the last 24h stays within its normal 66-85ms band (15:00 hour avg 67ms, max 70ms \u2014 actually lower than the daily average), cpu flat ~0.40, dependency_latency flat ~20ms, only 1 WARN QUERY_SLOW log, no search-service deploys or config changes, and no companion alerts. Classic threshold blip inside the normal oscillation band (known noise N1).",
+   "result": "correct",
+   "queries": 6
+  },
+  {
+   "page_id": "p-004",
+   "when": "day 3, Thu 2026-09-03 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification-worker p95 oscillates 196-222ms daily with an evening traffic peak; the same pattern occurred on 09-02 (peak 219ms at 20:00). At the 22:10 alert the current-hour p95 was 200ms, i.e. at the low end of the band. error_rate flat at 0.008, cpu flat 0.18, dependency_latency_ms (Courierly) in normal 247-274ms range, only INFO MESSAGE_QUEUED logs, no notification-worker deploy or config change, and no companion alerts. Threshold blip inside the normal band.",
+   "result": "correct",
+   "queries": 7
+  },
+  {
+   "page_id": "p-005",
+   "when": "day 4, Fri 2026-09-04 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-04",
+    "cause": [
+     "config-day04-reduce"
+    ],
+    "decoy": [
+     "deploy-day04-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "config-day04-reduce",
+   "result": "correct",
+   "queries": 12
+  },
+  {
+   "page_id": "p-006",
+   "when": "day 4, Fri 2026-09-04 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 oscillates ~118-133ms over the last 36h; the 22:00 hour value (130.9ms) is inside that band and below yesterday's peak (132.5ms at 20:00 UTC). error_rate (~0.003), cpu (~0.21), dependency_latency (~46ms) and request_count all flat/normal-diurnal; logs are only INFO ORDER_SAVED, no warn/error. No order-service deploy or config change (only inventory cache deploy day 3 and the payment-orchestrator max_connections change already reverted at 19:25). Threshold sits inside the normal band \u2014 noise.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-007",
+   "when": "day 5, Sat 2026-09-05 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo search_latency_high warning with no companion alerts. search-service hourly p95 over the last 36h stays in its normal 61-79ms band (22:00 UTC hour = 67.0ms, below the 19-20 UTC peak of 72-74ms); error_rate (~0.006), cpu (~0.40) and request_count are flat and tracking the normal diurnal curve. Logs are INFO CACHE_HIT with only 2 routine WARN QUERY_SLOW. No deployment or config change touched search-service (only checkout-api gift_wrap flag at 15:00 and day-4 payments work). Threshold blip inside normal band.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-008",
+   "when": "day 6, Sun 2026-09-06 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning inventory_latency_high with no companion alerts. Hourly p95 for inventory-service over the last 40h stays 83-96ms (22:00 UTC = 88.6ms), well inside its 85-105ms band and below yesterday's same-hour peak (96ms at 19-21 UTC Sat). error_rate (~0.004), cpu (~0.25), dependency_latency and request_count are flat/diurnal; logs are INFO STOCK_READ plus 2 routine WARN QUERY_SLOW. No deployment or config change touched inventory-service (only a search-service synonym deploy). Threshold blip, not a real problem.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-009",
+   "when": "day 7, Mon 2026-09-07 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning notification_latency_high with no companion alerts. notification-worker p95 peaked at 218ms during the Monday 18-20 UTC traffic peak (req 734-826/hr, ~35% above Sunday's 609 peak) and was already falling to 203ms at alert time \u2014 inside the known 196-222ms band. error_rate (~0.008), cpu (~0.18), memory (~0.35) and dependency_latency all flat and tracking request_count; logs show only INFO MESSAGE_QUEUED, no warns/errors for notification-worker. No deployment or config change for notification-worker in the last 40h (only a search-service synonym-list deploy). Diurnal traffic-driven latency, not an incident.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-010",
+   "when": "day 8, Tue 2026-09-08 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning latency alert on order-service with no companions. Hourly p95 over 40h stays in the normal 115-133ms band; 22:00 value 129ms is below the prior-day 19:00-20:00 peaks (132-133ms) and tracks the diurnal request_count curve (req 739 vs peak 1090). error_rate (~0.0029), cpu (~0.22) and memory (~0.40) flat; logs are INFO-only plus routine QUERY_SLOW warns in other services; no deployment or config change touched order-service (only notification-worker template/batch_size changes). Threshold is simply inside the normal band.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-011",
+   "when": "day 9, Wed 2026-09-09 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-09",
+    "cause": [
+     "vendor-payrail-20260909T192000Z"
+    ],
+    "decoy": [
+     "deploy-day09-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "vendor-payrail-20260909T192000Z",
+   "result": "correct",
+   "queries": 9
+  },
+  {
+   "page_id": "p-012",
+   "when": "day 9, Wed 2026-09-09 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning search_latency_high with no companion alerts. search-service hourly p95 stayed in its normal 65-78ms band through day 8-9 (22:00 hour = 66.7ms, below the 19:00 peak of 78ms), error_rate ~0.006, cpu ~0.40, memory ~0.62 all flat, and p95 tracks the diurnal request_count curve. Logs show only INFO CACHE_HIT plus 2 routine WARN QUERY_SLOW. No search-service deployment or config change (only a checkout-api receipt-footer deploy and an unrelated notification batch_size change); the day-9 checkout/PayRail criticals resolved at 20:06, two hours before. Threshold noise inside the normal band.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-013",
+   "when": "day 10, Thu 2026-09-10 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo search-service warning with no companions. Hourly p95 at 15:00 UTC was 76.0ms, inside the normal 61-80ms band (prior day same hours 65-78ms); error_rate ~0.006, cpu ~0.40, memory ~0.62, request_count ~1550 all flat. No deployments or config changes touched search-service (only notification template day 8 and checkout receipt-footer day 9), and logs are INFO CACHE_HIT plus 2 routine WARN QUERY_SLOW. Threshold inside normal band.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-014",
+   "when": "day 10, Thu 2026-09-10 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo inventory_latency_high warning with no companions. Hourly p95 for inventory-service sat in its normal post-v8.0.4 band all day (85-100ms, peaking ~99-100 at 18-19 UTC with request_count ~1350) and was only 88ms in the 22:00 hour when the alert fired; error_rate (~0.004), cpu (~0.25) and memory (~0.44) flat, identical to the prior day. No deployments or config changes for inventory-service (only a day-9 checkout receipt-footer deploy), and logs are INFO STOCK_READ plus 3 routine WARN QUERY_SLOW. Threshold inside normal band.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-015",
+   "when": "day 11, Fri 2026-09-11 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning latency alert with no companions. notification-worker p95 at 22:00 UTC was 206ms, squarely inside its normal 196-222ms band (yesterday's same peak hours were 213-216ms, and today's 19:00 peak hit 219ms without alerting); error_rate (~0.008), cpu, memory and dependency_latency_ms are flat and p95 simply tracks the diurnal request_count rise (452 -> 846). Logs are INFO-only for notification-worker; the only deploy in 40h was a cosmetic order-service invoice-footnote change and there were no config changes.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-016",
+   "when": "day 12, Sat 2026-09-12 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning order_latency_high with no companion alerts. order-service p95 at 22:00 UTC was 122ms, squarely in its normal 113-131ms band (yesterday's same hour 122ms, peak 131ms at 19:00 with no alert); error_rate ~0.003, cpu ~0.21, memory ~0.40 all flat, request_count actually lower (Saturday, 558 vs 708 prior day). Logs are INFO-only for order-service. The only recent change for order-service was a cosmetic v2.3.4 invoice-footnote deploy 28h earlier with no metric shift; the day-12 config change was inventory cache_ttl, unrelated. Threshold inside normal band.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-017",
+   "when": "day 13, Sun 2026-09-13 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning search_latency_high with no companion alerts. search-service p95 at 22:00 UTC was 69.4ms, squarely inside its normal 61-80ms band and identical to the same hour a day earlier (69.6ms); error_rate (~0.006), cpu (~0.40), memory (~0.62) and request_count all flat/tracking normal diurnal shape. No deployments in 36h, only config change was inventory-service cache_ttl (different service), logs are INFO plus 2 routine WARN QUERY_SLOW. Threshold noise.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-018",
+   "when": "day 14, Mon 2026-09-14 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo search_latency_high warning with no companions. search-service hourly p95 at 15:00 is 70.6ms, fully inside its normal 61-80ms band and matching the same hours on day 13 (66-74ms); error_rate (~0.006), cpu (~0.40) and memory (~0.62) are flat, request_count steady ~1500. Logs are INFO CACHE_HIT with only 2 WARN QUERY_SLOW, and there is no deploy or config change for search-service (only a cosmetic checkout-api footer-link deploy). Threshold noise, same as the self-resolving day-13 22:10 warning.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-019",
+   "when": "day 14, Mon 2026-09-14 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning with no companions: inventory-service hourly p95 stayed 83-99ms (band 85-96 post-v8.0.4), peaking only with traffic (req 1366 at 19:00 UTC vs ~990 same hour prior day); error_rate ~0.004, cpu ~0.25, memory ~0.44 all flat; logs INFO plus 2 WARN QUERY_SLOW; no deployments or config changes for inventory-service in the last 36h (only a cosmetic checkout-api footer-link deploy).",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-020",
+   "when": "day 15, Tue 2026-09-15 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning notification_latency_high with no companions. notification-worker hourly p95 at 22:00 is 211.6ms, inside its normal 196-222ms band and matching the same hour yesterday (203ms) / the evening peak pattern (19:00 was 221ms yesterday 218ms); p95 simply tracks request_count (569 vs 449 baseline). error_rate ~0.008, cpu ~0.18, memory ~0.35, dependency latency ~259ms all flat. No deploys or config changes for notification-worker in 40h (only a cosmetic inventory-service sku-label deploy), and logs are INFO only for this service.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-021",
+   "when": "day 16, Wed 2026-09-16 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo warning order_latency_high with no companions. order-service hourly p95 at 22:00 UTC was 121.6ms, identical to prior day same hour (121.2ms) and inside its normal 113-133ms band; p95 simply tracks request_count (peak 1109/h at 19:00). error_rate ~0.003, cpu ~0.22, memory ~0.40 all flat. No order-service deploy or config change in 40h (only inventory sku-label deploy day15 and a checkout log_sample_rate change), and logs are INFO-only for order-service. Normal traffic-peak noise.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-022",
+   "when": "day 17, Thu 2026-09-17 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo 22:10 UTC search_latency_high warning with no companion alerts, no deployments in 40h, and only an unrelated checkout log_sample_rate config change. search-service p95 at 22:00 was 72ms (band 61-80; same hour prior day 74ms), tracking request_count decline, with error_rate ~0.006 and cpu ~0.40 flat. Normal-band noise in the recurring 22:10 slot.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-023",
+   "when": "day 18, Fri 2026-09-18 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 at 22:00 UTC was 92.0ms, identical to same hour prior day (92.5ms) and within the post-v8.0.4 band (85-100ms); error_rate ~0.004 and cpu ~0.25 flat, p95 simply tracks request_count. No deploy or config change touched inventory-service (only a search-service typo-tolerance deploy). Same daily 22:10 UTC self-resolving latency warning slot.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-024",
+   "when": "day 19, Sat 2026-09-19 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo search_latency_high warning with no companions. search-service p95 at the alert time was 70-72ms (14:30-15:15 points), squarely inside the normal 61-80ms band and below yesterday's same-hour/peak values (77-85ms). error_rate flat at ~0.006, cpu flat ~0.40, request_count down ~30% (Saturday). Only nearby change is the day-18 v5.6.2 typo-tolerance deploy 19h earlier with no metric shift since. Noise (N1/L10 pattern).",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-025",
+   "when": "day 19, Sat 2026-09-19 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification-worker p95 at 22:00 UTC was 202ms, inside its normal 196-222ms band and below the same hour prior day (207ms); error_rate flat at 0.008, cpu flat, request_count 389 (weekend-low, tracking the evening ramp). No deployments or config changes touch notification-worker (only search-service v5.6.2 typo-tolerance on d18). This is the recurring self-resolving 22:10 UTC warning-slot noise.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-026",
+   "when": "day 20, Sun 2026-09-20 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo 22:10 order_latency_high warning with no companion alerts, no deployments or config changes in 40h. order-service p95 at 22:00 was 125.8ms, inside its normal 113-133ms band and essentially identical to the same hour the prior day (124.2ms); request_count (540 vs 546) and error_rate (0.0032) track normally. Matches the known rotating short-lived latency-warning slot (N1/L10).",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-027",
+   "when": "day 21, Mon 2026-09-21 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Classic 22:10 UTC rotating solo latency warning. search-service p95 at 22:00 was 77.4ms, inside its normal 61-85ms band (Mon peak 83ms at 19 UTC), error_rate flat ~0.0064 and cpu flat ~0.41 all day; request_count tracks a normal weekday curve (2781/h peak). No deploys or config changes in 40h touching search (only a notification-worker copy deploy). No companion alerts.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-028",
+   "when": "day 22, Tue 2026-09-22 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-22",
+    "cause": [
+     "config-day22-reduce"
+    ],
+    "decoy": [
+     "deploy-day22-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "config-day22-reduce",
+   "result": "correct",
+   "queries": 6
+  },
+  {
+   "page_id": "p-029",
+   "when": "day 22, Tue 2026-09-22 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo inventory_latency_high warning in the recurring 22:10 UTC slot. Inventory p95 at 22:00 was 94.9ms with req 962, essentially identical to the same hour the prior day (95.9ms / 934 req); error_rate (0.0043) and cpu (0.25) flat all day, and p95 tracks the normal daily request curve. The only deploy (checkout-api v4.22.0 banner/copy) and the payments.max_connections change touch other services and the checkout incident already resolved at 19:28. No real inventory problem.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-030",
+   "when": "day 23, Wed 2026-09-23 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo 22:10 UTC notification_latency_high warning with no companions. notification-worker p95 at 22:00 was 199ms, below its own weekday band (196-227ms) and essentially identical to the same hour yesterday (210ms); error_rate (~0.0082), cpu (~0.19) and request_count (576 vs 566 prior day) all flat and tracking the normal evening ramp. No deployments or config changes touching notification-worker (only the day-22 checkout/payments items, already restored+recycled and resolved). Normal-band noise.",
+   "result": "correct",
+   "queries": 3
+  },
+  {
+   "page_id": "p-031",
+   "when": "day 24, Thu 2026-09-24 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-24",
+    "cause": [
+     "deploy-day24-enrichment"
+    ],
+    "decoy": [
+     "config-day24-log-level"
+    ]
+   },
+   "action": "resolve",
+   "answer": "deploy-day24-enrichment",
+   "result": "correct",
+   "queries": 9
+  },
+  {
+   "page_id": "p-032",
+   "when": "day 24, Thu 2026-09-24 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo order_latency_high warning in the recurring 22:10 UTC slot (L10 predicted order-service on d24). order-service p95 at 21:45/22:00 UTC was 119-123ms, inside the normal 113-139ms band and matching the same hours on d23 (129/128ms); error_rate ~0.003 and cpu ~0.227 flat, request_count on normal evening decline. No deploy/config change on order-service. Normal band, self-resolving noise.",
+   "result": "correct",
+   "queries": 3
+  },
+  {
+   "page_id": "p-033",
+   "when": "day 25, Fri 2026-09-25 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Predicted rotating 22:10 UTC self-resolving latency warning (L10: search on d25). search-service hourly p95 22:00 = 68.4ms, within its normal 61-85ms band and essentially identical to the same hour on d24 (72.0ms); error_rate ~0.006 and cpu 0.40 flat, request_count tracking the normal daily curve. No search-service deployments or config changes in the last 40h. Noise.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-034",
+   "when": "day 26, Sat 2026-09-26 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo inventory_latency_high warning with no companions: hourly p95 at 22:00 UTC was 91.1ms, within the normal 87-106ms band and essentially identical to prior day (95.3ms same hour), error_rate flat ~0.004, cpu flat 0.25, request_count lower (weekend). No inventory deploys or config changes (only an off-service order-service packing-slip deploy at 17:40). This is the known recurring 22:10 UTC self-resolving latency warning slot (L10/N1).",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-035",
+   "when": "day 27, Sun 2026-09-27 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo search_latency_high warning with no companions. Hourly search-service metrics through the alert window are flat and within the normal band: p95 68.6ms at 15:00 UTC (24h band 63-74, prior-day same hour 72.0), error_rate 0.0061, cpu 0.39, request_count 1077 (typical Sunday morning). No search-service deploys or config changes in 48h (only an unrelated order-service packing-slip deploy). Normal-band noise.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-036",
+   "when": "day 27, Sun 2026-09-27 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification-worker p95 at the alert hour (204.6ms) is within its normal band and matches the prior day's same hours (193-209ms); error_rate ~0.008, cpu ~0.18 and request_count 396 are all flat/identical to day 26. No notification-worker deploy or config change in the last 40h (only an unrelated order-service packing-slip cosmetic deploy). Solo self-resolving latency warning = normal band noise.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-037",
+   "when": "day 28, Mon 2026-09-28 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo order_latency_high warning with no companions. Hourly order-service p95 stayed in its normal 113-133ms band (peak 133ms at 19:00, vs 129ms same hour prior day), error_rate flat ~0.003 and cpu flat 0.22; only request_count is up (Monday traffic, 1109 vs 780). No deployments or config changes at all in the last 40h. Matches the known self-resolving 22:10 UTC latency-warning rotation.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-038",
+   "when": "day 29, Tue 2026-09-29 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo search_latency_high warning with no companions. Search-service hourly p95 70-76ms, error_rate ~0.006, cpu 0.40 \u2014 identical to the same hours the prior day and inside the normal band (61-85ms). No search-service deploys or config changes in 40h (only a cosmetic checkout-api help-link deploy). Self-resolving rotating latency warning, not a real problem.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-039",
+   "when": "day 30, Wed 2026-09-30 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Solo inventory_latency_high warning matching the known 4-day self-resolving cycle (inventory d14/18/22/26/30, 22:10 UTC). No deployments or config changes in the prior 40h; hourly p95 96.6ms is within the normal 85-106ms band and identical to prior day's same hours, with error_rate flat ~0.004, cpu 0.25, request_count normal. Noise.",
+   "result": "correct",
+   "queries": 4
+  }
+ ],
+ "memory": "LESSONS (9 of 12 slots):\n[L2] Universal triage: use literal timestamps from the page header (now() returns nothing). 3 parallel queries: alerts, deployments, config_changes over last ~36-40h, all services. Then one hourly CASE-pivot of p95/error_rate/request_count/cpu for the ALERTING service over 32h (compare same hour prior day); logs by service/level/code only if needed. <=5 queries settled p-002..p-023. (evidence: p-002, p-005, p-008, p-012, p-016, p-018, p-020, p-021, p-023)\n[L4] Caching/serving-path deploys (e.g. inventory-service/v8.0.4 stale-while-revalidate, day 3) reset metric baselines. After such a deploy compare to post-deploy hours, not remembered numbers, and treat a sustained p95/error_rate shift starting at deploy time as real. Post-v8.0.4 inventory settled at 83-96ms and stayed there through day 6. Status: baseline confirmed stable p-008. (evidence: p-002, p-003, p-004, p-008)\n[L5] Critical checkout_error_rate_high: pivot pool_utilization/wait_ms, error_rate, dependency_latency_ms, payments_db_cpu for checkout-api AND payment-orchestrator. Pool 0.24->0.97, wait 15->4000ms, err 0.005->0.16, dependency flat ~330ms, no changed vendor = pool exhaustion. Split: db_cpu flat -> max_connections cut (L6); db_cpu 0.3->0.85 -> bad deploy (L11). (evidence: p-005, p-028, p-031)\n[L6] Repeat offender: actor cost-optimizer cuts payments.max_connections 100->20 at 09:00 UTC (d4, d22); breakage shows only at ~19:00 UTC peak, so late onset does NOT clear a config change. Decoys (cosmetic deploys near a page; check changed_components): checkout v4.22.0 banner, v4.23.0 help-link (d28), order v2.3.4 footnote, v2.4.0 packing-slip, inventory v8.1.0 sku-label, search v5.6.2 typo. (evidence: p-005, p-011, p-016, p-020, p-023, p-028, p-034, p-037)\n[L7] Pool-exhaustion fix pattern: restoring payments.max_connections 20->100 isn't enough - pods keep stale pools, so a recycle_pods action follows minutes later (d4; d22 restore 19:25 UTC, recycle 19:27, alert resolved 19:28). If a later page fires after that restore+recycle pair, the checkout incident is already closed - don't re-litigate it; investigate only the alerting service. Confirmed d22. (evidence: p-005, p-028, p-029)\n[L8] Paired critical checkout_error_rate_high + payrail_upstream_timeout: check dependency_latency_ms for checkout-api AND payment-orchestrator. If it jumps ~325ms -> ~8000ms with error_rate ~0.005 -> ~0.2 on BOTH, and connection_pool_utilization stays at baseline (~0.25/0.24), it's external, not pool exhaustion. Confirm with vendor_snapshots changed=True; resolve with that snapshot id. Worked p-011. (evidence: p-011)\n[L9] Query gotchas: SELECTing vendor_snapshots.published_at fails (needs pytz) - omit it; \"first\"/\"last\" reserved as aliases. Vendor outages: WHERE event_time>=T AND (changed=True OR current_status<>'operational') - unfiltered floods operational noise. Log level values are UPPERCASE (ERROR/INFO); filtering level IN ('error','warn') returns nothing. Metrics can be per-minute, not only 15-min. (evidence: p-011, p-031)\n[L10] Self-resolving latency warnings rotate on a 4-day cycle: inventory d14/18/22/26/30, notif d15/19/23/27, order d16/20/24/28, search d17/21/25/29. Always 22:10 UTC, resolves ~22:35. Such days often have ZERO deploys/configs in 40h. Any solo *_latency_high: 3 queries (alerts/deploys/configs) + hourly p95/err/req vs prior day; no same-svc change -> dismiss. (d30 confirmed) (evidence: p-012, p-021, p-024, p-027, p-030, p-032, p-033, p-034, p-035, p-036, p-037, p-038, p-039)\n[L12] Pool exhaustion can be deploy-caused: d24 payment-orchestrator v9.4.2 18:35 UTC (changed_components=payment-enrichment-query) saturated payments DB (db_cpu 0.3->0.85) ~25min later; checkout err 0.16, payment_success 0.995->0.84. Clincher: logs QUERY_SLOW \"Enrichment query >4000ms\" + CONNECTION_POOL_TIMEOUT. Fix = rollback deploy (v9.4.1, 19:22 UTC). Decoy: checkout log_level->debug 17:05 UTC. (evidence: p-031)\nKNOWN NOISE (1 of 3 slots):\n[N1] Solo *_latency_high warning, no companions = normal band. Hourly p95: search 61-85 (err ~.006, cpu ~.40, req 1500 night -> ~2800 at 19 UTC), inventory 85-106 (err ~.004, cpu ~.25, req ~750 night -> ~1400 at 19 UTC), notification 190-209 (err ~.008, cpu ~.18), order 113-133 (err ~.003, cpu ~.22). Weekend req ~30% lower. Dismiss if err/cpu flat and no same-svc deploy. (evidence: p-001, p-008, p-012, p-021, p-024, p-027, p-030, p-032, p-033, p-034, p-035, p-036, p-037, p-038, p-039)"
+}

@@ -18,3 +18,16 @@ All runs used claude-opus-5 on the same 12 days (14 pages, 2 real incidents). Ea
 - `results/run1/`: baseline vs. notebook. Both got 14/14, but the notebook never saved the day-4 lesson. This run used an earlier notebook memory (whole rewrites under a 2,500-character cap) that isn't in `run.py` anymore.
 - `results/run2/`: the same pair, with one-entry memory edits. Both got 14/14; the notebook re-ran its own queries and cost $4.31 against the baseline's $0.92.
 - `results/run3/`: the hybrid agent alone. 14/14 with 50 queries, a largest context of 10.8k tokens, and $1.66.
+- `results/run4-safe-memory/`: the safe-memory agent on the same 12 days. 14/14, 4 queries on each incident, $1.99. Only the run log is here; its memory log was overwritten by a later fake-model check.
+
+## Safe memory on the Northstar world
+
+- `safe_memory.py` is the combined agent with checked memory writes. Every entry must cite pages the agent closed, nothing is written mid-investigation, instruction-like text and links are refused, sections have slot and size limits, and every attempt goes to an append-only log you can replay.
+- `northstar.py` runs that agent, or the baseline with `--agent baseline`, on the Northstar Commerce 30-day mock world from [Cioran123/wallymartdata](https://github.com/Cioran123/wallymartdata). Clone it next to this folder or pass `--world PATH`. The agent never sees `incident_id` or the answer key, and each page is scored against the world's `ground_truth.json`.
+
+```bash
+uv run --with anthropic --with duckdb python northstar.py --fake                # no API calls
+uv run --with anthropic --with duckdb python northstar.py --env-file PATH       # needs an Anthropic key
+```
+
+- `results/northstar-30-day-run1/`: the safe-memory agent on all 30 days (39 pages, 4 incidents). 39/39, including the day-24 look-alike whose old runbook advice is wrong. 200 queries, a largest context of 16,110 tokens, and $6.41.
