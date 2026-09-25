@@ -138,7 +138,7 @@
   <section class="card">
     <h2>How each agent remembers</h2>
     <div class="scroll">
-      <svg viewBox="0 0 1000 250" role="img" aria-label="The naive agent keeps one growing conversation across pages and squashes it into a summary when it gets long. The memory agent starts each page fresh with only a small memory, and after each page saves a few checked lessons.">
+      <svg viewBox="0 0 1000 250" role="img" aria-label="The naive agent keeps one growing conversation across pages and squashes it into a summary when it gets long. The Dejavu agent starts each page fresh with only a small memory, and after each page saves a few checked lessons.">
         <text class="t-ink" x="20" y="34" fill="currentColor">Naive agent</text>
         <text class="t-mut" x="20" y="52">history + summaries</text>
         <rect class="f-naive-soft" x="200" y="22" width="130" height="36" rx="6"/>
@@ -149,7 +149,7 @@
         <text class="t-mut" x="772" y="37">at 30k tokens: squash into</text><text class="t-mut" x="772" y="53">its own summary, grow again</text>
         <text class="t-mut" x="200" y="80">One conversation for the whole month. Every step re-reads everything since the last summary.</text>
 
-        <text class="t-ink" x="20" y="150">Memory agent</text>
+        <text class="t-ink" x="20" y="150">Dejavu agent</text>
         <text class="t-mut" x="20" y="168">safe, checked memory</text>
         <rect class="f-mem" x="200" y="138" width="40" height="36" rx="6"/><rect class="f-inset" x="242" y="138" width="110" height="36" rx="6"/>
         <text class="t-mut" x="252" y="161">page 1</text>
@@ -168,7 +168,7 @@
 
   <section class="card">
     <h2>The month, page by page</h2>
-    <p class="sub">Top: how much the naive agent had to read at each page (rings mark where it squashed its history into a summary). Middle: every page, with the four real incidents in orange. Bottom: how many lessons the memory agent held. Click or tab to any page.</p>
+    <p class="sub">Top: how much the naive agent had to read at each page (rings mark where it squashed its history into a summary). Middle: every page, with the four real incidents in orange. Bottom: how many lessons the Dejavu agent held. Click or tab to any page.</p>
     <div class="buttons" id="jump"></div>
     <div class="scroll" id="timeline"></div>
     <div class="detail" id="detail" aria-live="polite"></div>
@@ -182,11 +182,11 @@
   </section>
 
   <section class="card">
-    <h2>How the memory agent manages memory</h2>
+    <h2>How the Dejavu agent manages memory</h2>
     <p class="sub">Same model, same tools, same 39 pages. The only difference is what each agent carries from one page to the next. Numbers are from the two traced 30-day runs.</p>
     <figure class="arch">
       <div class="scroll">
-        <svg viewBox="0 0 1000 624" role="img" aria-label="Architecture of both agents. The naive agent appends every page to one conversation that it re-reads on every call and squashes into a summary past 30,000 tokens. The memory agent starts each page with only instructions, its memory and the alert, deletes the page conversation when the page closes, and saves lessons only after they pass safety checks, into a capped memory and an append-only log that the next page reads.">
+        <svg viewBox="0 0 1000 624" role="img" aria-label="Architecture of both agents. The naive agent appends every page to one conversation that it re-reads on every call and squashes into a summary past 30,000 tokens. The Dejavu agent starts each page with only instructions, its memory and the alert, deletes the page conversation when the page closes, and saves lessons only after they pass safety checks, into a capped memory and an append-only log that the next page reads.">
           <defs><marker id="aa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahd "/></marker><marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahd mm"/></marker><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ahd bad"/></marker></defs>
 
           <text class="alane-n" x="20" y="30">Naive agent · history + summaries</text>
@@ -216,7 +216,7 @@
 
           <line class="adiv" x1="20" y1="274" x2="980" y2="274"/>
 
-          <text class="alane-m" x="20" y="310">Memory agent · explicit, checked memory</text>
+          <text class="alane-m" x="20" y="310">Dejavu agent · explicit, checked memory</text>
           <rect class="ab" x="20" y="360" width="120" height="56" rx="8"/>
           <text class="at" x="80" y="384" text-anchor="middle">New alert</text><text class="as" x="80" y="402" text-anchor="middle">page N</text>
           <rect class="ab mm" x="180" y="326" width="200" height="156" rx="8"/>
@@ -258,7 +258,7 @@
           <text class="as" x="636" y="606" text-anchor="middle">the next page reads only this memory</text>
         </svg>
       </div>
-      <figcaption>Top: the naive agent's context is the whole month, re-read on every call and squashed into a summary past 30k tokens. Bottom: the memory agent starts every page with only instructions, a small memory and the alert; the page's conversation is deleted when it closes, and a lesson survives only if it passes the checks.</figcaption>
+      <figcaption>Top: the naive agent's context is the whole month, re-read on every call and squashed into a summary past 30k tokens. Bottom: the Dejavu agent starts every page with only instructions, a small memory and the alert; the page's conversation is deleted when it closes, and a lesson survives only if it passes the checks.</figcaption>
     </figure>
     <div class="props">
       <div class="prop"><span class="pname">Reads less at every step</span><span class="pval"><span class="big">6.3k</span><span class="vs">tokens per call vs 16.7k naive</span></span><p>About 2.6 times less to read and reason over on each call.</p></div>
@@ -278,7 +278,7 @@
         </ul>
       </div>
       <div class="col">
-        <h3 class="mem-h">Memory agent: explicit, checked memory</h3>
+        <h3 class="mem-h">Dejavu agent: explicit, checked memory</h3>
         <ul class="how">
           <li>Starts <strong>every page fresh</strong>: the system prompt, its memory, and the new alert. Nothing else from earlier pages.</li>
           <li>Keeps <strong>full detail within a page</strong> (up to 15 queries), then throws that page's conversation away.</li>
@@ -289,27 +289,27 @@
         </ul>
       </div>
     </div>
-    <p class="caveat"><strong>Where it isn't efficient yet:</strong> the memory agent made 258 model calls to the naive agent's 99, because it updates its memory after every page and every end-of-day note. Both read about the same total (1.63M vs 1.65M tokens), but the naive agent's growing history is cheap to re-read from cache, so it cost $2.40 against $6.07. The planned fix is to hand memory upkeep and false-alarm triage to a small Liquid model.</p>
+    <p class="caveat"><strong>Where it isn't efficient yet:</strong> the Dejavu agent made 258 model calls to the naive agent's 99, because it updates its memory after every page and every end-of-day note. Both read about the same total (1.63M vs 1.65M tokens), but the naive agent's growing history is cheap to re-read from cache, so it cost $2.40 against $6.07. The planned fix is to hand memory upkeep and false-alarm triage to a small Liquid model.</p>
   </section>
 
   <section class="two">
     <div class="card">
       <h2>The four real incidents</h2>
-      <div class="table-wrap"><table id="inc"><thead><tr><th>Day</th><th>Incident</th><th>Naive agent</th><th>Memory agent</th></tr></thead><tbody></tbody></table></div>
+      <div class="table-wrap"><table id="inc"><thead><tr><th>Day</th><th>Incident</th><th>Naive agent</th><th>Dejavu agent</th></tr></thead><tbody></tbody></table></div>
     </div>
     <div class="card">
       <h2>What we learned</h2>
       <ul class="takeaways">
         <li><strong>Accuracy tied.</strong> Both agents got all 39 pages right, including the day-24 look-alike. At 30 days, a strong model with good summaries holds up.</li>
         <li><strong>The naive agent was faster and cheaper here</strong>: fewer queries, and its growing history is cheap to re-read thanks to caching.</li>
-        <li><strong>The memory agent's context has a hard ceiling</strong>, about a third of the naive agent's peak, and it doesn't depend on when a summary happens to run.</li>
+        <li><strong>The Dejavu agent's context has a hard ceiling</strong>, about a third of the naive agent's peak, and it doesn't depend on when a summary happens to run.</li>
         <li><strong>Its memory is auditable</strong>: every lesson cites the pages behind it and can be replayed as of any day. On day 22 it reused its own day-4 lesson, and on day 24 it checked that lesson against the evidence instead of applying it blindly.</li>
       </ul>
     </div>
   </section>
 
   <section class="card">
-    <h2>What the memory agent knew at the end of the month</h2>
+    <h2>What the Dejavu agent knew at the end of the month</h2>
     <p class="sub">Written entirely by the agent. Every entry passed the safety checks and cites its evidence.</p>
     <ul class="mem-list" id="final"></ul>
   </section>
@@ -335,7 +335,7 @@ function kpis() {
   const host = document.getElementById("kpis");
   for (const [label, nv, mv] of tiles) {
     const t = h("div", "kpi"); t.appendChild(h("div", "label", label));
-    for (const [cls, who, v] of [["naive", "Naive agent", nv], ["mem", "Memory agent", mv]]) {
+    for (const [cls, who, v] of [["naive", "Naive agent", nv], ["mem", "Dejavu agent", mv]]) {
       const r = h("div", "row"); r.appendChild(h("i", `key ${cls}`)); r.appendChild(h("span", "val", v)); r.appendChild(h("span", "who", who)); t.appendChild(r);
     }
     host.appendChild(t);
@@ -369,7 +369,7 @@ function timeline() {
   }
   // memory lane
   const mTop = 215, mBot = 290, cap = 15, my = (v) => mBot - (v / 16) * (mBot - mTop);
-  txt(svg, L, mTop - 8, "t-tick", "MEMORY AGENT · LESSONS HELD");
+  txt(svg, L, mTop - 8, "t-tick", "DEJAVU AGENT · LESSONS HELD");
   el("line", { x1: L, x2: W - R, y1: my(0), y2: my(0), class: "axis" }, svg);
   el("line", { x1: L, x2: W - R, y1: my(cap), y2: my(cap), class: "cap" }, svg);
   txt(svg, W - R, my(cap) - 5, "t-tick", "15-slot cap", "end");
@@ -408,7 +408,7 @@ function select(id) {
   if (s) head.appendChild(h("p", "mono", `Real cause: ${s.cause}   ·   Decoy: ${s.decoy}`));
   host.appendChild(head);
   const cols = h("div", "cols");
-  for (const [k, name, cls] of [["naive", "Naive agent", "naive"], ["memory", "Memory agent", "mem"]]) {
+  for (const [k, name, cls] of [["naive", "Naive agent", "naive"], ["memory", "Dejavu agent", "mem"]]) {
     const r = p[k], col = h("div", "col");
     const t = h("h3"); t.appendChild(h("i", `key ${cls}`)); t.appendChild(document.createTextNode(name)); col.appendChild(t);
     col.appendChild(verdict(r));
@@ -437,7 +437,7 @@ function contextChart() {
   const maxV = Math.max(...n.map((p) => p.v), DATA.totals.memory.max_context, ...(m || []).map((p) => p.v));
   const top = Math.ceil(maxV / 10000) * 10000, y = (v) => H - B - (v / top) * (H - T - B);
   const host = document.getElementById("ctx");
-  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `Naive agent context peaks at ${fmtN(DATA.totals.naive.max_context)} tokens; memory agent at ${fmtN(DATA.totals.memory.max_context)}.` }, host);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `Naive agent context peaks at ${fmtN(DATA.totals.naive.max_context)} tokens; Dejavu agent at ${fmtN(DATA.totals.memory.max_context)}.` }, host);
   for (let v = 0; v <= top; v += 10000) { el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: v ? "grid" : "axis" }, svg); txt(svg, L - 8, y(v) + 4, "t-tick", fmtK(v), "end"); }
   for (const dd of [1, 5, 10, 15, 20, 25, 30]) txt(svg, x(dd), H - B + 20, "t-tick", `Day ${dd}`, "middle");
   el("path", { d: n.map((p, i) => `${i ? "L" : "M"}${x(p.day).toFixed(1)},${y(p.v).toFixed(1)}`).join(" "), class: "l-naive" }, svg);
@@ -451,15 +451,15 @@ function contextChart() {
     el("path", { d: m.map((p, i) => `${i ? "L" : "M"}${x(p.day).toFixed(1)},${y(p.v).toFixed(1)}`).join(" "), class: "l-mem" }, svg);
     const mEnd = m[m.length - 1];
     let ly = y(mEnd.v) + 4; if (Math.abs(ly - (y(nEnd.v) + 4)) < 18) ly += 18;
-    txt(svg, x(31) + 10, ly, "t-ink", `Memory agent ${fmtK(mEnd.v)}`);
-    item("mem", "Memory agent: largest context at each wake-up");
-    document.getElementById("ctx-note").textContent = "Rings mark where the naive agent squashed its history into a summary. The memory agent's context resets at every page, so it never builds up.";
+    txt(svg, x(31) + 10, ly, "t-ink", `Dejavu agent ${fmtK(mEnd.v)}`);
+    item("mem", "Dejavu agent: largest context at each wake-up");
+    document.getElementById("ctx-note").textContent = "Rings mark where the naive agent squashed its history into a summary. The Dejavu agent's context resets at every page, so it never builds up.";
   } else {
     const mv = DATA.totals.memory.max_context;
     el("line", { x1: L, x2: W - R, y1: y(mv), y2: y(mv), class: "ceil" }, svg);
-    txt(svg, x(31) + 10, y(mv) + 4, "t-ink", `Memory agent max ${fmtK(mv)}`);
-    item("mem", "Memory agent: the most it ever read in the month");
-    document.getElementById("ctx-note").textContent = "Rings mark where the naive agent squashed its history into a summary. The memory agent's per-call trace is still being recorded; the dashed line is the most it read at any point in its full 30-day run.";
+    txt(svg, x(31) + 10, y(mv) + 4, "t-ink", `Dejavu agent max ${fmtK(mv)}`);
+    item("mem", "Dejavu agent: the most it ever read in the month");
+    document.getElementById("ctx-note").textContent = "Rings mark where the naive agent squashed its history into a summary. The Dejavu agent's per-call trace is still being recorded; the dashed line is the most it read at any point in its full 30-day run.";
   }
 }
 
