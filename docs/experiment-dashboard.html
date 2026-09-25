@@ -392,4 +392,32 @@ function finalMemory() {
   }
 }
 if (DATA) { kpis(); timeline(); contextChart(); incidents(); finalMemory(); select(DATA.pages.find((p) => p.incident).id); }
+
+// Live RawTree overlay. The 30-day traced experiment remains the benchmark dataset;
+// these values are the durable agent state currently persisted in RawTree.
+async function refreshRawTree() {
+  const bar = document.getElementById("rawtree-live");
+  try {
+    const res = await fetch("/api/dashboard", {cache:"no-store"});
+    if (!res.ok) throw new Error(await res.text());
+    const live = await res.json();
+    const runs = live.runs || [];
+    if (!runs.length) throw new Error("No dejavu_agent_runs rows yet");
+    const last = runs[runs.length - 1];
+    document.getElementById("live-mem").textContent = last.total_memories ?? "—";
+    document.getElementById("live-ctx").textContent = last.context_tokens == null ? "—" : Number(last.context_tokens).toLocaleString()+" tokens";
+    document.getElementById("live-budget").textContent = last.context_budget == null ? "—" : Number(last.context_budget).toLocaleString()+" tokens";
+    document.getElementById("live-scenario").textContent = String(last.scenario || "—").replace(/^day0?/i,"Day ");
+    document.getElementById("rawtree-status").textContent = "LIVE · RawTree connected";
+    document.getElementById("rawtree-updated").textContent = "Updated "+new Date().toLocaleTimeString();
+    bar.className = "livebar ok";
+  } catch (e) {
+    document.getElementById("rawtree-status").textContent = "RawTree disconnected";
+    document.getElementById("rawtree-updated").textContent = e.message;
+    bar.className = "livebar bad";
+  }
+}
+refreshRawTree();
+setInterval(refreshRawTree, 5000);
+
 </script>
