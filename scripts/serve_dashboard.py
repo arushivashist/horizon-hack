@@ -75,7 +75,11 @@ class Handler(BaseHTTPRequestHandler):
             body = (ROOT / "docs/experiment-dashboard.html").read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
-        elif self.path in ("/day22", "/day22.html"):\n            body = (ROOT / "docs/day22-live-demo.html").read_bytes()\n            self.send_response(200)\n            self.send_header("Content-Type", "text/html; charset=utf-8")\n        elif self.path in ("/rawtree", "/rawtree.html"):
+        elif self.path in ("/day22", "/day22.html"):
+            body = (ROOT / "docs/day22-live-demo.html").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+        elif self.path in ("/rawtree", "/rawtree.html"):
             body = (ROOT / "docs/experiment-dashboard-rawtree.html").read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
