@@ -80,7 +80,8 @@ def utcnow():
 def main():
     parser = argparse.ArgumentParser(description="Run the RawTree-backed DejaVu live demo.")
     parser.add_argument("scenario", choices=["day22"], nargs="?", default="day22")
-    parser.add_argument("--delay", type=float, default=2.5, help="Seconds between visible steps.")\n    parser.add_argument("--no-wait", action="store_true", help="Skip the initial press-Enter cue.")
+    parser.add_argument("--delay", type=float, default=2.5, help="Seconds between visible steps.")
+    parser.add_argument("--no-wait", action="store_true", help="Skip the initial press-Enter cue.")
     args = parser.parse_args()
 
     demo = DAY22
