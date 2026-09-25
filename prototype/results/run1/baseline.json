@@ -1,0 +1,761 @@
+{
+ "model": "claude-opus-5",
+ "totals": {
+  "pages": 14,
+  "correct": 14,
+  "queries": 74,
+  "calls": 43,
+  "tokens_in": 735703,
+  "tokens_out": 41395,
+  "max_context": 37274,
+  "cost": 1.89
+ },
+ "error": null,
+ "pages": [
+  {
+   "page_id": "p-001",
+   "when": "day 1, Mon 2026-08-31 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real incident: a scheduled inventory reindex batch job ran 03:00\u201303:12 and saturated Postgres (CPU 30%\u2192~78%, conns 8\u2192~40), which raised inventory p99 to ~1.1s. Inventory rps/CPU and error rate (~0.001) were unchanged, so no customer impact, and the alert self-resolved at 03:14 when the job finished. No deploys or config changes occurred in the preceding 24h. Follow-up (not a page): throttle the reindex job or raise the inventory p99 threshold during the batch window to stop this recurring overnight.",
+   "result": "correct",
+   "queries": 7,
+   "calls": 4,
+   "tokens_in": 12185,
+   "tokens_out": 1625,
+   "cost": 0.0747,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= TIMESTAMP '2026-08-31 02:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts >= TIMESTAMP '2026-08-30 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= TIMESTAMP '2026-08-30 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-08-31 02:45' AND TIMESTAMP '2026-08-31 03:17' ORDER BY ts, service"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-08-31 02:45' AND TIMESTAMP '2026-08-31 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('day', ts) d, min(ts), max(ts), count(*) FROM logs WHERE service='inventory-batch' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('day', ts) d, max(p99_ms) mx, avg(error_rate) er FROM metrics WHERE service='inventory' AND (hour(ts)=3 AND minute(ts)<15) GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real incident: a scheduled inventory reindex batch job ran 03:00\u201303:12 and saturated Postgres (CPU 30%\u2192~78%, conns 8\u2192~40), which raised inventory p99 to ~1.1s. Inventory rps/CPU and error rate (~0.001) were unchanged, so no customer impact, and the alert self-resolved at 03:14 when the job finished. No deploys or config changes occurred in the preceding 24h. Follow-up (not a page): throttle the reindex job or raise the inventory p99 threshold during the batch window to stop this recurring overnight."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-002",
+   "when": "day 2, Tue 2026-09-01 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real incident \u2014 identical recurrence of p-001. The nightly inventory reindex batch job ran 03:00\u201303:12 and saturated Postgres (CPU ~31%\u2192~75%, conns 8\u2192~40), pushing inventory p99 to ~1.1s; p99 dropped back to 113ms the exact minute the job logged completion, and the alert auto-resolved at 03:14. Inventory rps/CPU and error rate (~0.001) unchanged, so no user impact. No deploy or config change explains it: the only recent changes were web-side (dep-002, cfg-001) 12h earlier, and cfg-002 (search replica_count 6\u21925), which is a different service with flat rps/error/p99/cache-hit metrics. ACTION NEEDED: this alert is now 2-for-2 false pages at 03:02 \u2014 suppress inventory_p99_high during the 03:00\u201303:15 reindex window or throttle the job, otherwise it will page again tomorrow. Also worth watching cost-optimizer-bot trimming search replicas.",
+   "result": "correct",
+   "queries": 6,
+   "calls": 3,
+   "tokens_in": 21412,
+   "tokens_out": 1676,
+   "cost": 0.0765,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-01 02:45' AND TIMESTAMP '2026-09-01 03:17' ORDER BY ts LIMIT 30"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= TIMESTAMP '2026-09-01 00:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts >= TIMESTAMP '2026-08-31 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= TIMESTAMP '2026-08-31 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-01 02:55' AND TIMESTAMP '2026-09-01 03:16' ORDER BY ts, service"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) h, avg(rps) rps, avg(error_rate) er, max(p99_ms) mxp99, avg(cache_hit_rate) chr, avg(cpu_pct) cpu FROM metrics WHERE service='search' AND ts >= TIMESTAMP '2026-09-01 00:00' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real incident \u2014 identical recurrence of p-001. The nightly inventory reindex batch job ran 03:00\u201303:12 and saturated Postgres (CPU ~31%\u2192~75%, conns 8\u2192~40), pushing inventory p99 to ~1.1s; p99 dropped back to 113ms the exact minute the job logged completion, and the alert auto-resolved at 03:14. Inventory rps/CPU and error rate (~0.001) unchanged, so no user impact. No deploy or config change explains it: the only recent changes were web-side (dep-002, cfg-001) 12h earlier, and cfg-002 (search replica_count 6\u21925), which is a different service with flat rps/error/p99/cache-hit metrics. ACTION NEEDED: this alert is now 2-for-2 false pages at 03:02 \u2014 suppress inventory_p99_high during the 03:00\u201303:15 reindex window or throttle the job, otherwise it will page again tomorrow. Also worth watching cost-optimizer-bot trimming search replicas."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-003",
+   "when": "day 3, Wed 2026-09-02 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real incident \u2014 third identical recurrence (p-001, p-002, p-003). The nightly inventory reindex batch job runs 03:00\u201303:12 and saturates shared Postgres (CPU ~32%\u2192~77%, conns 8\u2192~40), inflating inventory p99 to ~1.0\u20131.2s; p99 returns to ~118ms the exact minute the job logs completion and the alert auto-resolves at 03:14. Inventory rps/CPU and error rate (~0.001) are flat, so no customer impact. No change explains it: zero config changes since yesterday, and dep-003/004/005 deployed ~13h earlier with inventory p99 sitting at a normal ~100-117ms right up to 02:59. ESCALATING AS ALERT-QUALITY BUG, not an outage: this alert has now burned three consecutive on-call nights with no user impact. Concrete fix needed before tomorrow 03:02 \u2014 either suppress/mute inventory_p99_high during the 03:00\u201303:15 reindex window, throttle the reindex job's Postgres concurrency, or move it to a read replica. I am filing this rather than dismissing silently again.",
+   "result": "correct",
+   "queries": 5,
+   "calls": 3,
+   "tokens_in": 33848,
+   "tokens_out": 1396,
+   "cost": 0.0729,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-02 02:45' AND TIMESTAMP '2026-09-02 03:17' ORDER BY ts LIMIT 30"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= TIMESTAMP '2026-09-02 00:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts >= TIMESTAMP '2026-09-01 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= TIMESTAMP '2026-09-01 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-02 02:57' AND TIMESTAMP '2026-09-02 03:15' ORDER BY ts, service"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real incident \u2014 third identical recurrence (p-001, p-002, p-003). The nightly inventory reindex batch job runs 03:00\u201303:12 and saturates shared Postgres (CPU ~32%\u2192~77%, conns 8\u2192~40), inflating inventory p99 to ~1.0\u20131.2s; p99 returns to ~118ms the exact minute the job logs completion and the alert auto-resolves at 03:14. Inventory rps/CPU and error rate (~0.001) are flat, so no customer impact. No change explains it: zero config changes since yesterday, and dep-003/004/005 deployed ~13h earlier with inventory p99 sitting at a normal ~100-117ms right up to 02:59. ESCALATING AS ALERT-QUALITY BUG, not an outage: this alert has now burned three consecutive on-call nights with no user impact. Concrete fix needed before tomorrow 03:02 \u2014 either suppress/mute inventory_p99_high during the 03:00\u201303:15 reindex window, throttle the reindex job's Postgres concurrency, or move it to a read replica. I am filing this rather than dismissing silently again."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-004",
+   "when": "day 4, Thu 2026-09-03 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "The page itself is NOT a real incident \u2014 4th identical recurrence of the nightly inventory reindex job (03:00-03:12), which saturates shared Postgres (CPU ~35%->76%, conns 9->44) and inflates inventory p99 to ~1.1s. p99 returns to 109ms the exact minute the job logs completion; inventory rps/CPU/error_rate flat; alert auto-resolved 03:14. No user impact, and no deploy/config caused it. TWO ESCALATIONS, both more important than this page: (1) ALERT QUALITY - inventory_p99_high has now falsely paged four consecutive nights at 03:02; mute it during 03:00-03:15 or throttle the reindex job / move it to a read replica. (2) IMPENDING REAL INCIDENT - cfg-004 (02:00 today, cost-optimizer-bot) cut payments.db_pool_max from 50 to 20. This looks fine now only because overnight payments load is ~15 rps / 4 conns. Yesterday payments peaked at 28 concurrent DB connections (11:00-13:00, ~98 rps), i.e. well above the new cap of 20. Unless cfg-004 is reverted before the morning ramp, payments will exhaust its pool around 10:00-12:00 today and take checkout down. Recommend reverting cfg-004 to 50 NOW rather than waiting to be paged. Note this is the same bot that has been trimming capacity unreviewed (cfg-002 search replicas 6->5).",
+   "result": "correct",
+   "queries": 6,
+   "calls": 3,
+   "tokens_in": 48219,
+   "tokens_out": 2360,
+   "cost": 0.1164,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-03 02:45' AND TIMESTAMP '2026-09-03 03:17' ORDER BY ts LIMIT 30"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= TIMESTAMP '2026-09-03 00:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-03 02:57' AND TIMESTAMP '2026-09-03 03:16' ORDER BY ts, service"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= TIMESTAMP '2026-09-02 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service='payments' AND ts BETWEEN TIMESTAMP '2026-09-03 01:40' AND TIMESTAMP '2026-09-03 03:16' AND minute(ts) % 5 = 0 ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) h, avg(rps) rps, max(db_conn_in_use) mx_conn, avg(error_rate) er, max(p99_ms) mxp99 FROM metrics WHERE service='payments' AND ts >= TIMESTAMP '2026-09-02 00:00' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "The page itself is NOT a real incident \u2014 4th identical recurrence of the nightly inventory reindex job (03:00-03:12), which saturates shared Postgres (CPU ~35%->76%, conns 9->44) and inflates inventory p99 to ~1.1s. p99 returns to 109ms the exact minute the job logs completion; inventory rps/CPU/error_rate flat; alert auto-resolved 03:14. No user impact, and no deploy/config caused it. TWO ESCALATIONS, both more important than this page: (1) ALERT QUALITY - inventory_p99_high has now falsely paged four consecutive nights at 03:02; mute it during 03:00-03:15 or throttle the reindex job / move it to a read replica. (2) IMPENDING REAL INCIDENT - cfg-004 (02:00 today, cost-optimizer-bot) cut payments.db_pool_max from 50 to 20. This looks fine now only because overnight payments load is ~15 rps / 4 conns. Yesterday payments peaked at 28 concurrent DB connections (11:00-13:00, ~98 rps), i.e. well above the new cap of 20. Unless cfg-004 is reverted before the morning ramp, payments will exhaust its pool around 10:00-12:00 today and take checkout down. Recommend reverting cfg-004 to 50 NOW rather than waiting to be paged. Note this is the same bot that has been trimming capacity unreviewed (cfg-002 search replicas 6->5)."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-005",
+   "when": "day 4, Thu 2026-09-03 11:36",
+   "truth": "incident",
+   "action": "resolve",
+   "answer": "cfg-004",
+   "result": "correct",
+   "queries": 6,
+   "calls": 3,
+   "tokens_in": 66171,
+   "tokens_out": 2386,
+   "cost": 0.1272,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT ts, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service='payments' AND ts BETWEEN TIMESTAMP '2026-09-03 09:30' AND TIMESTAMP '2026-09-03 11:51' AND minute(ts) % 5 = 0 ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT service, level, count(*) n, min(ts) first_ts, max(ts) last_ts, any_value(message) sample FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-03 10:30' AND TIMESTAMP '2026-09-03 11:51' AND level IN ('ERROR','WARN') GROUP BY 1,2 ORDER BY n DESC LIMIT 25"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts >= TIMESTAMP '2026-09-03 00:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= TIMESTAMP '2026-09-02 18:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT service, level, message, count(*) n, min(ts) first_ts FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-03 10:30' AND TIMESTAMP '2026-09-03 11:51' AND level IN ('ERROR','WARN') GROUP BY 1,2,3 ORDER BY n DESC LIMIT 20"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, error_rate, p99_ms FROM metrics WHERE service IN ('checkout','web') AND ts BETWEEN TIMESTAMP '2026-09-03 11:05' AND TIMESTAMP '2026-09-03 11:30' ORDER BY ts, service"
+     }
+    ],
+    [
+     "resolve",
+     {
+      "cause_event_id": "cfg-004",
+      "summary": "cfg-004 (02:00, cost-optimizer-bot) cut payments.db_pool_max 50->20, below normal peak demand (payments used 25-28 concurrent connections at yesterday's midday peak). As morning traffic ramped, payments db_conn_in_use pinned hard at exactly 20 from ~11:15 and never rose further, with payments logging \"request timed out after 3000ms waiting for db connection\"; payments p99 went 232ms -> 1912ms and error_rate 0.001 -> 0.12. Impact cascaded downstream exactly as the topology predicts: checkout \"payment authorization failed: upstream payments timeout\" then web \"POST /checkout returned 502 from upstream checkout\". Postgres itself is healthy and payments CPU is only ~60%, so this is pool-cap starvation, not DB load. dep-008 (checkout v1.4.2 \"tweak retry logging\", 11:16) is ruled out: payments p99 had already doubled and connections were already saturating before it, checkout's own error rate stayed at baseline until 11:19, and a checkout logging change cannot exhaust the payments DB pool. FIX: revert payments.db_pool_max to 50 immediately; recovery should be near-instant. FOLLOW-UP: cost-optimizer-bot is making unreviewed capacity cuts in production (also cfg-002 search replica_count 6->5) - it should be gated on peak-utilization checks or require human review. This was predicted and flagged on page p-004 at 03:17 today and could have been prevented by reverting before the morning ramp."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-006",
+   "when": "day 5, Fri 2026-09-04 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real incident \u2014 5th identical recurrence of the nightly inventory reindex job (03:00-03:12), which saturates shared Postgres (CPU ~30%->77%, conns 8->41) and inflates inventory p99 to ~1.1-1.2s. p99 returns to 122ms the exact minute the job logs \"reindex job completed in 12m\"; inventory rps/CPU/error_rate unchanged; alert auto-resolved 03:14. No user impact and no deploy/config caused it (no config changes since cfg-005; dep-009/010/011 landed ~11h earlier with inventory p99 normal at ~109ms through 02:59). Also confirmed yesterday's p-005 incident is fully closed: after cfg-005 restored payments.db_pool_max to 50 at 12:40, payments again reached 27-28 concurrent connections at peak with error rate back to baseline (max 0.0014 vs 0.359 during the outage) and p99 ~285ms. STILL OPEN AND NOW URGENT (5 wasted night pages): inventory_p99_high fires every single night at 03:02 with zero user impact. This alert is pure noise as configured and is actively degrading on-call effectiveness \u2014 it is exactly the kind of fatigue that delays response to real incidents like p-005. Please action one of: (a) mute inventory_p99_high 03:00-03:15, (b) exclude batch-job windows from the SLO, (c) throttle the reindex job's Postgres concurrency or move it to a read replica. I am dismissing this page but it should not have been sent.",
+   "result": "correct",
+   "queries": 5,
+   "calls": 3,
+   "tokens_in": 83660,
+   "tokens_out": 1778,
+   "cost": 0.1139,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-04 02:45' AND TIMESTAMP '2026-09-04 03:17' ORDER BY ts LIMIT 30"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= TIMESTAMP '2026-09-04 00:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-04 02:58' AND TIMESTAMP '2026-09-04 03:15' ORDER BY ts, service"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= TIMESTAMP '2026-09-03 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) h, avg(rps) rps, max(db_conn_in_use) mx_conn, max(error_rate) mx_er, max(p99_ms) mxp99 FROM metrics WHERE service='payments' AND ts BETWEEN TIMESTAMP '2026-09-03 12:00' AND TIMESTAMP '2026-09-04 03:17' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real incident \u2014 5th identical recurrence of the nightly inventory reindex job (03:00-03:12), which saturates shared Postgres (CPU ~30%->77%, conns 8->41) and inflates inventory p99 to ~1.1-1.2s. p99 returns to 122ms the exact minute the job logs \"reindex job completed in 12m\"; inventory rps/CPU/error_rate unchanged; alert auto-resolved 03:14. No user impact and no deploy/config caused it (no config changes since cfg-005; dep-009/010/011 landed ~11h earlier with inventory p99 normal at ~109ms through 02:59). Also confirmed yesterday's p-005 incident is fully closed: after cfg-005 restored payments.db_pool_max to 50 at 12:40, payments again reached 27-28 concurrent connections at peak with error rate back to baseline (max 0.0014 vs 0.359 during the outage) and p99 ~285ms. STILL OPEN AND NOW URGENT (5 wasted night pages): inventory_p99_high fires every single night at 03:02 with zero user impact. This alert is pure noise as configured and is actively degrading on-call effectiveness \u2014 it is exactly the kind of fatigue that delays response to real incidents like p-005. Please action one of: (a) mute inventory_p99_high 03:00-03:15, (b) exclude batch-job windows from the SLO, (c) throttle the reindex job's Postgres concurrency or move it to a read replica. I am dismissing this page but it should not have been sent."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-007",
+   "when": "day 6, Sat 2026-09-05 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real incident \u2014 6th identical recurrence of the nightly inventory reindex job (03:00-03:12) saturating shared Postgres (CPU ~27%->75%, conns 8->43) and inflating inventory p99 to ~1.0-1.25s; p99 returns to 114ms the exact minute the job logs completion, alert auto-resolves 03:14, error rate flat at ~0.001, no user impact. No change explains it: cfg-006 was payments (different service, 11h earlier) and dep-013 left inventory baseline p99 normal (~118-124ms) through 02:59. NEW EVIDENCE STRENGTHENING THE CASE FOR A FIX: tonight is Saturday with roughly half the weekday traffic (inventory ~13 rps vs ~22, postgres ~67 vs ~113), yet the p99 spike is identical in magnitude. The latency is entirely a function of the batch job's DB contention and is independent of user load, so this alert is guaranteed to fire at 03:02 every night forever until the job or the alert is changed. ESCALATION (6 consecutive wasted night pages, now spanning a weekend): this is my sixth dismissal of the same non-issue and the noise is a genuine reliability risk - it is the classic pattern that masks a real incident (cf. p-005). Requesting a concrete owner and fix before tomorrow night: mute inventory_p99_high 03:00-03:15, or exclude batch windows from the SLO, or throttle/move the reindex job to a read replica. Please treat the alert configuration itself as the defect.",
+   "result": "correct",
+   "queries": 4,
+   "calls": 2,
+   "tokens_in": 63141,
+   "tokens_out": 1595,
+   "cost": 0.0912,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-05 02:45' AND TIMESTAMP '2026-09-05 03:17' ORDER BY ts LIMIT 30"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= TIMESTAMP '2026-09-05 00:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-05 02:58' AND TIMESTAMP '2026-09-05 03:15' ORDER BY ts, service"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= TIMESTAMP '2026-09-04 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real incident \u2014 6th identical recurrence of the nightly inventory reindex job (03:00-03:12) saturating shared Postgres (CPU ~27%->75%, conns 8->43) and inflating inventory p99 to ~1.0-1.25s; p99 returns to 114ms the exact minute the job logs completion, alert auto-resolves 03:14, error rate flat at ~0.001, no user impact. No change explains it: cfg-006 was payments (different service, 11h earlier) and dep-013 left inventory baseline p99 normal (~118-124ms) through 02:59. NEW EVIDENCE STRENGTHENING THE CASE FOR A FIX: tonight is Saturday with roughly half the weekday traffic (inventory ~13 rps vs ~22, postgres ~67 vs ~113), yet the p99 spike is identical in magnitude. The latency is entirely a function of the batch job's DB contention and is independent of user load, so this alert is guaranteed to fire at 03:02 every night forever until the job or the alert is changed. ESCALATION (6 consecutive wasted night pages, now spanning a weekend): this is my sixth dismissal of the same non-issue and the noise is a genuine reliability risk - it is the classic pattern that masks a real incident (cf. p-005). Requesting a concrete owner and fix before tomorrow night: mute inventory_p99_high 03:00-03:15, or exclude batch windows from the SLO, or throttle/move the reindex job to a read replica. Please treat the alert configuration itself as the defect."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-008",
+   "when": "day 7, Sun 2026-09-06 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real problem \u2014 7th consecutive night of the known scheduled inventory-batch reindex (Pattern A). Logs show \"reindex job started\" 03:00 and \"reindex job completed in 12m\" 03:12; inventory p99 was normal (113-130ms) through 02:59, sat at 1.0-1.2s only for 03:00-03:11, and returned to 121ms at 03:12. Postgres conns 6-10\u219236-46 and CPU ~26%\u219270-77% over the identical window = batch DB contention. Zero user impact (inventory rps flat 13-14, error_rate flat ~0.001, CPU flat). No deploy or config change to inventory/postgres since Fri 14:20. The alert config is the defect \u2014 muting inventory_p99_high 03:00-03:15 (or excluding the batch window from the SLO / moving the reindex to a read replica) has now been escalated 6 times and is still unowned.\n\nSEPARATE RISK FLAGGED (do not close): cfg-007 at 02:00 today, cost-optimizer-bot, checkout.worker_threads 16\u219212. This is the same unreviewed-capacity-cut pattern as cfg-004, which caused the p-005 outage. It looks fine overnight (11 rps, 30% CPU) but Friday's checkout peak was 125 rps at 67% CPU with 16 threads; a 25% concurrency cut leaves little headroom for the Monday 11:00-13:00 ramp on a critical-path service. Recommend reverting to 16 before Monday morning and gating this bot on prior-peak utilization checks.",
+   "result": "correct",
+   "queries": 6,
+   "calls": 4,
+   "tokens_in": 55545,
+   "tokens_out": 6184,
+   "cost": 0.2383,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) AS m, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-06 02:45' AND TIMESTAMP '2026-09-06 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) AS m, service, round(rps,1) rps, round(error_rate,4) er, round(p99_ms) p99, db_conn_in_use, round(cpu_pct) cpu FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-06 02:50' AND TIMESTAMP '2026-09-06 03:16' ORDER BY ts, service LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT 'cfg' k, event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts > TIMESTAMP '2026-09-04 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts > TIMESTAMP '2026-09-04 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) h, round(max(rps)) max_rps, round(max(cpu_pct)) max_cpu, round(max(p99_ms)) max_p99, max(db_conn_in_use) max_conn, round(max(error_rate),4) max_er FROM metrics WHERE service='checkout' AND ts BETWEEN TIMESTAMP '2026-09-04 00:00' AND TIMESTAMP '2026-09-05 00:00' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) h, round(max(rps)) max_rps, round(max(cpu_pct)) max_cpu, round(max(p99_ms)) max_p99, round(max(error_rate),4) max_er FROM metrics WHERE service='checkout' AND ts >= TIMESTAMP '2026-09-05 12:00' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real problem \u2014 7th consecutive night of the known scheduled inventory-batch reindex (Pattern A). Logs show \"reindex job started\" 03:00 and \"reindex job completed in 12m\" 03:12; inventory p99 was normal (113-130ms) through 02:59, sat at 1.0-1.2s only for 03:00-03:11, and returned to 121ms at 03:12. Postgres conns 6-10\u219236-46 and CPU ~26%\u219270-77% over the identical window = batch DB contention. Zero user impact (inventory rps flat 13-14, error_rate flat ~0.001, CPU flat). No deploy or config change to inventory/postgres since Fri 14:20. The alert config is the defect \u2014 muting inventory_p99_high 03:00-03:15 (or excluding the batch window from the SLO / moving the reindex to a read replica) has now been escalated 6 times and is still unowned.\n\nSEPARATE RISK FLAGGED (do not close): cfg-007 at 02:00 today, cost-optimizer-bot, checkout.worker_threads 16\u219212. This is the same unreviewed-capacity-cut pattern as cfg-004, which caused the p-005 outage. It looks fine overnight (11 rps, 30% CPU) but Friday's checkout peak was 125 rps at 67% CPU with 16 threads; a 25% concurrency cut leaves little headroom for the Monday 11:00-13:00 ramp on a critical-path service. Recommend reverting to 16 before Monday morning and gating this bot on prior-peak utilization checks."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-009",
+   "when": "day 8, Mon 2026-09-07 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real problem \u2014 8th consecutive night of the scheduled inventory-batch reindex (Pattern A), matching the signature exactly. Logs: \"reindex job started\" 03:00, \"reindex job completed in 12m\" 03:12. inventory p99 normal 111-127ms through 02:59, 1050-1296ms only during 03:00-03:11, back to 113ms at 03:12. Postgres conns 6-9->36-47 and CPU ~30%->67-85% over the identical window = batch DB contention. Zero user impact: inventory rps flat 21-23, error_rate flat ~0.001, CPU flat, conns 3-4. The only changes in the last 36h are dep-016 (web, 13.5h earlier) and cfg-007 (checkout) - both the wrong service, and inventory's baseline was normal right up to 02:59, so neither preceded the inflection. Root fix remains an alerting change, now escalated 7 times and still unowned: mute inventory_p99_high 03:00-03:15, exclude the batch window from the SLO, or move/throttle the reindex on a read replica.\n\nCARRY-FORWARD WATCH (not this page): cfg-007 (checkout.worker_threads 16->12, cost-optimizer-bot) was NOT reverted. Reassuring data: Sunday ran all day on 12 threads and at matched load is indistinguishable from Saturday on 16 (76 rps -> CPU 50 vs 51, p99 391 vs 396, err 0.0026 vs 0.0028), so it is not biting at <=76 rps. However Sunday never exceeded 76 rps while Friday's weekday peak was 125 rps at 67% CPU - that range is untested on 12 threads and hits today at 11:00-13:00. Day shift should watch checkout CPU/p99 during the ramp and revert to 16 at the first sign of queueing.",
+   "result": "correct",
+   "queries": 5,
+   "calls": 3,
+   "tokens_in": 40108,
+   "tokens_out": 2732,
+   "cost": 0.12,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) AS m, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-07 02:45' AND TIMESTAMP '2026-09-07 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) m, service, round(rps,1) rps, round(error_rate,4) er, round(p99_ms) p99, db_conn_in_use conn, round(cpu_pct) cpu FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-07 02:55' AND TIMESTAMP '2026-09-07 03:16' ORDER BY ts, service LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts > TIMESTAMP '2026-09-05 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts > TIMESTAMP '2026-09-05 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) h, round(max(rps)) max_rps, round(avg(cpu_pct)) avg_cpu, round(max(cpu_pct)) max_cpu, round(max(p99_ms)) max_p99, round(max(error_rate),4) max_er FROM metrics WHERE service='checkout' AND ts BETWEEN TIMESTAMP '2026-09-06 08:00' AND TIMESTAMP '2026-09-06 22:00' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real problem \u2014 8th consecutive night of the scheduled inventory-batch reindex (Pattern A), matching the signature exactly. Logs: \"reindex job started\" 03:00, \"reindex job completed in 12m\" 03:12. inventory p99 normal 111-127ms through 02:59, 1050-1296ms only during 03:00-03:11, back to 113ms at 03:12. Postgres conns 6-9->36-47 and CPU ~30%->67-85% over the identical window = batch DB contention. Zero user impact: inventory rps flat 21-23, error_rate flat ~0.001, CPU flat, conns 3-4. The only changes in the last 36h are dep-016 (web, 13.5h earlier) and cfg-007 (checkout) - both the wrong service, and inventory's baseline was normal right up to 02:59, so neither preceded the inflection. Root fix remains an alerting change, now escalated 7 times and still unowned: mute inventory_p99_high 03:00-03:15, exclude the batch window from the SLO, or move/throttle the reindex on a read replica.\n\nCARRY-FORWARD WATCH (not this page): cfg-007 (checkout.worker_threads 16->12, cost-optimizer-bot) was NOT reverted. Reassuring data: Sunday ran all day on 12 threads and at matched load is indistinguishable from Saturday on 16 (76 rps -> CPU 50 vs 51, p99 391 vs 396, err 0.0026 vs 0.0028), so it is not biting at <=76 rps. However Sunday never exceeded 76 rps while Friday's weekday peak was 125 rps at 67% CPU - that range is untested on 12 threads and hits today at 11:00-13:00. Day shift should watch checkout CPU/p99 during the ramp and revert to 16 at the first sign of queueing."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-010",
+   "when": "day 9, Tue 2026-09-08 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real problem - 9th consecutive night of the scheduled inventory-batch reindex (Pattern A). Logs: \"reindex job started\" 03:00, \"reindex job completed in 12m\" 03:12. inventory p99 normal 112-124ms through 02:59, 1035-1207ms only during 03:00-03:11, back to 124ms at 03:12 and steady after. Postgres conns 8-9->28-52 and CPU ~30%->73-81% over the identical window = batch DB contention on the shared Postgres. Zero user impact: inventory rps flat 20-24, error_rate flat ~0.001, CPU flat, own conns 3-4. No deploy or config change touched inventory/postgres, and inventory's baseline was normal right up to 02:59. Root fix is still an alerting/scheduling change - now escalated 8 times and unowned: mute inventory_p99_high 03:00-03:15, exclude the batch window from the SLO, or move/throttle the reindex on a read replica.\n\nWATCH ITEM CLOSED: cfg-007 (checkout.worker_threads 16->12) is confirmed BENIGN. Monday's peak exercised it fully - checkout 128 rps @ 66% CPU, p99 401ms, err 0.0026, versus Friday on 16 threads at 125 rps @ 67% CPU, p99 ~405ms. No degradation; that was real headroom. Note for the pattern: a headroom trim behaves very differently from cfg-004, which set a hard pool cap below already-observed concurrency.\n\nNEW WATCH: cfg-009 02:00 today, cost-optimizer-bot, web.cache_ttl_s 60->45. No overnight impact (web 59.5 rps, p99 177-181ms, err ~0.003, unchanged; downstream search 37.5 rps and checkout 17.9 rps identical to Monday; search cache_hit 0.921->0.915, within noise). A TTL cut degrades gradually and scales with traffic, so it should be re-checked at today's 12:00-13:00 peak (search ~260 rps, web ~? ) for any rise in downstream fanout or origin latency.",
+   "result": "correct",
+   "queries": 5,
+   "calls": 3,
+   "tokens_in": 59009,
+   "tokens_out": 3944,
+   "cost": 0.1697,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) AS m, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-08 02:45' AND TIMESTAMP '2026-09-08 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) m, service, round(rps,1) rps, round(error_rate,4) er, round(p99_ms) p99, db_conn_in_use conn, round(cpu_pct) cpu FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-08 02:56' AND TIMESTAMP '2026-09-08 03:15' ORDER BY ts, service LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts > TIMESTAMP '2026-09-06 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT service, date_trunc('hour', ts) h, round(max(rps)) max_rps, round(max(cpu_pct)) max_cpu, round(max(p99_ms)) max_p99, round(max(error_rate),4) max_er, max(db_conn_in_use) max_conn FROM metrics WHERE service IN ('checkout','payments','search') AND ts BETWEEN TIMESTAMP '2026-09-07 10:00' AND TIMESTAMP '2026-09-07 15:00' GROUP BY 1,2 ORDER BY 1,2"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('day', ts) d, service, date_trunc('hour', ts) h, round(avg(rps),1) avg_rps, round(avg(cache_hit_rate),4) avg_chr, round(avg(p99_ms)) avg_p99, round(avg(error_rate),4) avg_er FROM metrics WHERE service IN ('web','search','checkout') AND (ts BETWEEN TIMESTAMP '2026-09-07 00:00' AND TIMESTAMP '2026-09-07 03:15' OR ts BETWEEN TIMESTAMP '2026-09-08 00:00' AND TIMESTAMP '2026-09-08 03:15') GROUP BY 1,2,3 ORDER BY 2,3 LIMIT 50"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real problem - 9th consecutive night of the scheduled inventory-batch reindex (Pattern A). Logs: \"reindex job started\" 03:00, \"reindex job completed in 12m\" 03:12. inventory p99 normal 112-124ms through 02:59, 1035-1207ms only during 03:00-03:11, back to 124ms at 03:12 and steady after. Postgres conns 8-9->28-52 and CPU ~30%->73-81% over the identical window = batch DB contention on the shared Postgres. Zero user impact: inventory rps flat 20-24, error_rate flat ~0.001, CPU flat, own conns 3-4. No deploy or config change touched inventory/postgres, and inventory's baseline was normal right up to 02:59. Root fix is still an alerting/scheduling change - now escalated 8 times and unowned: mute inventory_p99_high 03:00-03:15, exclude the batch window from the SLO, or move/throttle the reindex on a read replica.\n\nWATCH ITEM CLOSED: cfg-007 (checkout.worker_threads 16->12) is confirmed BENIGN. Monday's peak exercised it fully - checkout 128 rps @ 66% CPU, p99 401ms, err 0.0026, versus Friday on 16 threads at 125 rps @ 67% CPU, p99 ~405ms. No degradation; that was real headroom. Note for the pattern: a headroom trim behaves very differently from cfg-004, which set a hard pool cap below already-observed concurrency.\n\nNEW WATCH: cfg-009 02:00 today, cost-optimizer-bot, web.cache_ttl_s 60->45. No overnight impact (web 59.5 rps, p99 177-181ms, err ~0.003, unchanged; downstream search 37.5 rps and checkout 17.9 rps identical to Monday; search cache_hit 0.921->0.915, within noise). A TTL cut degrades gradually and scales with traffic, so it should be re-checked at today's 12:00-13:00 peak (search ~260 rps, web ~? ) for any rise in downstream fanout or origin latency."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-011",
+   "when": "day 10, Wed 2026-09-09 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real problem - 10th consecutive night of the scheduled inventory-batch reindex (Pattern A). Logs: \"reindex job started\" 03:00, \"reindex job completed in 12m\" 03:12. inventory p99 normal 113-123ms through 02:59, 951-1301ms only during 03:00-03:11, back to 117ms at 03:12 and steady 115-119ms after. Postgres conns 8-9->33-50 and CPU ~30%->69-80% over the identical window = batch contention on shared Postgres. Zero user impact: inventory rps flat 21.6-23.7, error_rate flat ~0.001, CPU flat, own conns 3-4. Nothing deployed or configured against inventory/postgres; dep-019 (inventory, Tue 10:05) was 17h earlier and inventory ran normally all Tuesday. Root fix remains alerting/scheduling, escalated 9 times and still unowned: mute inventory_p99_high 03:00-03:15, exclude the batch window from the SLO, or move/throttle the reindex to a read replica.\n\nWATCH CLOSED: cfg-009 (web.cache_ttl_s 60->45) is BENIGN - Tuesday peak web 425 rps / p99 205ms / err 0.004 and search 268 rps / cache_hit 0.921 / p99 166ms, all baseline, no downstream fanout increase.\n\nNEW WATCH - cannot be pre-cleared, needs eyes at today's peak: cfg-010 02:00 today, cost-optimizer-bot, redis.maxmemory_mb 4096->3584 (-12.5%). Overnight is completely flat (search cache_hit 0.918 vs 0.916 same window Tuesday, search p99 ~150ms, redis 124 rps / p99 1-2ms / CPU 15%), but that is weak evidence: a maxmemory cut only causes evictions once the working set exceeds the new ceiling, and overnight cardinality is the daily minimum (search 37 rps vs 268 at peak). There is no memory-used or eviction metric exposed, so cache_hit_rate is the only proxy and I cannot compare 3584MB against actual peak usage the way I compared cfg-004 against peak connections. Day shift: watch search cache_hit_rate (baseline ~0.92) and search p99 (~170ms) during 11:00-14:00; a falling hit rate with rising p99 means revert to 4096.",
+   "result": "correct",
+   "queries": 6,
+   "calls": 3,
+   "tokens_in": 81858,
+   "tokens_out": 3809,
+   "cost": 0.1805,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) AS m, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-09 02:45' AND TIMESTAMP '2026-09-09 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) m, service, round(rps,1) rps, round(error_rate,4) er, round(p99_ms) p99, db_conn_in_use conn, round(cpu_pct) cpu FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-09 02:56' AND TIMESTAMP '2026-09-09 03:15' ORDER BY ts, service LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts > TIMESTAMP '2026-09-07 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT service, date_trunc('hour', ts) h, round(max(rps)) max_rps, round(avg(cache_hit_rate),4) avg_chr, round(max(p99_ms)) max_p99, round(max(error_rate),4) max_er FROM metrics WHERE service IN ('web','search') AND ts BETWEEN TIMESTAMP '2026-09-08 11:00' AND TIMESTAMP '2026-09-08 15:00' GROUP BY 1,2 ORDER BY 1,2"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) - INTERVAL (extract(minute FROM ts)::int % 10) MINUTE AS b, service, round(avg(rps),1) rps, round(avg(cache_hit_rate),4) chr, round(avg(p99_ms)) p99, round(avg(error_rate),4) er, round(avg(cpu_pct)) cpu FROM metrics WHERE service IN ('redis','search') AND ts BETWEEN TIMESTAMP '2026-09-09 00:30' AND TIMESTAMP '2026-09-09 03:16' GROUP BY 1,2 ORDER BY 2,1 LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('day', ts) d, service, round(avg(rps),1) rps, round(avg(cache_hit_rate),4) chr, round(avg(p99_ms)) p99, round(avg(error_rate),4) er, round(avg(cpu_pct)) cpu FROM metrics WHERE service IN ('redis','search') AND (ts BETWEEN TIMESTAMP '2026-09-08 02:00' AND TIMESTAMP '2026-09-08 03:16' OR ts BETWEEN TIMESTAMP '2026-09-09 02:00' AND TIMESTAMP '2026-09-09 03:16') GROUP BY 1,2 ORDER BY 2,1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real problem - 10th consecutive night of the scheduled inventory-batch reindex (Pattern A). Logs: \"reindex job started\" 03:00, \"reindex job completed in 12m\" 03:12. inventory p99 normal 113-123ms through 02:59, 951-1301ms only during 03:00-03:11, back to 117ms at 03:12 and steady 115-119ms after. Postgres conns 8-9->33-50 and CPU ~30%->69-80% over the identical window = batch contention on shared Postgres. Zero user impact: inventory rps flat 21.6-23.7, error_rate flat ~0.001, CPU flat, own conns 3-4. Nothing deployed or configured against inventory/postgres; dep-019 (inventory, Tue 10:05) was 17h earlier and inventory ran normally all Tuesday. Root fix remains alerting/scheduling, escalated 9 times and still unowned: mute inventory_p99_high 03:00-03:15, exclude the batch window from the SLO, or move/throttle the reindex to a read replica.\n\nWATCH CLOSED: cfg-009 (web.cache_ttl_s 60->45) is BENIGN - Tuesday peak web 425 rps / p99 205ms / err 0.004 and search 268 rps / cache_hit 0.921 / p99 166ms, all baseline, no downstream fanout increase.\n\nNEW WATCH - cannot be pre-cleared, needs eyes at today's peak: cfg-010 02:00 today, cost-optimizer-bot, redis.maxmemory_mb 4096->3584 (-12.5%). Overnight is completely flat (search cache_hit 0.918 vs 0.916 same window Tuesday, search p99 ~150ms, redis 124 rps / p99 1-2ms / CPU 15%), but that is weak evidence: a maxmemory cut only causes evictions once the working set exceeds the new ceiling, and overnight cardinality is the daily minimum (search 37 rps vs 268 at peak). There is no memory-used or eviction metric exposed, so cache_hit_rate is the only proxy and I cannot compare 3584MB against actual peak usage the way I compared cfg-004 against peak connections. Day shift: watch search cache_hit_rate (baseline ~0.92) and search p99 (~170ms) during 11:00-14:00; a falling hit rate with rising p99 means revert to 4096."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-012",
+   "when": "day 11, Thu 2026-09-10 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Not a real problem - 11th consecutive night of the scheduled inventory-batch reindex (Pattern A). Logs: \"reindex job started\" 03:00, \"reindex job completed in 12m\" 03:12. inventory p99 normal 103-132ms through 02:59, 988-1311ms only during 03:00-03:11, back to 125ms at 03:12 and steady after. Postgres conns 8-9->30-45 and CPU ~30%->72-80% over the identical window = batch contention on the shared Postgres. Zero user impact: inventory rps flat 21.0-23.6, error_rate flat ~0.001, CPU flat, own conns 3-4. No config changes in the last 24h and no deploy touched inventory (dep-022 web / dep-023 search were ~14.5h earlier, wrong service); inventory's baseline was normal right up to 02:59. Root fix is still an alerting/scheduling change - escalated 10 times, still unowned: mute inventory_p99_high 03:00-03:15, exclude the batch window from the SLO, or move/throttle the reindex to a read replica.\n\nWATCH CLOSED: cfg-010 (redis.maxmemory_mb 4096->3584) is BENIGN. Wednesday's peak exercised it - search 269 rps with cache_hit avg 0.920 (min 0.891) and p99 max 172ms, err 0.0026, all at baseline; redis peaked 878 rps at p99 2ms. No eviction signature, so the working set fits in 3584MB. dep-023 (search, 12:25 Wed, at peak) likewise caused no change.\n\nPATTERN B REFINEMENT for the next on-call: all three cost-optimizer-bot changes this week (cfg-007 threads 16->12, cfg-009 web cache_ttl 60->45, cfg-010 redis maxmemory 4096->3584) proved harmless at true weekday peak. The single bot change that caused an outage (cfg-004, payments db_pool_max 50->20) was categorically different: a hard concurrency cap set BELOW already-observed peak usage (28 conns). Triage rule: for each bot change, identify the peak-usage metric it caps and compare against the prior weekday peak. If no such metric exists or peak usage is well under the new limit, it is a headroom trim - monitor at next peak rather than treating it as an impending outage.",
+   "result": "correct",
+   "queries": 4,
+   "calls": 2,
+   "tokens_in": 67356,
+   "tokens_out": 2470,
+   "cost": 0.1259,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) AS m, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-10 02:45' AND TIMESTAMP '2026-09-10 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) m, service, round(rps,1) rps, round(error_rate,4) er, round(p99_ms) p99, db_conn_in_use conn, round(cpu_pct) cpu FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-10 02:56' AND TIMESTAMP '2026-09-10 03:15' ORDER BY ts, service LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts > TIMESTAMP '2026-09-08 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT service, date_trunc('hour', ts) h, round(max(rps)) max_rps, round(avg(cache_hit_rate),4) avg_chr, round(min(cache_hit_rate),4) min_chr, round(max(p99_ms)) max_p99, round(max(error_rate),4) max_er FROM metrics WHERE service IN ('search','redis') AND ts BETWEEN TIMESTAMP '2026-09-09 10:00' AND TIMESTAMP '2026-09-09 16:00' GROUP BY 1,2 ORDER BY 1,2"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Not a real problem - 11th consecutive night of the scheduled inventory-batch reindex (Pattern A). Logs: \"reindex job started\" 03:00, \"reindex job completed in 12m\" 03:12. inventory p99 normal 103-132ms through 02:59, 988-1311ms only during 03:00-03:11, back to 125ms at 03:12 and steady after. Postgres conns 8-9->30-45 and CPU ~30%->72-80% over the identical window = batch contention on the shared Postgres. Zero user impact: inventory rps flat 21.0-23.6, error_rate flat ~0.001, CPU flat, own conns 3-4. No config changes in the last 24h and no deploy touched inventory (dep-022 web / dep-023 search were ~14.5h earlier, wrong service); inventory's baseline was normal right up to 02:59. Root fix is still an alerting/scheduling change - escalated 10 times, still unowned: mute inventory_p99_high 03:00-03:15, exclude the batch window from the SLO, or move/throttle the reindex to a read replica.\n\nWATCH CLOSED: cfg-010 (redis.maxmemory_mb 4096->3584) is BENIGN. Wednesday's peak exercised it - search 269 rps with cache_hit avg 0.920 (min 0.891) and p99 max 172ms, err 0.0026, all at baseline; redis peaked 878 rps at p99 2ms. No eviction signature, so the working set fits in 3584MB. dep-023 (search, 12:25 Wed, at peak) likewise caused no change.\n\nPATTERN B REFINEMENT for the next on-call: all three cost-optimizer-bot changes this week (cfg-007 threads 16->12, cfg-009 web cache_ttl 60->45, cfg-010 redis maxmemory 4096->3584) proved harmless at true weekday peak. The single bot change that caused an outage (cfg-004, payments db_pool_max 50->20) was categorically different: a hard concurrency cap set BELOW already-observed peak usage (28 conns). Triage rule: for each bot change, identify the peak-usage metric it caps and compare against the prior weekday peak. If no such metric exists or peak usage is well under the new limit, it is a headroom trim - monitor at next peak rather than treating it as an impending outage."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-013",
+   "when": "day 12, Fri 2026-09-11 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Pattern A nightly false page, 13th consecutive night. inventory-batch reindex ran 03:00-03:12 (\"reindex job started\"/\"completed in 12m\"); inventory p99 950-1299ms confined exactly to 03:00-03:11 and back to 117ms at 03:12, while inventory rps (~22), error_rate (~0.001), CPU (~25%) and its own db connections (3-4) were flat \u2014 no user impact. Postgres conns 8\u219235-47 and CPU 31\u219286% for the same window only. No deploy or config change explains it (dep-024..027 are 11-15h earlier with normal baseline through 02:59; cfg-011/cfg-012 touched inventory reservation TTL and pool cap, neither of which moved the 3-4 conns in use). The alert config is the defect: it should be muted 03:00-03:15 or the reindex moved to a replica. SEPARATELY ESCALATED (not this page): cfg-012 cut inventory.db_pool_max 40\u219215 at 02:00 while Thursday's peak was 26 concurrent connections \u2014 same shape as cfg-004; recommend immediate revert before the 10:00 ramp.",
+   "result": "correct",
+   "queries": 5,
+   "calls": 4,
+   "tokens_in": 62249,
+   "tokens_out": 7418,
+   "cost": 0.2779,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN '2026-09-11 02:45' AND '2026-09-11 03:17' AND (message ILIKE '%reindex%' OR level='ERROR') ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE ts BETWEEN '2026-09-11 02:56' AND '2026-09-11 03:15' AND service IN ('inventory','postgres') ORDER BY service, ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= '2026-09-09 15:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts >= '2026-09-09 15:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) h, max(db_conn_in_use) mx, round(max(rps),1) mxrps, round(max(p99_ms),0) mxp99 FROM metrics WHERE service='inventory' AND ts >= '2026-09-10 06:00' AND ts < '2026-09-11 00:00' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Pattern A nightly false page, 13th consecutive night. inventory-batch reindex ran 03:00-03:12 (\"reindex job started\"/\"completed in 12m\"); inventory p99 950-1299ms confined exactly to 03:00-03:11 and back to 117ms at 03:12, while inventory rps (~22), error_rate (~0.001), CPU (~25%) and its own db connections (3-4) were flat \u2014 no user impact. Postgres conns 8\u219235-47 and CPU 31\u219286% for the same window only. No deploy or config change explains it (dep-024..027 are 11-15h earlier with normal baseline through 02:59; cfg-011/cfg-012 touched inventory reservation TTL and pool cap, neither of which moved the 3-4 conns in use). The alert config is the defect: it should be muted 03:00-03:15 or the reindex moved to a replica. SEPARATELY ESCALATED (not this page): cfg-012 cut inventory.db_pool_max 40\u219215 at 02:00 while Thursday's peak was 26 concurrent connections \u2014 same shape as cfg-004; recommend immediate revert before the 10:00 ramp."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-014",
+   "when": "day 12, Fri 2026-09-11 10:54",
+   "truth": "incident",
+   "action": "resolve",
+   "answer": "cfg-012",
+   "result": "correct",
+   "queries": 4,
+   "calls": 3,
+   "tokens_in": 40942,
+   "tokens_out": 2022,
+   "cost": 0.1048,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT ts, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service='inventory' AND ts BETWEEN '2026-09-11 10:00' AND '2026-09-11 11:09' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT service, level, message, count(*) n, min(ts) first_seen FROM logs WHERE ts BETWEEN '2026-09-11 10:00' AND '2026-09-11 11:09' AND level IN ('WARN','ERROR') GROUP BY 1,2,3 ORDER BY n DESC LIMIT 25"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, rps, round(error_rate,4) err, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service='inventory' AND ts BETWEEN '2026-09-11 10:50' AND '2026-09-11 11:09' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT service, round(avg(rps),1) rps, round(avg(error_rate),4) err, round(avg(p99_ms),0) p99, round(avg(cpu_pct),1) cpu, max(db_conn_in_use) mxconn FROM metrics WHERE ts BETWEEN '2026-09-11 10:55' AND '2026-09-11 11:09' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "resolve",
+     {
+      "cause_event_id": "cfg-012",
+      "summary": "cfg-012 (02:00, cost-optimizer-bot) cut inventory.db_pool_max 40\u219215, below Thursday's observed peak of 26 concurrent connections. At the Friday morning ramp inventory's db_conn_in_use pinned at exactly 15 from 10:52, driving p99 117ms\u21921998ms and error_rate 0.001\u21920.15, with logs \"slow db acquire: waited 1387ms for a connection\" and \"request timed out after 3000ms waiting for db connection\" = pool starvation. Postgres itself was healthy (p99 8ms, 0 errors, 54% CPU) and payments on the same DB with pool_max 50 was fine at 20 conns/0.001 err, isolating the fault to inventory's pool cap. Cascade followed topology: inventory \u2192 checkout \"inventory reservation failed: upstream timeout\" \u2192 web 502s. Fix: revert db_pool_max to 40."
+     }
+    ]
+   ]
+  }
+ ],
+ "compactions": 2,
+ "summaries": [
+  "# ShopCo On-Call Rotation \u2014 Running Summary (through Day 6, Sat 2026-09-05 18:00)\n\n## Environment / topology\n- web \u2192 checkout, search. checkout \u2192 payments, inventory. payments + inventory \u2192 **shared Postgres**. search \u2192 Redis.\n- Tables: metrics (per service per minute, incl. `postgres` and `redis` rows; `db_conn_in_use` is NULL for postgres rows), logs (WARN/ERROR + some INFO), deploys, config_changes, alerts (firing/resolved).\n- Quota: 15 queries/page, 50 rows/result. Aggregate, don't dump.\n\n## Pages so far\n\n**p-001 \u2014 Day 1 Mon 2026-08-31 03:02 \u2014 inventory_p99_high (1098) \u2014 DISMISSED (noise)**\n- Symptom: inventory p99 116ms \u2192 ~1.1-1.27s, 03:00-03:11, auto-resolved 03:14 (a-002, value 108).\n- Cause: scheduled `inventory-batch` reindex job. Logs: \"reindex job started\" 03:00 \u2192 \"reindex job completed in 12m\" 03:12. Postgres CPU 30%\u2192~75-83%, conns 8\u2192~40.\n- Ruled out: **zero** deploys and **zero** config changes in preceding 24h. inventory rps/CPU flat, error_rate flat ~0.001 \u2192 no user impact.\n\n**p-002 \u2014 Day 2 Tue 2026-09-01 03:02 \u2014 inventory_p99_high (1059) \u2014 DISMISSED (noise)**\n- Identical. p99 back to 113ms at 03:12, resolved 03:14.\n- Ruled out cfg-002 (02:00, search.replica_count 6\u21925, cost-optimizer-bot): search rps/error_rate/p99/cache_hit_rate flat across 00:00-03:00, and search uses Redis not Postgres. Also ruled out dep-002/cfg-001 (web, ~12h earlier, wrong service).\n\n**p-003 \u2014 Day 3 Wed 2026-09-02 03:02 \u2014 inventory_p99_high (1001) \u2014 DISMISSED (noise)**\n- Identical. Ruled out dep-003 (search), dep-004 (inventory \"fix typo in order email template\"), dep-005 (checkout) \u2014 all ~13h earlier; inventory baseline p99 was normal ~97-117ms right up to 02:59. No config changes.\n\n**p-004 \u2014 Day 4 Thu 2026-09-03 03:02 \u2014 inventory_p99_high (1148) \u2014 DISMISSED (noise) + PREDICTED p-005**\n- Same batch-job signature.\n- **Key win:** while checking recent config I found **cfg-004** (02:00, cost-optimizer-bot, `payments.db_pool_max` 50\u219220). Looked harmless overnight (~15 rps, 4 conns), but I checked the *previous day's hourly peak*: payments used **28 concurrent connections at 12:00** (~98 rps), 25-27 sustained 11:00-13:00 \u2014 far above the new cap of 20. Flagged in the dismissal as an impending outage and recommended reverting before the morning ramp. It was not reverted.\n\n**p-005 \u2014 Day 4 Thu 2026-09-03 11:36 \u2014 checkout_error_rate_high 0.0377, web_error_rate_high 0.0237, payments_p99_high 2056, checkout_p99_high 2034 \u2014 RESOLVED \u2192 cfg-004**\n- Symptom: payments `db_conn_in_use` **pinned at exactly 20** from ~11:15 (never exceeded); p99 232ms\u21921912ms; error_rate 0.001\u21920.1266. Cascaded: checkout \"payment authorization failed: upstream payments timeout after 3000ms\" \u2192 web \"POST /checkout returned 502 from upstream checkout\".\n- Smoking-gun log: payments **\"request timed out after 3000ms waiting for db connection\"** = pool starvation, not DB slowness (Postgres healthy, payments CPU only ~60%).\n- Ruled out dep-008 (checkout v1.4.2 \"tweak retry logging\", 11:16 \u2014 suspiciously close): payments p99 had already doubled (232\u2192639ms) and conns were already saturating *before* it; checkout's own error_rate stayed ~0.002 until 11:19; a checkout logging change cannot exhaust the payments DB pool.\n- Fix: cfg-005 (12:40, alice) reverted db_pool_max 20\u219250. **Verified recovery:** from 13:00 payments again reached 27-28 conns, max error_rate 0.0014, p99 ~285ms.\n\n**p-006 \u2014 Day 5 Fri 2026-09-04 03:02 \u2014 inventory_p99_high (1181) \u2014 DISMISSED (noise)**\n- Identical batch signature; p99 122ms at 03:12. Ruled out dep-009/010/011 (~11h earlier) and cfg-005; inventory baseline normal ~109ms through 02:59. Also re-verified payments fix held through Thursday peak.\n\n**p-007 \u2014 Day 6 Sat 2026-09-05 03:02 \u2014 inventory_p99_high (1026) \u2014 DISMISSED (noise)**\n- Identical. **New evidence:** Saturday traffic is ~half weekday (inventory ~13 rps vs ~22; postgres ~67 vs ~113) yet the p99 spike is the same magnitude \u2192 latency is purely batch-job DB contention, **independent of user load**; will fire every night regardless of traffic.\n- Ruled out cfg-006 (payments retry_backoff, different service) and dep-013 (inventory, 11h earlier; baseline p99 normal through 02:59). Lone payments log \"card declined by issuer (code 05)\" = ordinary business decline noise.\n\n## Recurring patterns & playbook\n\n**PATTERN A \u2014 The 03:02 nightly false page (6/6 nights so far; expect it again).**\nRecognition signature (all must hold \u2192 dismiss):\n1. Alert fires 03:02, auto-resolves 03:14.\n2. Logs: `inventory-batch` \"reindex job started\" 03:00 / \"reindex job completed in 12m\" 03:12.\n3. inventory p99 ~1.0-1.3s **only** 03:00-03:11, snaps back to ~110-130ms exactly at 03:12.\n4. Postgres CPU ~30%\u2192~75-83%, conns ~8\u2192~35-49.\n5. inventory rps/CPU flat, error_rate flat ~0.001 (no user impact).\nFast check: one logs query (02:45-03:17) + one metrics query on inventory+postgres + one config_changes query. ~3-5 queries total.\n**OPEN ACTION (escalated 5\u00d7, still unowned):** mute inventory_p99_high 03:00-03:15, or exclude batch windows from SLO, or throttle/move reindex to a read replica. Treat the alert config as the defect.\n\n**PATTERN B \u2014 cost-optimizer-bot makes unreviewed production capacity cuts.** Track record: cfg-002 (search replica_count 6\u21925, benign so far), cfg-004 (payments db_pool_max 50\u219220, **caused the p-005 outage**). It changes things at **02:00**, so damage surfaces hours later at the morning ramp (~10:00-12:00). **On any page, always list config_changes back \u226524-36h and check bot changes against the *previous day's peak* utilization, not current overnight numbers.** Recommend gating this bot on peak-utilization checks / human review.\n\n**Checks that paid off:**\n- Comparing a new limit against the **prior day's hourly max** (`max(db_conn_in_use)` grouped by hour) \u2014 caught cfg-004 ~8h early.\n- `db_conn_in_use` pinned flat at a round number = config cap, not organic load.\n- Log message wording distinguishes cause: \"waiting for db connection\" = pool cap; upstream timeout/502 = downstream victim.\n- Checking whether a suspicious deploy *preceded or followed* the metric inflection (killed the dep-008 red herring).\n- Alert *ordering* matches topology (payments \u2192 checkout \u2192 web) \u21d2 true origin is the deepest service.\n- Verifying the fix held through the next peak before considering an incident closed.\n\n**Known benign log noise (ignore):** web \"request body larger than 1MB\", web \"client disconnected before response\", web \"slow request NNNms on GET /api\", search \"query parse error near position N\", search \"empty result for filtered query\", payments \"card declined by issuer (code 05)\", scattered \"retrying upstream call (attempt 2/3)\", checkout \"cart validation failed: missing shipping zip\".\n\n## Handoff facts to carry forward\n- Baselines (weekday): inventory ~22 rps / p99 ~110-130ms / err ~0.001; postgres ~110-115 rps, conns ~8, CPU ~30%; payments overnight ~15 rps / 4 conns / p99 ~280ms, midday peak ~98 rps / 27-28 conns; search ~37 rps / p99 ~170ms / cache_hit ~0.92 / err ~0.002; checkout p99 ~350-600ms / err ~0.002; web p99 ~200-260ms / err ~0.003. Weekend \u2248 half weekday traffic.\n- payments.db_pool_max currently **50** (correct). payments.retry_backoff_ms 250 (cfg-006). web.rate_limit_rps 1000 (cfg-001). checkout.feature_gift_cards true (cfg-003). search.replica_count **5** (cfg-002 \u2014 watch for further bot trims).\n- Day 6 (Sat): no deploys, no config changes.\n- Frequent deployers: dana, gus, hana, eli, farah; alice did the cfg-005 remediation.\n- Commit messages are generic/low-signal (\"clean up dead code\", \"refactor handler for readability\") \u2014 do **not** infer risk from message text; use metric inflection timing instead.",
+  "# ShopCo On-Call Rotation \u2014 Running Summary (through Day 11, Thu 2026-09-10 18:00)\n\n## Environment / topology\n- web \u2192 checkout, search. checkout \u2192 payments, inventory. payments + inventory \u2192 **shared Postgres**. search \u2192 Redis.\n- Tables: metrics (per service per minute, incl. `postgres` and `redis` rows; `db_conn_in_use` is NULL for postgres/redis/web/search/checkout rows \u2014 only payments & inventory report it; `cache_hit_rate` populated for search only, not redis), logs (WARN/ERROR + some INFO), deploys, config_changes, alerts (firing/resolved).\n- Quota: 15 queries/page, 50 rows/result. Aggregate, don't dump.\n\n## Pages so far\n\n**p-001 \u2014 Day 1 Mon 2026-08-31 03:02 \u2014 inventory_p99_high (1098) \u2014 DISMISSED (noise)**\n- inventory p99 116ms \u2192 ~1.1-1.27s, 03:00-03:11, auto-resolved 03:14 (a-002, value 108).\n- Cause: scheduled `inventory-batch` reindex. Logs \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Postgres CPU 30%\u219275-83%, conns 8\u2192~40.\n- Ruled out: **zero** deploys and **zero** config changes in preceding 24h. inventory rps/CPU flat, err flat ~0.001.\n\n**p-002 \u2014 Day 2 Tue 2026-09-01 03:02 \u2014 inventory_p99_high (1059) \u2014 DISMISSED (noise)**\n- Identical. Ruled out cfg-002 (02:00, search.replica_count 6\u21925, cost-optimizer-bot): search metrics flat 00:00-03:00, and search uses Redis not Postgres. Ruled out dep-002/cfg-001 (web, ~12h earlier, wrong service).\n\n**p-003 \u2014 Day 3 Wed 2026-09-02 03:02 \u2014 inventory_p99_high (1001) \u2014 DISMISSED (noise)**\n- Identical. Ruled out dep-003 (search), dep-004 (inventory \"fix typo in order email template\"), dep-005 (checkout) \u2014 all ~13h earlier; inventory baseline p99 normal ~97-117ms right up to 02:59. No config changes.\n\n**p-004 \u2014 Day 4 Thu 2026-09-03 03:02 \u2014 inventory_p99_high (1148) \u2014 DISMISSED (noise) + PREDICTED p-005**\n- Same batch signature.\n- **Key win:** spotted **cfg-004** (02:00, cost-optimizer-bot, `payments.db_pool_max` 50\u219220). Looked harmless overnight (~15 rps, 4 conns), but prior day's hourly peak showed payments at **28 concurrent conns at 12:00** (~98 rps), 25-27 sustained 11:00-13:00 \u2014 above the new cap of 20. Flagged as impending outage, recommended revert. Not reverted.\n\n**p-005 \u2014 Day 4 Thu 2026-09-03 11:36 \u2014 checkout_error_rate_high 0.0377, web_error_rate_high 0.0237, payments_p99_high 2056, checkout_p99_high 2034 \u2014 RESOLVED \u2192 cfg-004**\n- payments `db_conn_in_use` **pinned at exactly 20** from ~11:15; p99 232\u21921912ms; err 0.001\u21920.1266. Cascade: checkout \"payment authorization failed: upstream payments timeout after 3000ms\" \u2192 web \"POST /checkout returned 502\".\n- Smoking gun: payments **\"request timed out after 3000ms waiting for db connection\"** = pool starvation, not DB slowness (Postgres healthy, payments CPU ~60%).\n- Ruled out dep-008 (checkout v1.4.2 \"tweak retry logging\", 11:16): payments p99 had already doubled and conns were saturating *before* it; checkout's own err stayed ~0.002 until 11:19; a checkout logging change can't exhaust the payments pool.\n- Fix cfg-005 (12:40, alice) reverted 20\u219250. Verified: from 13:00 payments reached 27-28 conns, max err 0.0014, p99 ~285ms.\n\n**p-006 \u2014 Day 5 Fri 2026-09-04 03:02 \u2014 inventory_p99_high (1181) \u2014 DISMISSED (noise)**\n- Identical; p99 122ms at 03:12. Ruled out dep-009/010/011 (~11h earlier) and cfg-005. Re-verified payments fix held through Thursday peak.\n\n**p-007 \u2014 Day 6 Sat 2026-09-05 03:02 \u2014 inventory_p99_high (1026) \u2014 DISMISSED (noise)**\n- Identical. **New evidence:** Saturday traffic ~half weekday (inventory ~13 rps vs ~22; postgres ~67 vs ~113) yet spike magnitude unchanged \u2192 latency is pure batch DB contention, **independent of user load**; fires nightly regardless of traffic.\n- Ruled out cfg-006 (payments retry_backoff, wrong service) and dep-013 (inventory, 11h earlier; baseline normal through 02:59). \"card declined by issuer (code 05)\" = business noise.\n\n**p-008 \u2014 Day 7 Sun 2026-09-06 03:02 \u2014 inventory_p99_high (1164) \u2014 DISMISSED (noise)**\n- Identical (p99 1024-1228 during window, 121ms at 03:12; pg conns 6-10\u219236-46, CPU 26\u219270-77%).\n- Ruled out dep-013 (Fri) \u2014 nothing touched inventory/postgres.\n- Flagged **cfg-007** (02:00, bot, `checkout.worker_threads` 16\u219212) as possible repeat of cfg-004; Friday checkout peak was 125 rps @ 67% CPU on 16 threads. Recommended revert before Monday. Not reverted.\n\n**p-009 \u2014 Day 8 Mon 2026-09-07 03:02 \u2014 inventory_p99_high (1212) \u2014 DISMISSED (noise)**\n- Identical (1050-1296ms; 113ms at 03:12; pg conns 6-9\u219236-47, CPU 30\u219267-85%).\n- Ruled out dep-016 (web, 13.5h earlier) and cfg-007 (checkout) \u2014 wrong services, baseline normal to 02:59.\n- cfg-007 interim check: Sunday on 12 threads matched Saturday on 16 at equal load (76 rps \u2192 CPU 50 vs 51, p99 391 vs 396) \u2192 downgraded to \"untested above 76 rps\".\n\n**p-010 \u2014 Day 9 Tue 2026-09-08 03:02 \u2014 inventory_p99_high (1106) \u2014 DISMISSED (noise)**\n- Identical (1035-1207ms; 124ms at 03:12; pg conns 8-9\u219228-52, CPU 30\u219273-81%).\n- **cfg-007 CLOSED BENIGN:** Monday peak checkout 128 rps @ 66% CPU, p99 401ms, err 0.0026 \u2248 Friday's 125 rps @ 67% on 16 threads. Real headroom.\n- Flagged **cfg-009** (02:00, bot, `web.cache_ttl_s` 60\u219245): overnight flat (web 59.5 rps, p99 177-181, err ~0.003; search 37.5 rps, checkout 17.9 rps unchanged; search cache_hit 0.921\u21920.915 = noise).\n\n**p-011 \u2014 Day 10 Wed 2026-09-09 03:02 \u2014 inventory_p99_high (1169) \u2014 DISMISSED (noise)**\n- Identical (951-1301ms; 117ms at 03:12; pg conns 8-9\u219233-50, CPU 30\u219269-80%).\n- **cfg-009 CLOSED BENIGN:** Tuesday peak web 425 rps / p99 205ms / err 0.004; search 268 rps / cache_hit 0.921 / p99 166ms. All baseline.\n- Flagged **cfg-010** (02:00, bot, `redis.maxmemory_mb` 4096\u21923584). Explicitly noted overnight flatness was *weak* evidence (working set at daily minimum; no memory-used/eviction metric exists, cache_hit_rate is the only proxy) \u2192 could not pre-clear, needed peak eyes.\n\n**p-012 \u2014 Day 11 Thu 2026-09-10 03:02 \u2014 inventory_p99_high (1127) \u2014 DISMISSED (noise)**\n- Identical (988-1311ms; 125ms at 03:12; pg conns 8-9\u219230-45, CPU 30\u219272-80%).\n- Ruled out dep-022 (web) / dep-023 (search) ~14.5h earlier, wrong service; no config changes in 24h.\n- **cfg-010 CLOSED BENIGN:** Wednesday peak search 269 rps, cache_hit avg 0.920 (min 0.891), p99 max 172ms, err 0.0026; redis 878 rps @ p99 2ms. No eviction signature; working set fits 3584MB.\n\n## Recurring patterns & playbook\n\n**PATTERN A \u2014 The 03:02 nightly false page (12/12 nights; expect it again).**\nSignature (all must hold \u2192 dismiss):\n1. Alert fires 03:02, auto-resolves ~03:14.\n2. Logs: `inventory-batch` \"reindex job started\" 03:00 / \"reindex job completed in 12m\" 03:12.\n3. inventory p99 ~0.95-1.3s **only** 03:00-03:11, snaps back to ~101-131ms exactly at 03:12.\n4. Postgres CPU ~30%\u2192~67-85%, conns ~6-10\u2192~28-52.\n5. inventory rps/CPU flat, err flat ~0.001, own conns 3-4 (no user impact).\nFast check (~4 queries, run in ONE parallel block): logs 02:45-03:17; metrics inventory+postgres 02:56-03:15; config_changes last ~36h; deploys last ~36h.\n**OPEN ACTION (escalated 10\u00d7, still unowned):** mute inventory_p99_high 03:00-03:15, exclude batch window from SLO, or move/throttle reindex to a read replica. Treat the alert config as the defect.\n\n**PATTERN B \u2014 cost-optimizer-bot makes unreviewed 02:00 capacity cuts.** Damage would surface at the morning ramp (~10:00-13:00).\n- Track record: cfg-002 (search replica 6\u21925, benign), **cfg-004 (payments db_pool_max 50\u219220 \u2192 caused p-005 outage)**, cfg-007 (threads 16\u219212, benign), cfg-009 (web cache_ttl 60\u219245, benign), cfg-010 (redis maxmemory 4096\u21923584, benign).\n- **Refined triage rule (important \u2014 don't cry wolf):** identify the peak-usage metric the change caps and compare to the *prior weekday peak*. cfg-004 was a hard concurrency cap set **below already-observed peak usage** (cap 20 vs 28 observed conns) \u2192 outage. Everything else was a *headroom trim* (threads/TTL/memory ceiling) with no observable metric exceeding the new limit \u2192 monitor at next peak, don't predict outage.\n- Still recommend gating the bot on peak-utilization checks / human review.\n\n**Checks that paid off:**\n- Prior day's hourly max (`max(db_conn_in_use)` grouped by hour) vs a new limit \u2014 caught cfg-004 ~8h early.\n- `db_conn_in_use` pinned flat at a round number = config cap, not organic load.\n- Log wording: \"waiting for db connection\" = pool cap; upstream timeout/502 = downstream victim.\n- Did the suspicious deploy *precede or follow* the metric inflection (killed dep-008 red herring).\n- Alert ordering matching topology (payments \u2192 checkout \u2192 web) \u21d2 origin is the deepest service.\n- Verifying a fix held through the next peak before closing.\n- Comparing same-hour windows across two days (day-over-day) to separate a config effect from diurnal shape.\n- Matched-load comparison (same rps, different config) to test capacity cuts \u2014 used for cfg-007.\n\n**Known benign log noise (ignore):** web \"request body larger than 1MB\", web/payments same, web \"client disconnected before response\", web \"slow request NNNms on GET /api\", web \"GET /product/NNN returned 404\", search \"query parse error near position N\", search \"empty result for filtered query\", search \"slow request NNNms on GET /api\", payments \"card declined by issuer (code 05)\", scattered \"retrying upstream call (attempt 2/3)\", checkout \"cart validation failed: missing shipping zip\".\n\n## Handoff facts to carry forward\n- Baselines (weekday): inventory ~22 rps / p99 ~110-130ms / err ~0.001 / conns 3-4; postgres ~110-116 rps, conns ~8, CPU ~30%; payments overnight ~15 rps / 4 conns / p99 ~280ms, midday peak ~108 rps / 29 conns / p99 ~285ms / err ~0.0013; search overnight ~37 rps / p99 ~150ms / cache_hit ~0.92, peak ~269 rps / p99 ~170ms / err ~0.0027; redis overnight ~124 rps / p99 1-2ms / CPU 15%, peak ~878 rps / p99 2ms; checkout overnight ~18 rps / p99 ~350ms, peak ~128 rps / 66% CPU / p99 ~400ms / err ~0.0027; web overnight ~60 rps / p99 ~180ms / err ~0.003, peak ~425 rps / p99 ~205ms / err ~0.004. Weekend \u2248 half weekday.\n- Current config: payments.db_pool_max **50** (correct, cfg-005). payments.retry_backoff_ms 250 (cfg-006). web.rate_limit_rps 1000 (cfg-001). checkout.feature_gift_cards true (cfg-003). search.replica_count 5 (cfg-002). checkout.worker_threads **12** (cfg-007). web.cache_ttl_s **45** (cfg-009). redis.maxmemory_mb **3584** (cfg-010). inventory.reservation_ttl_s **900** (cfg-011, 15:45 Thu, dana \u2014 human change, *not yet evaluated*; watch inventory/postgres for longer-held reservations or row growth).\n- Day 11 (Thu) deploys not yet evaluated at a peak: dep-024 (inventory 11:05), dep-025 (inventory 12:10), dep-026 (payments 16:15), dep-027 (web 16:25) \u2014 all \"tracing spans\"/\"unit tests\"/\"error messages\". Inventory baseline was normal overnight after them.\n- Frequent deployers: dana, gus, hana, eli, farah; alice did the cfg-005 remediation.\n- Commit messages are generic and recycled across services (\"clean up dead code\", \"fix typo in order email template\", \"add request tracing spans\") \u2014 do **not** infer risk from message text; use metric inflection timing."
+ ]
+}

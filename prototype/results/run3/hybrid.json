@@ -1,0 +1,1156 @@
+{
+ "model": "claude-opus-5",
+ "totals": {
+  "pages": 14,
+  "correct": 14,
+  "queries": 50,
+  "calls": 86,
+  "tokens_in": 393716,
+  "tokens_out": 32318,
+  "max_context": 10826,
+  "cost": 1.66
+ },
+ "error": null,
+ "pages": [
+  {
+   "page_id": "p-001",
+   "when": "day 1, Mon 2026-08-31 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "inventory p99 rose 120ms\u2192~1100ms exactly at 03:00 and returned to ~108ms by 03:14, matching the inventory-batch \"reindex job started\" (03:00) / \"completed in 12m\" (03:12) log lines and a matching postgres CPU spike (30%\u219276%). No deploys or config changes in the window, error rates stayed flat (~0.001), and the alert self-resolved. This is the scheduled nightly reindex, not an incident.",
+   "result": "correct",
+   "queries": 5,
+   "calls": 4,
+   "tokens_in": 14548,
+   "tokens_out": 1441,
+   "cost": 0.0744,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= TIMESTAMP '2026-08-31 02:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts >= TIMESTAMP '2026-08-30 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= TIMESTAMP '2026-08-30 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE ts BETWEEN TIMESTAMP '2026-08-31 02:40' AND TIMESTAMP '2026-08-31 03:17' AND service IN ('inventory','postgres') ORDER BY ts, service"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-08-31 02:50' AND TIMESTAMP '2026-08-31 03:17' ORDER BY ts LIMIT 40"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "inventory p99 rose 120ms\u2192~1100ms exactly at 03:00 and returned to ~108ms by 03:14, matching the inventory-batch \"reindex job started\" (03:00) / \"completed in 12m\" (03:12) log lines and a matching postgres CPU spike (30%\u219276%). No deploys or config changes in the window, error rates stayed flat (~0.001), and the alert self-resolved. This is the scheduled nightly reindex, not an incident."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-002",
+   "when": "day 2, Tue 2026-09-01 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known nightly inventory-batch reindex noise (MEMORY N1). Alert self-resolved at 03:14 (a-004). inventory p99 rose 120ms\u2192~1100ms exactly 03:00\u201303:11 with flat rps (~22) and flat error_rate (~0.001), tracking a postgres CPU spike (31%\u2192~75%) over the same window; logs show inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. No inventory deploys or config changes in the prior 12h (only web dep-002/cfg-001 on Aug 31 and search cfg-002 at 02:00, unrelated).",
+   "result": "correct",
+   "queries": 4,
+   "calls": 4,
+   "tokens_in": 15182,
+   "tokens_out": 1618,
+   "cost": 0.0699,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-08-31 12:00:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, message FROM deploys WHERE ts >= TIMESTAMP '2026-08-31 12:00:00' UNION ALL SELECT event_id, ts, service, key, new_value FROM config_changes WHERE ts >= TIMESTAMP '2026-08-31 12:00:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts >= TIMESTAMP '2026-09-01 02:50:00' AND ts <= TIMESTAMP '2026-09-01 03:17:00' ORDER BY ts LIMIT 40"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) t, service, round(avg(rps),1) rps, round(avg(error_rate),4) er, round(avg(p99_ms)) p99, round(avg(cpu_pct)) cpu FROM metrics WHERE ts BETWEEN TIMESTAMP '2026-09-01 02:55:00' AND TIMESTAMP '2026-09-01 03:17:00' AND service IN ('inventory','postgres') GROUP BY 1,2 ORDER BY 2,1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known nightly inventory-batch reindex noise (MEMORY N1). Alert self-resolved at 03:14 (a-004). inventory p99 rose 120ms\u2192~1100ms exactly 03:00\u201303:11 with flat rps (~22) and flat error_rate (~0.001), tracking a postgres CPU spike (31%\u2192~75%) over the same window; logs show inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. No inventory deploys or config changes in the prior 12h (only web dep-002/cfg-001 on Aug 31 and search cfg-002 at 02:00, unrelated)."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-003",
+   "when": "day 3, Wed 2026-09-02 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known nightly inventory-batch reindex: inventory p99 110ms -> ~1100ms only 03:00-03:11 with flat rps (~22) and flat error_rate (~0.001), postgres CPU 30%->~78% in the same window, logs show inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12, alert self-resolved at 03:14 (value 116). No inventory deploy/config in the prior 12h (latest inventory deploy dep-004 was 13h earlier, an email-template typo fix, and p99 was normal all evening). Expected behavior, not an incident.",
+   "result": "correct",
+   "queries": 4,
+   "calls": 4,
+   "tokens_in": 15951,
+   "tokens_out": 1629,
+   "cost": 0.0717,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-09-02 02:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, 'deploy' AS kind, message AS detail FROM deploys WHERE ts >= TIMESTAMP '2026-09-01 12:00' UNION ALL SELECT event_id, ts, service, 'config', key || ': ' || old_value || '->' || new_value FROM config_changes WHERE ts >= TIMESTAMP '2026-09-01 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) t, service, round(rps,1) rps, round(error_rate,4) er, round(p99_ms) p99, round(cpu_pct) cpu FROM metrics WHERE service IN ('inventory','postgres') AND ts BETWEEN TIMESTAMP '2026-09-02 02:55' AND TIMESTAMP '2026-09-02 03:17' ORDER BY t, service"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-02 02:55' AND TIMESTAMP '2026-09-02 03:17' ORDER BY ts LIMIT 30"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known nightly inventory-batch reindex: inventory p99 110ms -> ~1100ms only 03:00-03:11 with flat rps (~22) and flat error_rate (~0.001), postgres CPU 30%->~78% in the same window, logs show inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12, alert self-resolved at 03:14 (value 116). No inventory deploy/config in the prior 12h (latest inventory deploy dep-004 was 13h earlier, an email-template typo fix, and p99 was normal all evening). Expected behavior, not an incident."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-004",
+   "when": "day 4, Thu 2026-09-03 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known noise N1: inventory-batch reindex. Logs show \"reindex job started\" 03:00 and \"completed in 12m\" 03:12; inventory p99 was flat ~115-125ms all night and only spiked 03:00-03:12 with flat rps/error_rate, postgres CPU 32%->76% in the same window, and the alert self-resolved at 03:14 (value 117). The only nearby change, cfg-004 (payments db_pool_max 50->20 at 02:00), is off the inventory path and payments metrics/pool usage (max 4 conns, p99 ~250ms, er 0.001) were unchanged.",
+   "result": "correct",
+   "queries": 5,
+   "calls": 6,
+   "tokens_in": 35573,
+   "tokens_out": 2659,
+   "cost": 0.1262,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= '2026-09-03 02:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, message FROM deploys WHERE ts >= '2026-09-02 12:00' UNION ALL SELECT event_id, ts, service, key, old_value || '->' || new_value FROM config_changes WHERE ts >= '2026-09-02 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) m, service, round(avg(p99_ms)) p99, round(avg(error_rate),4) er, round(avg(rps)) rps, round(avg(db_conn_in_use)) conns, round(avg(cpu_pct)) cpu FROM metrics WHERE ts >= '2026-09-03 01:50' AND service IN ('inventory','payments','postgres') GROUP BY 1,2 ORDER BY 2,1"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) m, service, level, message FROM logs WHERE ts >= '2026-09-03 01:55' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) + interval (floor(extract(minute from ts)/10)*10) minute h, service, round(avg(p99_ms)) p99, round(avg(error_rate),4) er, round(max(db_conn_in_use)) maxconn, round(avg(cpu_pct)) cpu FROM metrics WHERE ts >= '2026-09-03 01:00' AND service IN ('payments','postgres','checkout') GROUP BY 1,2 ORDER BY 2,1"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known noise N1: inventory-batch reindex. Logs show \"reindex job started\" 03:00 and \"completed in 12m\" 03:12; inventory p99 was flat ~115-125ms all night and only spiked 03:00-03:12 with flat rps/error_rate, postgres CPU 32%->76% in the same window, and the alert self-resolved at 03:14 (value 117). The only nearby change, cfg-004 (payments db_pool_max 50->20 at 02:00), is off the inventory path and payments metrics/pool usage (max 4 conns, p99 ~250ms, er 0.001) were unchanged."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-005",
+   "when": "day 4, Thu 2026-09-03 11:36",
+   "truth": "incident",
+   "action": "resolve",
+   "answer": "cfg-004",
+   "result": "correct",
+   "queries": 7,
+   "calls": 5,
+   "tokens_in": 33549,
+   "tokens_out": 2391,
+   "cost": 0.1295,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= '2026-09-03 09:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts >= '2026-09-02 20:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, key, old_value, new_value, author FROM config_changes WHERE ts >= '2026-09-02 20:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute',ts) t, service, round(rps,1) rps, round(error_rate,4) er, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE ts>='2026-09-03 10:50' AND service IN ('payments','checkout') ORDER BY t, service"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour',ts) h, service, round(avg(error_rate),4) er, round(avg(p99_ms),0) p99, round(max(db_conn_in_use),0) maxconn FROM metrics WHERE ts>='2026-09-03 00:00' AND service IN ('payments','postgres','checkout') GROUP BY 1,2 ORDER BY 1,2"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute',ts) t, service, level, message, count(*) n FROM logs WHERE ts>='2026-09-03 10:55' GROUP BY 1,2,3,4 ORDER BY t LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute',ts) t, round(rps,1) rps, round(error_rate,4) er, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE ts>='2026-09-03 11:15' AND service='payments' ORDER BY t"
+     }
+    ],
+    [
+     "resolve",
+     {
+      "cause_event_id": "cfg-004",
+      "summary": "cfg-004 (payments db_pool_max 50->20 at 02:00, cost-optimizer-bot) saturated the pool as morning traffic grew: payments db_conn_in_use pegged at exactly 20 from ~11:15 onward, with logs \"slow db acquire: waited 163->1300ms\" and \"request timed out after 3000ms waiting for db connection\", driving payments p99 250ms->2000ms+ and error_rate 0.001->0.15, cascading to checkout (\"upstream payments timeout after 3000ms\") and web 502s. Postgres itself is healthy (p99 8ms, 0 errors) and the checkout deploy dep-008 at 11:16 postdates the degradation that began ~11:06."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-006",
+   "when": "day 5, Fri 2026-09-04 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known nightly inventory-batch reindex (N1): alert self-resolved at 03:14 (122ms), inventory p99 flat ~120ms all night and spiked only 03:00-03:12 with flat rps/error_rate/db_conn; postgres CPU 32%->79% in the same window; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Peak p99 1238ms matches the identical 03:00-03:12 spike on every prior night (1193-1274ms). No deploy/config change involved.",
+   "result": "correct",
+   "queries": 6,
+   "calls": 8,
+   "tokens_in": 53931,
+   "tokens_out": 2864,
+   "cost": 0.1411,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT * FROM alerts WHERE ts >= '2026-09-03 12:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT event_id, ts, service, version, author, message FROM deploys WHERE ts >= '2026-09-03 06:00' UNION ALL SELECT event_id, ts, service, key, new_value, old_value FROM config_changes WHERE ts >= '2026-09-03 06:00' ORDER BY 2"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute', ts) m, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service='inventory' AND ts BETWEEN '2026-09-04 02:45' AND '2026-09-04 03:17' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('hour', ts) h, service, max(p99_ms) mx, avg(p99_ms) av, max(db_conn_in_use) mc, max(cpu_pct) cp FROM metrics WHERE ts >= '2026-09-03 14:00' AND service IN ('inventory','postgres') GROUP BY 1,2 ORDER BY 1,2"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('day', ts) d, max(p99_ms) mx, avg(p99_ms) av FROM metrics WHERE service='inventory' AND hour(ts)=3 AND minute(ts)<12 GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts BETWEEN '2026-09-04 02:55' AND '2026-09-04 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known nightly inventory-batch reindex (N1): alert self-resolved at 03:14 (122ms), inventory p99 flat ~120ms all night and spiked only 03:00-03:12 with flat rps/error_rate/db_conn; postgres CPU 32%->79% in the same window; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Peak p99 1238ms matches the identical 03:00-03:12 spike on every prior night (1193-1274ms). No deploy/config change involved."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-007",
+   "when": "day 6, Sat 2026-09-05 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known nightly inventory-batch reindex (N1): alert fired 03:02 (1026ms) and already resolved 03:14 (113ms); logs show inventory-batch reindex started 03:00 / completed in 12m. Same signature as p-001..p-004, p-006.",
+   "result": "correct",
+   "queries": 2,
+   "calls": 4,
+   "tokens_in": 14726,
+   "tokens_out": 796,
+   "cost": 0.0422,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= '2026-09-05 02:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts >= '2026-09-05 02:50' AND ts <= '2026-09-05 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known nightly inventory-batch reindex (N1): alert fired 03:02 (1026ms) and already resolved 03:14 (113ms); logs show inventory-batch reindex started 03:00 / completed in 12m. Same signature as p-001..p-004, p-006."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-008",
+   "when": "day 7, Sun 2026-09-06 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known benign nightly inventory-batch reindex (MEMORY N1). Alert a-021 fired 03:02 (1164ms) and self-resolved 12 minutes later at 03:14 (131ms, back to baseline); logs show inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. No deploy/config involvement needed.",
+   "result": "correct",
+   "queries": 2,
+   "calls": 3,
+   "tokens_in": 10544,
+   "tokens_out": 894,
+   "cost": 0.0412,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-09-06 02:30' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts >= TIMESTAMP '2026-09-06 02:50' AND ts <= TIMESTAMP '2026-09-06 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known benign nightly inventory-batch reindex (MEMORY N1). Alert a-021 fired 03:02 (1164ms) and self-resolved 12 minutes later at 03:14 (131ms, back to baseline); logs show inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. No deploy/config involvement needed."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-009",
+   "when": "day 8, Mon 2026-09-07 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known nightly inventory-batch reindex (MEMORY N1): inventory_p99_high fired 03:02 at 1212ms and self-resolved 03:14 at 120ms baseline, with inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. Same signature as p-001..p-008; not a real problem.",
+   "result": "correct",
+   "queries": 2,
+   "calls": 3,
+   "tokens_in": 10610,
+   "tokens_out": 997,
+   "cost": 0.0438,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-09-07 02:30' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts >= TIMESTAMP '2026-09-07 02:50' AND ts <= TIMESTAMP '2026-09-07 03:17' ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known nightly inventory-batch reindex (MEMORY N1): inventory_p99_high fired 03:02 at 1212ms and self-resolved 03:14 at 120ms baseline, with inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. Same signature as p-001..p-008; not a real problem."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-010",
+   "when": "day 9, Tue 2026-09-08 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known benign nightly inventory-batch reindex (MEMORY N1): inventory_p99_high fired 03:02 at 1106ms and self-resolved 03:14 at 108ms (baseline), bracketed exactly by inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. No deploy/config involvement needed; expected recurring behavior.",
+   "result": "correct",
+   "queries": 2,
+   "calls": 3,
+   "tokens_in": 10922,
+   "tokens_out": 1401,
+   "cost": 0.0553,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-09-08 02:30' AND ts <= TIMESTAMP '2026-09-08 03:17' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts >= TIMESTAMP '2026-09-08 02:50' AND ts <= TIMESTAMP '2026-09-08 03:17' AND (service LIKE '%batch%' OR level IN ('WARN','ERROR')) ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known benign nightly inventory-batch reindex (MEMORY N1): inventory_p99_high fired 03:02 at 1106ms and self-resolved 03:14 at 108ms (baseline), bracketed exactly by inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. No deploy/config involvement needed; expected recurring behavior."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-011",
+   "when": "day 10, Wed 2026-09-09 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known noise N1: nightly inventory-batch reindex. Alert fired 03:02 (1169ms) and self-resolved 03:14 at baseline (117ms); logs show inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. No deploy/config involvement.",
+   "result": "correct",
+   "queries": 2,
+   "calls": 3,
+   "tokens_in": 10959,
+   "tokens_out": 823,
+   "cost": 0.0402,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-09-09 02:30' AND ts <= TIMESTAMP '2026-09-09 03:17' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts >= TIMESTAMP '2026-09-09 02:55' AND ts <= TIMESTAMP '2026-09-09 03:17' AND (service LIKE '%batch%' OR level='ERROR') ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known noise N1: nightly inventory-batch reindex. Alert fired 03:02 (1169ms) and self-resolved 03:14 at baseline (117ms); logs show inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. No deploy/config involvement."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-012",
+   "when": "day 11, Thu 2026-09-10 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known benign nightly inventory-batch reindex: alert fired 03:02 (1127ms) and self-resolved 03:14 at baseline (126ms), with inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. Only N2-type background log chatter otherwise. Matches known-noise entry N1.</reason>\n",
+   "result": "correct",
+   "queries": 2,
+   "calls": 3,
+   "tokens_in": 11120,
+   "tokens_out": 1087,
+   "cost": 0.0475,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-09-10 02:30' AND ts <= TIMESTAMP '2026-09-10 03:17' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts >= TIMESTAMP '2026-09-10 02:50' AND ts <= TIMESTAMP '2026-09-10 03:17' AND (service LIKE '%batch%' OR level='ERROR') ORDER BY ts LIMIT 50"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known benign nightly inventory-batch reindex: alert fired 03:02 (1127ms) and self-resolved 03:14 at baseline (126ms), with inventory-batch INFO \"reindex job started\" 03:00 and \"completed in 12m\" 03:12. Only N2-type background log chatter otherwise. Matches known-noise entry N1.</reason>\n"
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-013",
+   "when": "day 12, Fri 2026-09-11 03:02",
+   "truth": "noise",
+   "action": "dismiss",
+   "answer": "Known benign nightly inventory-batch reindex (N1): alert fired 03:02 at 1091ms and self-resolved 03:14 back at 116ms baseline, matching inventory-batch INFO logs \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. No deploy or config change involved.",
+   "result": "correct",
+   "queries": 2,
+   "calls": 3,
+   "tokens_in": 10943,
+   "tokens_out": 824,
+   "cost": 0.0402,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-09-11 02:30' AND ts <= TIMESTAMP '2026-09-11 03:17' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, service, level, message FROM logs WHERE ts >= TIMESTAMP '2026-09-11 02:50' AND ts <= TIMESTAMP '2026-09-11 03:17' AND (service LIKE '%batch%' OR message ILIKE '%reindex%') ORDER BY ts"
+     }
+    ],
+    [
+     "dismiss",
+     {
+      "reason": "Known benign nightly inventory-batch reindex (N1): alert fired 03:02 at 1091ms and self-resolved 03:14 back at 116ms baseline, matching inventory-batch INFO logs \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. No deploy or config change involved."
+     }
+    ]
+   ]
+  },
+  {
+   "page_id": "p-014",
+   "when": "day 12, Fri 2026-09-11 10:54",
+   "truth": "incident",
+   "action": "resolve",
+   "answer": "cfg-012",
+   "result": "correct",
+   "queries": 5,
+   "calls": 7,
+   "tokens_in": 50513,
+   "tokens_out": 3451,
+   "cost": 0.1625,
+   "steps": [
+    [
+     "query",
+     {
+      "sql": "SELECT alert_id, ts, alert_name, service, state, value FROM alerts WHERE ts >= TIMESTAMP '2026-09-11 08:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT 'dep' k, event_id, ts, service, version, author, message FROM deploys WHERE ts >= TIMESTAMP '2026-09-10 20:00' UNION ALL SELECT 'cfg', event_id, ts, service, key || ': ' || old_value || '->' || new_value, author, '' FROM config_changes WHERE ts >= TIMESTAMP '2026-09-10 20:00' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT ts, rps, error_rate, p99_ms, db_conn_in_use, cpu_pct FROM metrics WHERE service='inventory' AND ts BETWEEN TIMESTAMP '2026-09-11 10:20' AND TIMESTAMP '2026-09-11 11:09' ORDER BY ts"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('minute',ts) m, level, message, count(*) FROM logs WHERE ts BETWEEN TIMESTAMP '2026-09-11 10:30' AND TIMESTAMP '2026-09-11 11:09' AND service IN ('inventory','postgres','checkout') GROUP BY 1,2,3 ORDER BY 1 LIMIT 50"
+     }
+    ],
+    [
+     "query",
+     {
+      "sql": "SELECT date_trunc('day',ts) d, max(db_conn_in_use) mx, avg(db_conn_in_use) avg_c, max(p99_ms) mxp, max(rps) mxr FROM metrics WHERE service='inventory' AND ts::time BETWEEN TIME '10:30' AND TIME '11:09' GROUP BY 1 ORDER BY 1"
+     }
+    ],
+    [
+     "resolve",
+     {
+      "cause_event_id": "cfg-012",
+      "summary": "cost-optimizer-bot cut inventory db_pool_max 40->15 at 02:00; by late-morning load inventory db_conn_in_use is pegged at exactly 15 from ~10:49 with logs \"slow db acquire\" / \"request timed out after 3000ms waiting for db connection\", p99 916->1998ms and error_rate climbing. Prior days at the same 10:30-11:09 window needed 17-18 connections with normal 130ms p99, so the new cap is the binding constraint. The 11:08 checkout_error_rate_high is the downstream cascade; dep-028 (10:34, \"add stock reservation metrics\") is innocent \u2014 degradation tracks pool saturation with rising rps, not the deploy."
+     }
+    ]
+   ]
+  }
+ ],
+ "memory": "LESSONS (9 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] cost-optimizer-bot pool cuts at ~02:00 bite hours later at peak (cfg-004 payments 50->20 -> p-005; cfg-012 inventory 40->15 -> p-014). Proof: db_conn_in_use pegged at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = GROUP BY day of max(db_conn_in_use), same clock window (prior days 17-18 > cap 15). A human revert to the old cap later (cfg-013) confirms. Active.\n[L5] Multi-alert cascades: alert order follows the caller chain (web->checkout->payments/inventory), not causality; root cause is the deepest degraded service (p-005; p-014 inventory p99 then checkout_error_rate 14min later). Blame only changes before the first minute any metric left baseline; deploys landing mid-incident are innocent (dep-008 p-005, dep-028 p-014). Active.\n[L6] Author is a triage signal: cost-optimizer-bot resource/pool caps caused real pages (cfg-004->p-005, cfg-012->p-014); nearby human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"add stock reservation metrics\") were innocent (p-003, p-005, p-014). Rank bot config changes first, but still confirm metrics moved. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009..p-012). Active.\n[L8] A daytime inventory_p99_high (not the ~03:00 N1 signature) is real: p-014 at 10:54 ramped gradually from ~10:39 as rps rose, unlike the nightly reindex which jumps and self-resolves in ~12min. Check for a 'resolved' row: none within ~15min + rising error_rate = investigate the db pool/dependency, don't dismiss as the reindex. Active.\n[L9] Late-afternoon batches of deploys with copy-paste/cosmetic messages (\"add unit tests for pricing\" on both search and web, \"add request tracing spans\", \"update feature flag client\") produced no page on day 12. Don't pre-blame them; a deploy only matters if a metric left baseline in the minutes after it. Active.\nKNOWN NOISE (2 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-013.\n[N2] Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline.",
+ "memory_log": [
+  {
+   "when": "2026-08-31 03:02:00",
+   "edits": [
+    [
+     "add_entry",
+     {
+      "section": "noise",
+      "text": "inventory_p99_high firing ~03:00 and self-resolving ~03:14, with flat error_rate/rps and a postgres CPU spike: nightly inventory-batch reindex job. Recognize it by logs service='inventory-batch' INFO \"reindex job started\" at 03:00 / \"completed in 12m\" ~03:12, and no deploys or config_changes in the window. Dismiss. (p-001, day 1)"
+     }
+    ],
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (1 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00 and self-resolving ~03:14, with flat error_rate/rps and a postgres CPU spike: nightly inventory-batch reindex job. Recognize it by logs service='inventory-batch' INFO \"reindex job started\" at 03:00 / \"completed in 12m\" ~03:12, and no deploys or config_changes in the window. Dismiss. (p-001, day 1)"
+  },
+  {
+   "when": "2026-09-01 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Recognize: inventory p99 ~120ms -> ~1100ms only 03:00-03:11 with flat rps and flat error_rate, postgres CPU ~30% -> ~75% same window, logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12, no inventory deploy/config in prior 12h. Dismiss. (p-001 day 1, p-002 day 2)"
+     }
+    ],
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (2 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Recognize: inventory p99 ~120ms -> ~1100ms only 03:00-03:11 with flat rps and flat error_rate, postgres CPU ~30% -> ~75% same window, logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12, no inventory deploy/config in prior 12h. Dismiss. (p-001 day 1, p-002 day 2)"
+  },
+  {
+   "when": "2026-09-02 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Confirm in ~4 queries: alerts window (resolved row ~03:14), inventory p99 ~110ms -> ~1100ms only 03:00-03:11 with flat rps and error_rate, postgres CPU ~30%->~78% same window, logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Dismiss. (p-001, p-002, p-003)"
+     }
+    ],
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (3 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Confirm in ~4 queries: alerts window (resolved row ~03:14), inventory p99 ~110ms -> ~1100ms only 03:00-03:11 with flat rps and error_rate, postgres CPU ~30%->~78% same window, logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Dismiss. (p-001, p-002, p-003)"
+  },
+  {
+   "when": "2026-09-03 03:02:00",
+   "edits": [
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "To rule in/out a connection-pool config change (e.g. p-004: payments db_pool_max 50->20 at 02:00, an hour before an inventory page): compare db_conn_in_use against the new max over the window. If usage stays far below the new cap and that service's p99/error_rate are flat, it is not the cause \u2014 and it is on a different branch than the alerting service anyway. Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Confirm in ~4 queries: alerts window has resolved row (~117ms); inventory p99 ~115-125ms flat all night, spiking only 03:00-03:12 with flat rps/error_rate; postgres CPU ~32%->~76% same window; logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Dismiss. (p-001..p-004)"
+     }
+    ]
+   ],
+   "memory": "LESSONS (4 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] To rule in/out a connection-pool config change (e.g. p-004: payments db_pool_max 50->20 at 02:00, an hour before an inventory page): compare db_conn_in_use against the new max over the window. If usage stays far below the new cap and that service's p99/error_rate are flat, it is not the cause \u2014 and it is on a different branch than the alerting service anyway. Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Confirm in ~4 queries: alerts window has resolved row (~117ms); inventory p99 ~115-125ms flat all night, spiking only 03:00-03:12 with flat rps/error_rate; postgres CPU ~32%->~76% same window; logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Dismiss. (p-001..p-004)"
+  },
+  {
+   "when": "2026-09-03 11:36:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "L4",
+      "text": "Pool-cap config cuts bite hours later, at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, but caused p-005 at ~11:06 when morning load arrived). Check db_conn_in_use vs the new cap minute-by-minute: pegged exactly at the cap + logs \"slow db acquire\"/\"timed out waiting for db connection\" = guilty; far below cap + flat p99 = innocent. Active."
+     }
+    ],
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (5 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap config cuts bite hours later, at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, but caused p-005 at ~11:06 when morning load arrived). Check db_conn_in_use vs the new cap minute-by-minute: pegged exactly at the cap + logs \"slow db acquire\"/\"timed out waiting for db connection\" = guilty; far below cap + flat p99 = innocent. Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Confirm in ~4 queries: alerts window has resolved row (~117ms); inventory p99 ~115-125ms flat all night, spiking only 03:00-03:12 with flat rps/error_rate; postgres CPU ~32%->~76% same window; logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Dismiss. (p-001..p-004)"
+  },
+  {
+   "when": "2026-09-03 18:00:00",
+   "edits": [
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) have caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L4",
+      "text": "[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (6 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] [L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] [L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) have caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Confirm in ~4 queries: alerts window has resolved row (~117ms); inventory p99 ~115-125ms flat all night, spiking only 03:00-03:12 with flat rps/error_rate; postgres CPU ~32%->~76% same window; logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Dismiss. (p-001..p-004)"
+  },
+  {
+   "when": "2026-09-04 03:02:00",
+   "edits": [
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks on every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006 (nightly reindex, same ~1100-1250ms peak 5 nights running). Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing 03:00-03:02, resolving 03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1100-1250ms vs ~120ms baseline) \u2014 that magnitude is normal, not a new incident. Confirm: alerts has resolved row (~120ms); inventory rps/error_rate/db_conn flat; postgres CPU ~32%->~79%; logs inventory-batch INFO started 03:00 / completed 12m 03:12. Dismiss. (p-001..p-004, p-006)"
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] [L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] [L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) have caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks on every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006 (nightly reindex, same ~1100-1250ms peak 5 nights running). Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing 03:00-03:02, resolving 03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1100-1250ms vs ~120ms baseline) \u2014 that magnitude is normal, not a new incident. Confirm: alerts has resolved row (~120ms); inventory rps/error_rate/db_conn flat; postgres CPU ~32%->~79%; logs inventory-batch INFO started 03:00 / completed 12m 03:12. Dismiss. (p-001..p-004, p-006)"
+  },
+  {
+   "when": "2026-09-04 18:00:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "L4",
+      "text": "Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L6",
+      "text": "Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing 03:00-03:02, resolved 03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1100-1250ms vs ~120ms baseline) \u2014 that magnitude is normal, not a new incident. Confirm: alerts has resolved row; inventory rps/error_rate/db_conn flat; postgres CPU ~32%->~79%; logs inventory-batch INFO started 03:00 / completed 03:12. Dismiss fast. (p-001..p-004, p-006; 5 nights)"
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks on every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006 (nightly reindex, same ~1100-1250ms peak 5 nights running). Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing 03:00-03:02, resolved 03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1100-1250ms vs ~120ms baseline) \u2014 that magnitude is normal, not a new incident. Confirm: alerts has resolved row; inventory rps/error_rate/db_conn flat; postgres CPU ~32%->~79%; logs inventory-batch INFO started 03:00 / completed 03:12. Dismiss fast. (p-001..p-004, p-006; 5 nights)"
+  },
+  {
+   "when": "2026-09-05 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120ms baseline) \u2014 that magnitude is normal. Confirm in 2 queries: alerts window has a resolved row ~12min later, and logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\". Then dismiss. (p-001..p-004, p-006, p-007; 6 nights)"
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks on every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006 (nightly reindex, same ~1100-1250ms peak 5 nights running). Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120ms baseline) \u2014 that magnitude is normal. Confirm in 2 queries: alerts window has a resolved row ~12min later, and logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\". Then dismiss. (p-001..p-004, p-006, p-007; 6 nights)"
+  },
+  {
+   "when": "2026-09-05 18:00:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "L7",
+      "text": "Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks on every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006, p-007 (nightly reindex, same ~1000-1250ms peak 6 nights running). Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120ms baseline) \u2014 normal. Confirm in 2 queries: alerts window has a resolved row ~12min later; logs show inventory-batch INFO \"reindex started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006, p-007; recurs on days with no changes."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks on every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006, p-007 (nightly reindex, same ~1000-1250ms peak 6 nights running). Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120ms baseline) \u2014 normal. Confirm in 2 queries: alerts window has a resolved row ~12min later; logs show inventory-batch INFO \"reindex started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006, p-007; recurs on days with no changes."
+  },
+  {
+   "when": "2026-09-06 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120-130ms baseline) \u2014 normal. Confirm in 2 queries: alerts window shows a resolved row ~12min later; logs show inventory-batch INFO \"reindex started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006, p-007, p-008; recurs on days with no changes."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks on every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006, p-007 (nightly reindex, same ~1000-1250ms peak 6 nights running). Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120-130ms baseline) \u2014 normal. Confirm in 2 queries: alerts window shows a resolved row ~12min later; logs show inventory-batch INFO \"reindex started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006, p-007, p-008; recurs on days with no changes."
+  },
+  {
+   "when": "2026-09-06 18:00:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "L7",
+      "text": "Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006, p-007, p-008 (nightly reindex, same ~1000-1250ms peak, 7 nights, even on days with unrelated bot config cuts). Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006, p-007, p-008 (nightly reindex, same ~1000-1250ms peak, 7 nights, even on days with unrelated bot config cuts). Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120-130ms baseline) \u2014 normal. Confirm in 2 queries: alerts window shows a resolved row ~12min later; logs show inventory-batch INFO \"reindex started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006, p-007, p-008; recurs on days with no changes."
+  },
+  {
+   "when": "2026-09-07 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120-130ms baseline) \u2014 normal. Confirm in 2 queries (run them in parallel): alerts window shows a resolved row ~12min later; logs show inventory-batch INFO \"reindex started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006..p-009."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L7",
+      "text": "Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If the noise entry already names the signature (see N1), 2 confirm queries suffice (p-009). Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If the noise entry already names the signature (see N1), 2 confirm queries suffice (p-009). Active.\nKNOWN NOISE (1 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120-130ms baseline) \u2014 normal. Confirm in 2 queries (run them in parallel): alerts window shows a resolved row ~12min later; logs show inventory-batch INFO \"reindex started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006..p-009."
+  },
+  {
+   "when": "2026-09-08 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-010."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L7",
+      "text": "Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009, p-010). Active."
+     }
+    ],
+    [
+     "add_entry",
+     {
+      "section": "noise",
+      "text": "Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009, p-010). Active.\nKNOWN NOISE (2 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-010.\n[N2] Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline."
+  },
+  {
+   "when": "2026-09-09 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-011."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009, p-010). Active.\nKNOWN NOISE (2 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-011.\n[N2] Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline."
+  },
+  {
+   "when": "2026-09-09 18:00:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "L7",
+      "text": "Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009..p-011). Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009..p-011). Active.\nKNOWN NOISE (2 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-011.\n[N2] Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline."
+  },
+  {
+   "when": "2026-09-10 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-012."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L7",
+      "text": "Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009..p-012). Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009..p-012). Active.\nKNOWN NOISE (2 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-012.\n[N2] Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline."
+  },
+  {
+   "when": "2026-09-11 03:02:00",
+   "edits": [
+    [
+     "update_entry",
+     {
+      "id": "N1",
+      "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-013."
+     }
+    ]
+   ],
+   "memory": "LESSONS (7 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db conn\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active.\n[L5] Multi-alert cascades (p-005: checkout_error_rate -> web_error_rate -> payments_p99 -> checkout_p99): alert order follows the caller chain, not causality. Find the first minute any metric left baseline, then blame only changes before that minute; a deploy landing mid-incident (dep-008 checkout 11:16, symptoms from 11:06) is innocent. Root cause sits at the deepest degraded service. Active.\n[L6] Author is a triage signal: automated changes by cost-optimizer-bot (resource/pool caps, off-hours) caused a real page (cfg-004 -> p-005), while human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"improve error messages\") were innocent (p-003, p-005). Rank bot config changes above nearby human deploys, but still confirm the metric moved at the change time. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009..p-012). Active.\nKNOWN NOISE (2 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-013.\n[N2] Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline."
+  },
+  {
+   "when": "2026-09-11 10:54:00",
+   "edits": [
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "A daytime inventory_p99_high (not the ~03:00 N1 signature) is real: p-014 at 10:54 ramped gradually from ~10:39 as rps rose, unlike the nightly reindex which jumps and self-resolves in ~12min. Check for a 'resolved' row: none within ~15min + rising error_rate = investigate the db pool/dependency, don't dismiss as the reindex. Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L4",
+      "text": "cost-optimizer-bot pool cuts at ~02:00 bite hours later at peak load (cfg-004 payments 50->20 -> p-005 11:06; cfg-012 inventory 40->15 -> p-014 10:54). Proof: db_conn_in_use pegged exactly at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = GROUP BY day of max(db_conn_in_use) for the same clock window (prior days needed 17-18 > cap 15). Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L5",
+      "text": "Multi-alert cascades: alert order follows the caller chain (web->checkout->payments/inventory), not causality; root cause is the deepest degraded service (p-005; p-014 inventory p99 then checkout_error_rate 14min later). Blame only changes before the first minute any metric left baseline; deploys landing mid-incident are innocent (dep-008 p-005, dep-028 p-014). Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L6",
+      "text": "Author is a triage signal: cost-optimizer-bot resource/pool caps caused real pages (cfg-004->p-005, cfg-012->p-014); nearby human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"add stock reservation metrics\") were innocent (p-003, p-005, p-014). Rank bot config changes first, but still confirm metrics moved. Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (8 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] cost-optimizer-bot pool cuts at ~02:00 bite hours later at peak load (cfg-004 payments 50->20 -> p-005 11:06; cfg-012 inventory 40->15 -> p-014 10:54). Proof: db_conn_in_use pegged exactly at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = GROUP BY day of max(db_conn_in_use) for the same clock window (prior days needed 17-18 > cap 15). Active.\n[L5] Multi-alert cascades: alert order follows the caller chain (web->checkout->payments/inventory), not causality; root cause is the deepest degraded service (p-005; p-014 inventory p99 then checkout_error_rate 14min later). Blame only changes before the first minute any metric left baseline; deploys landing mid-incident are innocent (dep-008 p-005, dep-028 p-014). Active.\n[L6] Author is a triage signal: cost-optimizer-bot resource/pool caps caused real pages (cfg-004->p-005, cfg-012->p-014); nearby human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"add stock reservation metrics\") were innocent (p-003, p-005, p-014). Rank bot config changes first, but still confirm metrics moved. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009..p-012). Active.\n[L8] A daytime inventory_p99_high (not the ~03:00 N1 signature) is real: p-014 at 10:54 ramped gradually from ~10:39 as rps rose, unlike the nightly reindex which jumps and self-resolves in ~12min. Check for a 'resolved' row: none within ~15min + rising error_rate = investigate the db pool/dependency, don't dismiss as the reindex. Active.\nKNOWN NOISE (2 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-013.\n[N2] Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline."
+  },
+  {
+   "when": "2026-09-11 18:00:00",
+   "edits": [
+    [
+     "add_entry",
+     {
+      "section": "lesson",
+      "text": "Late-afternoon batches of deploys with copy-paste/cosmetic messages (\"add unit tests for pricing\" on both search and web, \"add request tracing spans\", \"update feature flag client\") produced no page on day 12. Don't pre-blame them; a deploy only matters if a metric left baseline in the minutes after it. Active."
+     }
+    ],
+    [
+     "update_entry",
+     {
+      "id": "L4",
+      "text": "cost-optimizer-bot pool cuts at ~02:00 bite hours later at peak (cfg-004 payments 50->20 -> p-005; cfg-012 inventory 40->15 -> p-014). Proof: db_conn_in_use pegged at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = GROUP BY day of max(db_conn_in_use), same clock window (prior days 17-18 > cap 15). A human revert to the old cap later (cfg-013) confirms. Active."
+     }
+    ]
+   ],
+   "memory": "LESSONS (9 of 12 slots):\n[L1] Triage habit that worked (p-001): first query alerts window (is there already a 'resolved' row? then it's short/self-healing), then deploys+config_changes in the prior ~12h. If both are empty, look for a batch/cron job in logs (INFO lines from *-batch services) plus the shared dependency's metrics (postgres/redis) before blaming the alerting service. Active.\n[L2] Unrelated changes often sit near a page's timestamp (e.g. p-002: a search replica_count config change 1h before an inventory alert). Before blaming a deploy/config, check it touches the alerting service or its dependency chain (web->checkout->payments/inventory; payments+inventory->postgres, search->redis) and that metrics moved at the change time, not before/after. Active.\n[L3] A deploy to the alerting service can still be innocent if it predates the symptom by many hours and metrics were normal in between (p-003: inventory deploy 13h before the 03:00 spike, unrelated email-template typo fix). Check the metric was flat right up to the spike minute before blaming the nearest deploy; also check the deploy's message/scope. Active.\n[L4] cost-optimizer-bot pool cuts at ~02:00 bite hours later at peak (cfg-004 payments 50->20 -> p-005; cfg-012 inventory 40->15 -> p-014). Proof: db_conn_in_use pegged at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = GROUP BY day of max(db_conn_in_use), same clock window (prior days 17-18 > cap 15). A human revert to the old cap later (cfg-013) confirms. Active.\n[L5] Multi-alert cascades: alert order follows the caller chain (web->checkout->payments/inventory), not causality; root cause is the deepest degraded service (p-005; p-014 inventory p99 then checkout_error_rate 14min later). Blame only changes before the first minute any metric left baseline; deploys landing mid-incident are innocent (dep-008 p-005, dep-028 p-014). Active.\n[L6] Author is a triage signal: cost-optimizer-bot resource/pool caps caused real pages (cfg-004->p-005, cfg-012->p-014); nearby human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"add stock reservation metrics\") were innocent (p-003, p-005, p-014). Rank bot config changes first, but still confirm metrics moved. Active.\n[L7] Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006..p-008. If a noise entry already names the signature (N1), 2 confirm queries suffice (p-009..p-012). Active.\n[L8] A daytime inventory_p99_high (not the ~03:00 N1 signature) is real: p-014 at 10:54 ramped gradually from ~10:39 as rps rose, unlike the nightly reindex which jumps and self-resolves in ~12min. Check for a 'resolved' row: none within ~15min + rising error_rate = investigate the db pool/dependency, don't dismiss as the reindex. Active.\n[L9] Late-afternoon batches of deploys with copy-paste/cosmetic messages (\"add unit tests for pricing\" on both search and web, \"add request tracing spans\", \"update feature flag client\") produced no page on day 12. Don't pre-blame them; a deploy only matters if a metric left baseline in the minutes after it. Active.\nKNOWN NOISE (2 of 3 slots):\n[N1] inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~110-130ms baseline) \u2014 normal. Confirm in 2 parallel queries: alerts window shows the resolved row ~12min later at baseline value; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Then dismiss. Seen p-001..p-004, p-006..p-013.\n[N2] Background log chatter that shows up in any window and means nothing on its own: web ERROR \"client disconnected before response\", web WARN \"slow request ~900ms on GET /api\", search ERROR \"query parse error near position N\". Seen alongside the 03:00 reindex on p-010. Only treat as signal if the matching service's error_rate/p99 metrics also leave baseline."
+  }
+ ],
+ "edit_errors": [
+  {
+   "when": "2026-09-03 03:02:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "N1",
+    "text": "inventory_p99_high firing ~03:00-03:02, self-resolving ~03:12-03:14: nightly inventory-batch reindex. Confirm in ~4-5 queries: alerts window shows resolved row (~117ms); inventory p99 ~115-125ms flat all night, spiking only 03:00-03:12 with flat rps/error_rate; postgres CPU ~32%->~76% same window; logs inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\" 03:12. Dismiss. (p-001..p-004)"
+   },
+   "error": "error: that entry is 404 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-03 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L4",
+    "text": "[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 when morning load arrived). Check db_conn_in_use vs the new cap minute-by-minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db connection\" = guilty; far below cap + flat p99 = innocent. Fix is a human revert (cfg-005 12:40, 20->50). Active."
+   },
+   "error": "error: that entry is 453 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-03 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L4",
+    "text": "[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 when morning load arrived). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db connection\" = guilty; far below cap + flat p99 = innocent. Fix = human revert (cfg-005 12:40). Active."
+   },
+   "error": "error: that entry is 436 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-03 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L4",
+    "text": "[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for 03:00 inventory page p-004, guilty for p-005 at ~11:06 when morning load arrived). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db connection\" = guilty; far below cap = innocent. Fix = human revert (cfg-005 12:40). Active."
+   },
+   "error": "error: that entry is 421 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-03 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L4",
+    "text": "[L4] Pool-cap cuts by cost-optimizer-bot bite hours later at peak traffic (cfg-004 payments db_pool_max 50->20 at 02:00: innocent for the 03:00 inventory page p-004, guilty for p-005 at ~11:06 morning load). Check db_conn_in_use vs the new cap per minute: pegged at cap + logs \"slow db acquire\"/\"timed out waiting for db connection\" = guilty; far below cap = innocent. Fix = human revert (cfg-005). Active."
+   },
+   "error": "error: that entry is 406 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-04 03:02:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "N1",
+    "text": "inventory_p99_high firing 03:00-03:02, self-resolving 03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1100-1250ms, ~10x the ~120ms baseline) and resolved value ~120ms \u2014 big magnitude is normal, not a new incident. Confirm in ~4 queries: alerts window has resolved row; inventory rps/error_rate/db_conn flat, postgres CPU ~32%->~79%; logs inventory-batch INFO started 03:00 / \"completed in 12m\" 03:12. Dismiss. (p-001..p-004, p-006)"
+   },
+   "error": "error: that entry is 453 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-04 03:02:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "N1",
+    "text": "inventory_p99_high firing 03:00-03:02, resolving 03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1100-1250ms vs ~120ms baseline) \u2014 big magnitude is normal, not a new incident; resolved value ~120ms. Confirm: alerts window has resolved row; inventory rps/error_rate/db_conn flat, postgres CPU ~32%->~79%; logs inventory-batch INFO started 03:00 / completed in 12m 03:12. Dismiss. (p-001..p-004, p-006)"
+   },
+   "error": "error: that entry is 422 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-04 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "N1",
+    "text": "inventory_p99_high firing 03:00-03:02, resolving 03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1100-1250ms vs ~120ms baseline) \u2014 that magnitude is normal, not a new incident. Confirm: alerts has resolved row (~120ms); inventory rps/error_rate/db_conn flat; postgres CPU ~32%->~79%; logs inventory-batch INFO started 03:00 / completed 12m 03:12. Dismiss fast. (p-001..p-004, p-006; 5 nights)"
+   },
+   "error": "error: that entry is 414 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-05 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "N1",
+    "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120ms baseline) \u2014 that magnitude is normal. Confirm in 2 queries: alerts window has a resolved row ~12min later, and logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006, p-007 (6 nights); recurs even on days with zero deploys/config changes."
+   },
+   "error": "error: that entry is 445 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-05 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "N1",
+    "text": "inventory_p99_high firing ~03:00-03:02, resolved ~03:12-03:14: nightly inventory-batch reindex. Firing value is LARGE (~1000-1250ms vs ~120ms baseline) \u2014 normal. Confirm in 2 queries: alerts window has a resolved row ~12min later; logs show inventory-batch INFO \"reindex job started\" 03:00 / \"completed in 12m\". Then dismiss. Seen p-001..p-004, p-006, p-007; recurs even on days with no deploys/config changes."
+   },
+   "error": "error: that entry is 410 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-06 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L7",
+    "text": "Cheapest way to prove a spike is recurring/benign: one query grouping the metric by day for the same clock window (e.g. inventory p99, hour=3, minute<12, GROUP BY day). Identical peaks on every prior night = known cron, dismiss without chasing nearby deploys. Confirmed p-006, p-007, p-008 (nightly reindex, same ~1000-1250ms peak, 7 nights running, even on days with unrelated bot config cuts). Active."
+   },
+   "error": "error: that entry is 403 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-11 10:54:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L4",
+    "text": "Pool-cap cuts by cost-optimizer-bot at ~02:00 bite hours later at peak traffic (cfg-004 payments 50->20 -> p-005 ~11:06; cfg-012 inventory 40->15 -> p-014 ~10:54). Proof: per-minute db_conn_in_use pegged exactly at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = one GROUP BY day query of max(db_conn_in_use) for the same clock window on prior days (needed 17-18 > cap 15). Active."
+   },
+   "error": "error: that entry is 414 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-11 10:54:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L5",
+    "text": "Multi-alert cascades: alert order follows the caller chain (web->checkout->payments/inventory), not causality; root cause sits at the deepest degraded service (p-005, p-014: inventory p99 alert then checkout_error_rate 14min later, inventory was the cause). Find the first minute any metric left baseline and blame only changes before it; a deploy landing mid-incident is innocent (dep-008 p-005, dep-028 p-014). Active."
+   },
+   "error": "error: that entry is 420 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-11 10:54:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L6",
+    "text": "Author is a triage signal: cost-optimizer-bot resource/pool caps caused real pages (cfg-004->p-005, cfg-012->p-014), while nearby human deploys with cosmetic messages (\"tweak retry logging\", \"email template typo\", \"add stock reservation metrics\") were innocent (p-003, p-005, p-014). Rank bot config changes above nearby human deploys, but still confirm the metric moved with load/at the change's effect. Active."
+   },
+   "error": "error: that entry is 412 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-11 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L4",
+    "text": "cost-optimizer-bot pool cuts at ~02:00 bite hours later at peak load (cfg-004 payments 50->20 -> p-005 11:06; cfg-012 inventory 40->15 -> p-014 10:54). Proof: db_conn_in_use pegged exactly at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = GROUP BY day of max(db_conn_in_use) for the same clock window (prior days needed 17-18 > cap 15). A human revert back to the old cap later that day (cfg-013 12:30) confirms the call. Active."
+   },
+   "error": "error: that entry is 463 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-11 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L4",
+    "text": "cost-optimizer-bot pool cuts at ~02:00 bite hours later at peak (cfg-004 payments 50->20 -> p-005 11:06; cfg-012 inventory 40->15 -> p-014 10:54). Proof: db_conn_in_use pegged exactly at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = GROUP BY day of max(db_conn_in_use), same clock window (prior days 17-18 > cap 15). A human revert to the old cap later that day (cfg-013) confirms. Active."
+   },
+   "error": "error: that entry is 424 characters; the limit is 400. Shorten it."
+  },
+  {
+   "when": "2026-09-11 18:00:00",
+   "tool": "update_entry",
+   "input": {
+    "id": "L4",
+    "text": "cost-optimizer-bot pool cuts at ~02:00 bite hours later at peak (cfg-004 payments 50->20 -> p-005; cfg-012 inventory 40->15 -> p-014). Proof: db_conn_in_use pegged exactly at the new cap + logs \"slow db acquire\"/\"timed out waiting for db conn\"; clincher = GROUP BY day of max(db_conn_in_use), same clock window (prior days 17-18 > cap 15). A human revert to the old cap later that day (cfg-013) confirms. Active."
+   },
+   "error": "error: that entry is 412 characters; the limit is 400. Shorten it."
+  }
+ ]
+}

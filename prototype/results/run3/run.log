@@ -1,0 +1,33 @@
+[hybrid] p-001 (day 1, Mon 2026-08-31 03:02) noise: dismiss 'inventory p99 rose 120ms→~1100ms exactly at 03:00 ' -> correct, 5 queries, 14,548 tokens in
+[hybrid] p-002 (day 2, Tue 2026-09-01 03:02) noise: dismiss 'Known nightly inventory-batch reindex noise (MEMOR' -> correct, 4 queries, 15,182 tokens in
+[hybrid] p-003 (day 3, Wed 2026-09-02 03:02) noise: dismiss 'Known nightly inventory-batch reindex: inventory p' -> correct, 4 queries, 15,951 tokens in
+[hybrid] p-004 (day 4, Thu 2026-09-03 03:02) noise: dismiss 'Known noise N1: inventory-batch reindex. Logs show' -> correct, 5 queries, 35,573 tokens in
+[hybrid] p-005 (day 4, Thu 2026-09-03 11:36) incident: resolve 'cfg-004' -> correct, 7 queries, 33,549 tokens in
+[hybrid] p-006 (day 5, Fri 2026-09-04 03:02) noise: dismiss 'Known nightly inventory-batch reindex (N1): alert ' -> correct, 6 queries, 53,931 tokens in
+[hybrid] p-007 (day 6, Sat 2026-09-05 03:02) noise: dismiss 'Known nightly inventory-batch reindex (N1): alert ' -> correct, 2 queries, 14,726 tokens in
+[hybrid] p-008 (day 7, Sun 2026-09-06 03:02) noise: dismiss 'Known benign nightly inventory-batch reindex (MEMO' -> correct, 2 queries, 10,544 tokens in
+[hybrid] p-009 (day 8, Mon 2026-09-07 03:02) noise: dismiss 'Known nightly inventory-batch reindex (MEMORY N1):' -> correct, 2 queries, 10,610 tokens in
+[hybrid] p-010 (day 9, Tue 2026-09-08 03:02) noise: dismiss 'Known benign nightly inventory-batch reindex (MEMO' -> correct, 2 queries, 10,922 tokens in
+[hybrid] p-011 (day 10, Wed 2026-09-09 03:02) noise: dismiss 'Known noise N1: nightly inventory-batch reindex. A' -> correct, 2 queries, 10,959 tokens in
+[hybrid] p-012 (day 11, Thu 2026-09-10 03:02) noise: dismiss 'Known benign nightly inventory-batch reindex: aler' -> correct, 2 queries, 11,120 tokens in
+[hybrid] p-013 (day 12, Fri 2026-09-11 03:02) noise: dismiss 'Known benign nightly inventory-batch reindex (N1):' -> correct, 2 queries, 10,943 tokens in
+[hybrid] p-014 (day 12, Fri 2026-09-11 10:54) incident: resolve 'cfg-012' -> correct, 5 queries, 50,513 tokens in
+
+page   truth                                    hybrid
+p-001  noise                    correct 5q 14.5k $0.07
+p-002  noise                    correct 4q 15.2k $0.07
+p-003  noise                    correct 4q 16.0k $0.07
+p-004  noise                    correct 5q 35.6k $0.13
+p-005  incident                 correct 7q 33.5k $0.13
+p-006  noise                    correct 6q 53.9k $0.14
+p-007  noise                    correct 2q 14.7k $0.04
+p-008  noise                    correct 2q 10.5k $0.04
+p-009  noise                    correct 2q 10.6k $0.04
+p-010  noise                    correct 2q 10.9k $0.06
+p-011  noise                    correct 2q 11.0k $0.04
+p-012  noise                    correct 2q 11.1k $0.05
+p-013  noise                    correct 2q 10.9k $0.04
+p-014  incident                 correct 5q 50.5k $0.16
+
+hybrid: 14/14 correct, 50 queries, 86 model calls, 393,716 input tokens, largest context 10,826, $1.66
+exit 0

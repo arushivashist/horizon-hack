@@ -1,0 +1,48 @@
+[baseline] p-001 (day 1, Mon 2026-08-31 03:02) noise: dismiss 'Not a real incident: a scheduled inventory reindex' -> correct, 7 queries, 12,185 tokens in
+[baseline] p-002 (day 2, Tue 2026-09-01 03:02) noise: dismiss 'Not a real incident — identical recurrence of p-00' -> correct, 6 queries, 21,412 tokens in
+[baseline] p-003 (day 3, Wed 2026-09-02 03:02) noise: dismiss 'Not a real incident — third identical recurrence (' -> correct, 5 queries, 33,848 tokens in
+[notebook] p-001 (day 1, Mon 2026-08-31 03:02) noise: dismiss 'Not a real incident. inventory p99 rose from ~120m' -> correct, 12 queries, 19,832 tokens in
+[baseline] p-004 (day 4, Thu 2026-09-03 03:02) noise: dismiss 'The page itself is NOT a real incident — 4th ident' -> correct, 6 queries, 48,219 tokens in
+[notebook] p-002 (day 2, Tue 2026-09-01 03:02) noise: dismiss 'Known nightly inventory reindex noise (matches mem' -> correct, 3 queries, 8,796 tokens in
+[baseline] p-005 (day 4, Thu 2026-09-03 11:36) incident: resolve 'cfg-004' -> correct, 6 queries, 66,171 tokens in
+[baseline] p-006 (day 5, Fri 2026-09-04 03:02) noise: dismiss 'Not a real incident — 5th identical recurrence of ' -> correct, 5 queries, 83,660 tokens in
+[baseline] p-007 (day 6, Sat 2026-09-05 03:02) noise: dismiss 'Not a real incident — 6th identical recurrence of ' -> correct, 4 queries, 63,141 tokens in
+[notebook] p-003 (day 3, Wed 2026-09-02 03:02) noise: dismiss 'Known nightly inventory reindex noise (3rd consecu' -> correct, 2 queries, 8,599 tokens in
+[baseline] p-008 (day 7, Sun 2026-09-06 03:02) noise: dismiss 'Not a real problem — 7th consecutive night of the ' -> correct, 6 queries, 55,545 tokens in
+[notebook] p-004 (day 4, Thu 2026-09-03 03:02) noise: dismiss 'Known nightly inventory reindex noise (4th occurre' -> correct, 2 queries, 11,550 tokens in
+[baseline] p-009 (day 8, Mon 2026-09-07 03:02) noise: dismiss 'Not a real problem — 8th consecutive night of the ' -> correct, 5 queries, 40,108 tokens in
+[baseline] p-010 (day 9, Tue 2026-09-08 03:02) noise: dismiss 'Not a real problem - 9th consecutive night of the ' -> correct, 5 queries, 59,009 tokens in
+[notebook] p-005 (day 4, Thu 2026-09-03 11:36) incident: resolve 'cfg-004' -> correct, 4 queries, 25,958 tokens in
+[baseline] p-011 (day 10, Wed 2026-09-09 03:02) noise: dismiss 'Not a real problem - 10th consecutive night of the' -> correct, 6 queries, 81,858 tokens in
+[baseline] p-012 (day 11, Thu 2026-09-10 03:02) noise: dismiss 'Not a real problem - 11th consecutive night of the' -> correct, 4 queries, 67,356 tokens in
+[notebook] p-006 (day 5, Fri 2026-09-04 03:02) noise: dismiss 'Known nightly inventory reindex noise (5th occurre' -> correct, 2 queries, 8,989 tokens in
+[baseline] p-013 (day 12, Fri 2026-09-11 03:02) noise: dismiss 'Pattern A nightly false page, 13th consecutive nig' -> correct, 5 queries, 62,249 tokens in
+[baseline] p-014 (day 12, Fri 2026-09-11 10:54) incident: resolve 'cfg-012' -> correct, 4 queries, 40,942 tokens in
+[notebook] p-007 (day 6, Sat 2026-09-05 03:02) noise: dismiss 'Known noise: nightly inventory reindex, 6th occurr' -> correct, 2 queries, 11,665 tokens in
+[notebook] p-008 (day 7, Sun 2026-09-06 03:02) noise: dismiss 'Known noise: nightly inventory reindex (7th occurr' -> correct, 2 queries, 8,933 tokens in
+[notebook] p-009 (day 8, Mon 2026-09-07 03:02) noise: dismiss 'Known nightly inventory reindex noise (8th occurre' -> correct, 2 queries, 9,123 tokens in
+[notebook] p-010 (day 9, Tue 2026-09-08 03:02) noise: dismiss 'Known nightly inventory reindex noise (9th occurre' -> correct, 2 queries, 9,073 tokens in
+[notebook] p-011 (day 10, Wed 2026-09-09 03:02) noise: dismiss 'Known nightly inventory reindex noise (10th confir' -> correct, 2 queries, 8,961 tokens in
+[notebook] p-012 (day 11, Thu 2026-09-10 03:02) noise: dismiss 'Known nightly inventory reindex noise (11th confir' -> correct, 2 queries, 8,878 tokens in
+[notebook] p-013 (day 12, Fri 2026-09-11 03:02) noise: dismiss 'Known nightly inventory reindex noise (12th confir' -> correct, 2 queries, 8,982 tokens in
+[notebook] p-014 (day 12, Fri 2026-09-11 10:54) incident: resolve 'cfg-012' -> correct, 15 queries, 45,288 tokens in
+
+page   truth                                  baseline                              notebook
+p-001  noise                    correct 7q 12.2k $0.07               correct 12q 19.8k $0.20
+p-002  noise                    correct 6q 21.4k $0.08                 correct 3q 8.8k $0.09
+p-003  noise                    correct 5q 33.8k $0.07                 correct 2q 8.6k $0.08
+p-004  noise                    correct 6q 48.2k $0.12                correct 2q 11.6k $0.12
+p-005  incident                 correct 6q 66.2k $0.13                correct 4q 26.0k $0.26
+p-006  noise                    correct 5q 83.7k $0.11                 correct 2q 9.0k $0.08
+p-007  noise                    correct 4q 63.1k $0.09                correct 2q 11.7k $0.12
+p-008  noise                    correct 6q 55.5k $0.24                 correct 2q 8.9k $0.08
+p-009  noise                    correct 5q 40.1k $0.12                 correct 2q 9.1k $0.08
+p-010  noise                    correct 5q 59.0k $0.17                 correct 2q 9.1k $0.08
+p-011  noise                    correct 6q 81.9k $0.18                 correct 2q 9.0k $0.08
+p-012  noise                    correct 4q 67.4k $0.13                 correct 2q 8.9k $0.08
+p-013  noise                    correct 5q 62.2k $0.28                 correct 2q 9.0k $0.08
+p-014  incident                 correct 4q 40.9k $0.10               correct 15q 45.3k $0.49
+
+baseline: 14/14 correct, 74 queries, 43 model calls, 735,703 input tokens, largest context 37,274, $1.89, summaries 2
+notebook: 14/14 correct, 54 queries, 94 model calls, 272,094 input tokens, largest context 5,749, $3.28
+exit 0
