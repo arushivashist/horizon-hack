@@ -1,0 +1,14 @@
+DESCRIPTION >
+  Historical incident memory visible to DejaVu.
+
+SCHEMA >
+  event_id String
+  event_type String
+  service String
+  timestamp String
+  visible_at String
+  scenario String
+  payload String
+
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "scenario, service, visible_at"
