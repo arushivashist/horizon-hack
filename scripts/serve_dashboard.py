@@ -20,6 +20,21 @@ FROM dejavu_memories
 ORDER BY parseDateTimeBestEffortOrNull(simulated_at), parseDateTimeBestEffortOrNull(created_at)
 """
 
+
+EXPERIMENT_ID = "northstar-30-day-safe-traced"
+EXPERIMENT_SERIES_SQL = f"""
+SELECT experiment_id, series, point_index, day, value
+FROM dejavu_experiment_series
+WHERE experiment_id = '{EXPERIMENT_ID}'
+ORDER BY series, point_index
+"""
+EXPERIMENT_SUMMARY_SQL = f"""
+SELECT experiment_id, pages, correct, queries, calls, max_context, cost, memory_points, memory_context_points
+FROM dejavu_experiments
+WHERE experiment_id = '{EXPERIMENT_ID}'
+LIMIT 1
+"""
+
 MUTATIONS_SQL = """
 SELECT mutation_id, operation, target_id, reason, evidence_ids, scenario, simulated_at, created_at
 FROM dejavu_memory_events
@@ -52,6 +67,23 @@ class Handler(BaseHTTPRequestHandler):
             body = (ROOT / "docs/experiment-dashboard.html").read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
+        elif self.path in ("/rawtree", "/rawtree.html"):
+            body = (ROOT / "docs/experiment-dashboard-rawtree.html").read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+        elif self.path == "/api/experiment":
+            try:
+                client = TinybirdClient()
+                series = client.rows(EXPERIMENT_SERIES_SQL)
+                summary = client.rows(EXPERIMENT_SUMMARY_SQL)
+                body = json.dumps({"source":"RawTree","experiment_id":EXPERIMENT_ID,
+                                   "series":series,"summary":summary[0] if summary else {}}).encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+            except Exception as e:
+                body = json.dumps({"error":str(e)}).encode()
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
         elif self.path == "/api/dashboard":
             try:
                 client = TinybirdClient()
