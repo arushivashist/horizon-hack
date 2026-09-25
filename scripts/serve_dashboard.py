@@ -9,7 +9,7 @@ SQL="""SELECT run_id, simulated_at, scenario, total_memories, context_tokens, co
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path in ("/","/index.html"):
-            body=(ROOT/"dashboard/context-window.svg.html").read_bytes(); self.send_response(200); self.send_header("Content-Type","text/html; charset=utf-8")
+            body=(ROOT/"docs/experiment-dashboard.html").read_bytes(); self.send_response(200); self.send_header("Content-Type","text/html; charset=utf-8")
         elif self.path=="/api/dashboard":
             try:
                 body=json.dumps(dashboard_rows(TinybirdClient().rows(SQL))).encode(); self.send_response(200); self.send_header("Content-Type","application/json")
