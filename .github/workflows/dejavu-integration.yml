@@ -1,0 +1,31 @@
+name: DejaVu Integration
+on:
+  push:
+    branches: [main]
+    paths: ['src/dejavu/**','scripts/run_integration.py','.github/workflows/dejavu-integration.yml']
+  workflow_dispatch:
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python scripts/run_integration.py
+  sponsor-connectivity:
+    runs-on: ubuntu-latest
+    env:
+      TINYBIRD_TOKEN: ${{ secrets.TINYBIRD_TOKEN }}
+      NIMBLE_API_KEY: ${{ secrets.NIMBLE_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Check configured sponsor credentials
+        run: |
+          python - <<'PY'
+          import os
+          for key in ("TINYBIRD_TOKEN","NIMBLE_API_KEY","OPENROUTER_API_KEY"):
+              print(f"{key}: {'configured' if os.getenv(key) else 'MISSING'}")
+          PY
