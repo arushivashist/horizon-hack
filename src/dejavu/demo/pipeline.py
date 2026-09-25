@@ -18,11 +18,9 @@ def incident_memory_row(row):
 def run_pipeline(now,situation,live_events=None,use_sponsors=True,scenario="demo"):
     tb=TinybirdClient(); safe_now=now.replace("'","")
     # Deduplicate CI snapshot ingestion and never expose records not visible at simulated time.
-    incident_rows=tb.rows(f"""SELECT event_id, any(event_type) event_type, any(service) service,
-      any(timestamp) timestamp, any(visible_at) visible_at, any(payload) payload
-      FROM dejavu_incidents
-      WHERE parseDateTimeBestEffortOrNull(visible_at) <= parseDateTimeBestEffort('{safe_now}')
-      GROUP BY event_id ORDER BY parseDateTimeBestEffortOrNull(any(visible_at))""")
+    raw_rows=tb.rows(f"SELECT event_id,event_type,service,timestamp,visible_at,payload FROM dejavu_incidents WHERE parseDateTimeBestEffortOrNull(visible_at) <= parseDateTimeBestEffort('{safe_now}') ORDER BY parseDateTimeBestEffortOrNull(visible_at)")
+    # CI may ingest the same snapshot repeatedly; keep one copy of each stable event_id.
+    incident_rows=list({row["event_id"]:row for row in raw_rows}.values())
     memories=[incident_memory_row(x) for x in incident_rows]
     engine=MemoryUpdateEngine(memories)
     budget=int(os.getenv("MAX_MEMORY_CONTEXT_TOKENS","1200"))
