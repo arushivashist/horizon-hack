@@ -14,7 +14,7 @@ class TinybirdClient:
         if not events:return {"inserted":0}
         return self._request(f"/v1/tables/{table}",events,"POST")
     def query(self,sql):
-        return self._request("/v1/query",{"sql":sql,"format":"JSON"},"POST")
+        return self._request("/v1/query",{"query":sql,"format":"JSON"},"POST")
     def rows(self,sql):
         result=self.query(sql)
         return result.get("data",result.get("rows",[]))
