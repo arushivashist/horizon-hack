@@ -185,7 +185,8 @@ def main():
     print(f"{args.scenario}: {len(pages)} pages ({sum(w['truth']['type'] == 'incident' for w in pages)} incidents), "
           f"{len(wakeups) - len(pages)} handoffs", flush=True)
 
-    client = Fake() if args.fake else anthropic.Anthropic(base_url="https://api.anthropic.com")
+    # A dropped connection otherwise waits out the SDK default of 10 minutes per attempt.
+    client = Fake() if args.fake else anthropic.Anthropic(base_url="https://api.anthropic.com", timeout=180.0, max_retries=4)
     world = NorthstarWorld(prepare(src, HERE / "northstar_data" / args.scenario))
     name = f"northstar_{args.scenario}_{args.agent}"
     if args.agent == "safe":

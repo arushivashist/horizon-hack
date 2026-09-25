@@ -1,530 +1,110 @@
-# DéjàVu — Long-Horizon Agent Memory
-
-> **Your production system has seen this before.**
-
-DéjàVu is a long-horizon agent memory system. It learns from internal production behavior and external API/SDK knowledge changes, preserves historical evidence, keeps current knowledge fresh, and retrieves only a bounded amount of memory for each agent decision.
-
-The core question is not just *“Have we seen this before?”* It is **“Have we seen this before — and is what we learned last time still true?”**
-
-## 1. Complete top-level flow
-
-This is the **one diagram to understand DéjàVu**. There are two inputs into the same long-horizon memory system:
-
-- **Internal:** production logs, metrics, events, errors.
-- **External:** SDK/API/docs/changelog changes.
-
-The key idea is simple: **Institutional Memory can keep growing, while the Context Builder gives the LLM a small, fixed working context.**
-
-```mermaid
-flowchart LR
-    INT["INTERNAL<br/>Logs · Metrics · Errors"] --> TB["Tinybird<br/>live windows"]
-    TB --> OBS["Observation Engine<br/>signals + trends"]
-    OBS --> LIQ["Liquid AI<br/>classify"]
-    OBS --> TM["Trajectory Matcher<br/>seen this pattern?"]
-
-    EXT["EXTERNAL<br/>SDK · API · Docs"] --> NIM["Nimble<br/>search + extract"]
-
-    LIQ --> MUE["Memory Update Engine<br/>ADD · REVALIDATE · SUPERSEDE<br/>INVALIDATE · CONSOLIDATE · ARCHIVE"]
-    TM --> MUE
-    NIM --> MUE
-
-    MUE <--> MEM["INSTITUTIONAL MEMORY<br/>Evidence · Incidents · Trajectories<br/>Patterns · Knowledge · Recommendations"]
-
-    MEM --> CB["CONTEXT BUILDER<br/>Retrieve → Freshness → Rank → Budget"]
-    TM --> CB
-    CB --> WC["BOUNDED WORKING CONTEXT<br/>small fixed set"]
-    WC --> DEC["Agent Decision"]
-    DEC --> ACT["Action / Alert"]
-    ACT --> OUT["Outcome Observer"]
-    OUT --> MUE
-
-    DEC -. "unknown / stale?" .-> NIM
-
-    click TB "#tinybird"
-    click OBS "#observation-engine"
-    click LIQ "#liquid-ai"
-    click TM "#trajectory-matcher"
-    click NIM "#nimble"
-    click MUE "#memory-update-engine"
-    click MEM "#institutional-memory"
-    click CB "#context-builder"
-    click DEC "#agent-decision"
-    click ACT "#action--alert"
-    click OUT "#outcome-observer"
-```
-
-### Read it in one sentence
-
-```text
-Internal events OR external changes
-        ↓
-understand what changed
-        ↓
-update / retrieve Institutional Memory
-        ↓
-Context Builder selects only what matters NOW
-        ↓
-fixed-size Working Context
-        ↓
-Agent decides
-        ↓
-outcome becomes new memory
-```
-
-## 2. Flat context: memory grows, context does not
-
-This is a core long-horizon property, not an optimization detail.
-
-```mermaid
-flowchart LR
-    LIFE["Agent lifetime<br/>Day 1 → Day 365"] --> MEMG["Institutional Memory<br/>100 → 1K → 10K+ items<br/>GROWS"]
-    MEMG --> CB2["Context Builder<br/>retrieve + validate + rank"]
-    CB2 --> BUD["Context Budget<br/>max N selected items"]
-    BUD --> FLAT["Working Context<br/>≤ N items<br/>STAYS FLAT"]
-    FLAT --> LLM["Agent / LLM"]
-```
-
-```text
-Institutional Memory
-10K |                              /
-    |                          /
- 5K |                     /
-    |                /
- 1K |          /
-    |     /
-  0 +--------------------------------→ time
-       Day 1      Day 30      Day 365
-
-Working Context
- N  |--------------------------------  ← fixed budget
-    |
-  0 +--------------------------------→ time
-```
-
-**DéjàVu's memory grows with the lifetime of the agent. Its context window doesn't.**
-
-
-## Institutional Memory
-
-**Purpose:** preserve the agent's experience across time while keeping current knowledge trustworthy.
-
-Institutional Memory stores six simple things:
-
-```text
-Evidence → Incidents → Trajectories → Patterns
-    │                                   │
-    └────────→ Knowledge ─────────→ Recommendations
-```
-
-Raw evidence and historical incidents are preserved. Derived knowledge can change status or version as the world changes.
-
-### How memory is managed
-
-```mermaid
-flowchart TD
-    NEW["New evidence"] --> FIND{"Related memory?"}
-    FIND -- "No" --> ADD["ADD new memory"]
-    FIND -- "Yes" --> SAME{"Still agrees?"}
-    SAME -- "Yes" --> REV["REVALIDATE"]
-    SAME -- "No" --> AUTH{"New evidence authoritative?"}
-    AUTH -- "Yes" --> SUP["SUPERSEDE old<br/>ADD new version"]
-    AUTH -- "Unclear" --> CON["Mark CONFLICTED<br/>investigate"]
-    ADD --> STORE["Institutional Memory"]
-    REV --> STORE
-    SUP --> STORE
-    CON --> STORE
-    STORE --> RET["RETRIEVE when needed"]
-```
-
-### Internal path — logs / events / errors
-
-This is how production experience becomes memory.
-
-```mermaid
-flowchart LR
-    LOG["Logs · Metrics · Errors"] --> TB3["Tinybird"]
-    TB3 --> OBS3["Observation Window"]
-    OBS3 --> TM3["Trajectory Matcher"]
-    TM3 --> KNOWN{"Seen before?"}
-    KNOWN -- "Yes" --> RET3["Retrieve Incident / Pattern"]
-    KNOWN -- "No" --> INV3["Investigate"]
-    RET3 --> OUT3["Action + Outcome"]
-    INV3 --> OUT3
-    OUT3 --> ADD3["ADD / refine<br/>Incident + Trajectory + Pattern"]
-    ADD3 --> MEM3["Institutional Memory"]
-```
-
-Example: `pool ↑ → queue ↑ → p99 ↑ → timeouts ↑ → outage`. The pre-failure sequence is stored so the next occurrence can be recognized earlier.
-
-### External path — SDK / API / docs change
-
-This is how the agent prevents old knowledge from becoming bad advice.
-
-```mermaid
-flowchart LR
-    CHANGE["SDK / API / Docs change"] --> NIM3["Nimble<br/>find current source"]
-    NIM3 --> EV3["New immutable Evidence"]
-    EV3 --> CHECK3["Compare with stored Knowledge"]
-    CHECK3 --> OLD3["Old version<br/>SUPERSEDED"]
-    CHECK3 --> NEW3["New version<br/>ACTIVE"]
-    OLD3 --> IMP3["Find dependent Patterns / Recommendations"]
-    NEW3 --> IMP3
-    IMP3 --> VAL3["Mark affected items<br/>NEEDS_VALIDATION"]
-    VAL3 --> MEM4["Institutional Memory updated"]
-```
-
-**Important:** the old knowledge is not deleted. We preserve **what was true then** separately from **what is safe to recommend now**.
-
-### ADD vs UPDATE vs RETRIEVE
-
-| Operation | Meaning |
-|---|---|
-| **ADD** | New incident, evidence, trajectory, pattern, or knowledge |
-| **REVALIDATE** | Existing knowledge is checked and still true |
-| **SUPERSEDE** | New authoritative version replaces current use of old knowledge |
-| **INVALIDATE** | A belief is shown to be wrong; history is preserved |
-| **CONSOLIDATE** | Merge duplicate derived memories without deleting source evidence |
-| **ARCHIVE** | Remove old items from normal retrieval, not from history |
-| **RETRIEVE** | Context Builder selects relevant, valid memories for the current decision |
-
-[↑ Back to top-level flow](#1-complete-top-level-flow)
-
-
-## Context Builder
-
-**Purpose:** convert a large, growing Institutional Memory into a **small, trustworthy, bounded working set** for the current decision.
-
-```mermaid
-flowchart TD
-    Q["Current observation / question"] --> RET["Retrieve candidates"]
-    MEM["Institutional Memory<br/>can be very large"] --> RET
-    RET --> REL["Relevance filter<br/>Does it matter now?"]
-    REL --> STATUS["Freshness filter<br/>Active? stale? superseded?"]
-    STATUS --> DEP["Dependency check<br/>API/SDK still valid?"]
-    DEP --> RANK["Rank by relevance + confidence + provenance"]
-    RANK --> BUD["Context Budget<br/>take at most N items"]
-    BUD --> CTX["BOUNDED WORKING CONTEXT<br/>≤ N items"]
-    CTX --> DEC["Agent Decision"]
-
-    STATUS -. "stale/conflicted" .-> NIM["Nimble revalidation"]
-    NIM --> STATUS
-```
-
-The Context Builder does **not** summarize the entire lifetime into the prompt. Old evidence stays in Institutional Memory for history/provenance, but only relevant and currently valid items consume working context.
-
-Example:
-
-```text
-12,481 memory objects
-        ↓ retrieve
-       37 candidates
-        ↓ relevance
-       11
-        ↓ freshness/dependency validation
-        6
-        ↓ context budget (max 8)
-   WORKING CONTEXT = 6 / 8
-        ↓
-   Agent Decision
-```
-
-[↑ Back to top-level flow](#1-complete-top-level-flow)
-
-
-## 4-hour implementation architecture
-
-The demo implementation keeps **lifetime history**, **current memory state**, and **LLM working context** separate. This prevents both database reads and LLM context from growing with the full history.
-
-```mermaid
-flowchart TD
-    PROD["Production telemetry"] --> BUF["Non-blocking queue / buffer"]
-    BUF --> RAW["Tinybird raw telemetry"]
-    RAW --> WIN["Rolling feature windows"]
-    WIN --> GATE{"Meaningful slope change<br/>or 15s cadence?"}
-    GATE -- Yes --> LIQ4["Liquid AI<br/>batch last N windows"]
-    GATE -- No --> WIN
-    WIN --> TM4["Trajectory Matcher"]
-    LIQ4 --> TM4
-    TM4 --> MUE4["Memory Update Engine"]
-
-    MUE4 --> LOG4["memory_events<br/>immutable lifetime log"]
-    LOG4 --> ACTIVE4["active_memory_state<br/>incrementally maintained current state"]
-
-    ACTIVE4 --> CB4["Context Builder<br/>retrieve → filter → rank → pack"]
-    CB4 --> BUD4["Fixed memory token budget"]
-    BUD4 --> AG4["Agent / LLM"]
-    AG4 --> OUT4["Action + Outcome"]
-    OUT4 --> MUE4
-
-    MUE4 -. "external knowledge stale?" .-> CACHE4{"Nimble cache<br/>(dependency, subject)<br/>TTL valid?"}
-    CACHE4 -- Yes --> ACTIVE4
-    CACHE4 -- No --> NIM4["Nimble Search / Extract"]
-    NIM4 --> MUE4
-```
-
-### 1. Keep current memory state incremental
-
-Do **not** rebuild current state by grouping the entire `memory_events` history on every request.
-
-```text
-memory_events
-immutable append-only history
-10 → 1K → 100K → millions
-          │
-          │ incrementally maintain on write
-          ▼
-active_memory_state
-current version/status of each memory
-          │
-          │ reads
-          ▼
-Context Builder
-```
-
-The implementation should use the Tinybird-supported incremental/materialized pattern available in the environment for `active_memory_state`. The architectural requirement is: **update current state when memory events arrive; never replay all historical mutations during normal retrieval.**
-
-This gives us two separate scaling guarantees:
-
-```text
-Lifetime history grows
-       ↓
-Incremental current state
-(no full-history replay on read)
-       ↓
-Candidate retrieval
-       ↓
-Fixed memory token budget
-(no growing LLM memory context)
-```
-
-### 2. Batch and gate Liquid AI classification
-
-Do not call Liquid for every 2–3 second telemetry tick.
-
-```text
-Tinybird windows
-      ↓
-Has a meaningful feature/slope changed?
-      │
-   NO ├────→ keep collecting
-      │
-  YES ▼
-Batch last N windows
-      ↓
-Liquid classification
-```
-
-For the demo, classify on either a meaningful feature/slope change or a fixed cadence such as ~15 seconds. This keeps classification responsive while avoiding repeated inference over nearly identical windows.
-
-### 3. Cache Nimble revalidation
-
-Nimble is invoked when external knowledge is missing or stale, not every time a similar incident occurs.
-
-Cache key:
-
-```text
-(dependency, subject)
-```
-
-Decision:
-
-```text
-Need external knowledge
-        ↓
-Find current Knowledge object
-        ↓
-lastValidatedAt + TTL > now?
-       /                 \
-     YES                  NO
-      │                    │
-use stored             Nimble Search
-knowledge              + Extract
-                           │
-                           ▼
-                     new Evidence
-                           │
-                           ▼
-                  Memory Update Engine
-```
-
-The existing `lastValidatedAt` field therefore serves both memory freshness and external-lookup caching.
-
-### 4. Trajectory similarity: simple now, ANN later
-
-For the hackathon, candidate sets are small enough that deterministic linear-scan similarity is simpler to implement and debug.
-
-```text
-Current trajectory
-      ↓
-candidate historical trajectories
-      ↓
-normalize features
-      ↓
-cosine / weighted temporal similarity
-      ↓
-rank matches
-```
-
-When the case library grows beyond hundreds/thousands of trajectories, replace broad linear scanning with an approximate-nearest-neighbor/vector index for candidate generation. Keep exact/weighted temporal validation after candidate retrieval.
-
-**Do not spend hackathon build time implementing ANN.**
-
-### 5. Decouple ingestion from analysis
-
-Telemetry ingestion must not wait for Liquid, Nimble, or an LLM.
-
-```mermaid
-flowchart LR
-    APP4["App / simulator"] --> Q4["Queue / buffer"]
-    Q4 --> TB4["Tinybird ingest"]
-    Q4 --> WORK4["Analysis worker"]
-    WORK4 --> L4["Liquid / Matcher / Agent"]
-    L4 --> MEM4["Memory updates"]
-```
-
-For the demo, this can be a simple in-process asynchronous queue. The important invariant is:
-
-> **Slow inference must never block telemetry ingestion.**
-
-### 6. Optional: precompute hot briefings
-
-Only if core functionality is complete, precompute compact briefings for the top 2–3 likely failure classes during idle time.
-
-```text
-Idle time
-   ↓
-top failure classes
-   ↓
-retrieve + validate likely memory
-   ↓
-cached briefing
-   ↓
-risk threshold crossed
-   ↓
-fast escalation
-```
-
-This is a latency optimization, not required for correctness.
-
-### Build priority
-
-| Priority | Build now | Why |
-|---|---|---|
-| P0 | Incremental `active_memory_state` | Read path does not replay lifetime history |
-| P0 | Batched/gated Liquid calls | Avoid wasteful per-tick inference |
-| P1 | Nimble TTL cache | Avoid repeated external research |
-| P1 | Non-blocking ingestion buffer | Slow inference cannot block telemetry |
-| P2 | Precomputed briefings | Demo latency optimization |
-| Later | ANN trajectory index | Scale candidate retrieval beyond small case library |
-
-### What “stays flat” actually means
-
-There are **two different growth problems**, and DéjàVu bounds both:
-
-```text
-DATABASE READ PATH
-
-memory_events       100 → 10K → 1M+
-                         │
-                         ▼
-              active_memory_state
-              incrementally maintained
-                         │
-                         ▼
-                  candidate query
-
-
-LLM MEMORY CONTEXT
-
-Institutional Memory 100 → 10K → 1M+
-                         │
-                         ▼
-                   Context Builder
-                         │
-                         ▼
-             MAX_MEMORY_CONTEXT_TOKENS
-                         │
-                         ▼
-               bounded memory context
-              ───────────────────────
-```
-
-The technically precise claim is:
-
-> **DéjàVu maintains incrementally queryable current memory and a fixed memory-context token budget even as lifetime institutional history grows.**
-
-
-
-# Sponsor responsibilities
-
-| Sponsor / Component | Responsibility |
-|---|---|
-| Tinybird | Live telemetry ingestion, rolling windows, real-time feature computation |
-| Liquid AI | Lightweight semantic failure/change classification |
-| Nimble Search | External discovery for novel failures and dependency/API changes |
-| Nimble Extract | Turn promising pages/docs into structured evidence |
-| Nimble Web Search Agent | Autonomous deeper investigation when evidence/hypotheses remain ambiguous |
-
-**Tinybird tells us what the system is doing. Our trajectory engine tells us whether we have seen this shape before. Liquid tells us what kind of failure that behavior represents. Nimble finds current external truth when memory is missing or stale. The Memory Update Engine decides what the agent should remember now.**
-
-
-## Repository ownership
-
-Implementation is split so teammates can work in parallel:
-
-| Piece | Code |
-|---|---|
-| Tinybird + ingestion | `tinybird/`, `src/dejavu/ingestion/`, `src/dejavu/clients/tinybird.py` |
-| Liquid + trajectory analysis | `src/dejavu/analysis/`, `src/dejavu/clients/liquid.py` |
-| Institutional Memory | `src/dejavu/memory/` |
-| Nimble freshness/research | `src/dejavu/external/`, `src/dejavu/clients/nimble.py` |
-| Context Builder + agent | `src/dejavu/context/`, `src/dejavu/agent/` |
-| Demo scenarios | `src/dejavu/demo/` |
-
-The integration contract is:
-
-```text
-telemetry / external evidence
-        ↓
-Observation + classification + trajectory matching
-        ↓
-Memory Update Engine
-        ↓
-Tinybird Institutional Memory
-        ↓
-Context Builder
-        ↓
-fixed memory-token budget
-        ↓
-Agent → Action → Outcome
-        ↓
-Memory Update Engine
-```
-
-See [docs/interactive-memory-architecture.md](docs/interactive-memory-architecture.md) for the full object model, component drill-downs, API-change scenario, trajectory scenario, and interactive UI design. See [docs/OWNERSHIP.md](docs/OWNERSHIP.md) for implementation ownership.
-
-# Core principle
-
-```text
-DAY 1                                              DAY 365
-  │                                                   │
-  ▼                                                   ▼
-Learns API behavior                            API changed 4×
-Learns Incident #1                             200 incidents
-Learns mitigation                              old fixes obsolete
-Reads docs                                     conflicting evidence
-  │                                                   │
-  └────────────────── LONG HORIZON ───────────────────┘
-                         ↓
-              WHAT SHOULD THE AGENT
-                 REMEMBER NOW?
-
-              What is still valid?
-              What became stale?
-              What was superseded?
-              What should be merged?
-              What must be preserved?
-              What needs revalidation?
-```
-
-**DéjàVu doesn't just ask “Have we seen this before?” It asks: “Have we seen this before — and is what we learned last time still true?”**
+# Horizon Hack build plan
+
+Sep 25, 2026
+
+By 4:30, ship a 30-day on-call simulation that measures three agent memory designs, built on Tinybird with a Liquid first responder. The demo answers one question in 3 minutes: does explicit state beat history?
+
+## Concept
+
+![How the pieces fit: Nimble, Tinybird, Liquid and Claude around the on-call test](docs/architecture.png)
+
+The full visual explainer, covering the test, the three memory designs and the prototype's results, is at [docs/state-vs-history.png](docs/state-vs-history.png). Open [docs/state-vs-history.html](docs/state-vs-history.html) in a browser for the page itself.
+
+**Results:** download and open [docs/experiment-dashboard.html](docs/experiment-dashboard.html) for the interactive 30-day comparison of the naive and safe-memory agents. Code and raw results are in [prototype/](prototype/).
+
+## Before kickoff (9:30 to 11:00)
+
+Set up accounts and settle the rules now. Write no project code until 11:00.
+
+- [ ] Ask the organizers whether this morning's prototype results can be cited as prior research. Rebuild all code after 11:00 either way.
+- [ ] Get Claude through the event's AWS credits (Bedrock) if they're offered. Otherwise use your own API key.
+- [ ] Create a Tinybird workspace, copy an admin token and install the Tinybird CLI.
+- [ ] Ask the Liquid team which small model and endpoint to use, and get a key.
+- [ ] Get a Nimble API key.
+- [ ] Create an empty repo with a folder for run results.
+- [ ] If teammates join, split four ways: world and Tinybird; agents and runs; Liquid and Nimble; dashboard and pitch.
+
+## Schedule
+
+The runs are the long pole: start them by 1:30, and start the last one no later than 2:45.
+
+| Time | Build | Done when |
+| --- | --- | --- |
+| 11:00–12:00 | World v2: 30 days with every incident type in the next section. Nimble pulls a real provider's outage history (20-minute timebox). | The generator prints about 40 pages with ground truth, and spot checks show each planted cause. |
+| 12:00–12:45 | Tinybird: load the tables, add a query endpoint with a `now` parameter, and add `agent_events` and `memory_edits` data sources. | A query can't see past `now`, and test events land. |
+| 12:45–1:30 | Agents: shared tools, the summarizing baseline and the combined agent, with memory edits written to Tinybird. Smoke test on days 1–5. | Both agents solve day 4. |
+| 1:30 | Start 30-day runs of both agents in the background (40–60 minutes each), then lunch. | Both runs are going. |
+| 2:00–2:45 | Liquid first responder for noise pages and handoff reviews, then start the combined-plus-Liquid run. | The third run is going. |
+| 2:45–3:45 | Dashboard on Tinybird endpoints. Read results as runs finish. | Charts show every finished run. |
+| 3:45–4:15 | Pitch script, plus a backup video of the dashboard walkthrough. | The video is recorded. |
+| 4:15–4:30 | Submit the repo, video and a short write-up. | Submitted before 4:30. |
+
+The notebook agent is optional: its failure modes are already known, and a 30-day run would cost about $10. Finalist demos start at 5:00.
+
+## The 30-day world
+
+Ten incidents over 30 days, each built so memory helps but blind pattern-matching fails. Day 1 is a Monday.
+
+| Day | Incident | What makes it hard |
+| --- | --- | --- |
+| Every night, 3am | Inventory reindex trips `inventory_p99_high` | Noise: 30 pages that should be dismissed fast |
+| 4 (Thu) | Cost bot cuts the payments connection limit at 2am; checkout breaks at the lunch peak | 10-hour delay; a harmless checkout deploy lands 20 minutes before the alert |
+| 8 (Mon) | A search deploy wipes the Redis cache | Looks like any other deploy |
+| 9 (Tue) | Payment provider outage, with timing and wording from a real status page | The cause is outside; a payments deploy an hour earlier is the decoy |
+| 10 (Wed) | The next search deploy wipes the cache again | Same bug at a different time of day |
+| 12 (Fri) | Cost bot cuts the inventory connection limit | First alert has the same name as the nightly noise; an inventory deploy lands just before |
+| 15 (Mon) | Postgres disk fills up; inventory writes fail | One-off: old lessons don't apply |
+| 18 (Thu) | A search deploy fixes the cache bug (no page) | Visible only in that day's handoff note |
+| 19 (Fri) | A feature flag breaks checkout's tax step | One-off with a config cause |
+| 22 (Mon) | Cost bot cuts the payments limit again | Tests whether the day-4 lesson survived 18 days |
+| 24 (Wed) | Search slows right after a search deploy | Trap: the cache is fine; a config change 30 minutes earlier raised results per query from 50 to 500 |
+| 26 (Fri) | Second payment provider outage, from real history | Tests memory of the day-9 outage |
+
+Keep the connection-limit cuts on weekdays, since weekend traffic is too low for them to bite. Every cause gets an event ID, provider outages included, so scoring stays exact.
+
+## Sponsor tools
+
+Tinybird carries the build, Liquid gives a measurable cost win, and Nimble grounds the outside world in real data.
+
+### Tinybird: the world, the memory and the scoreboard
+
+- Load metrics, logs, deploys, config changes, alerts and provider status as data sources.
+- Give every query a `now` parameter that filters to `ts <= now`, so the database itself blocks peeking ahead.
+- Write each memory edit to an append-only `memory_edits` source. One endpoint returns memory as of any time, which powers the replay.
+- Stream every model call, query, token count and memory edit to `agent_events`. Endpoints on it feed the dashboard.
+
+### Liquid: a cheap first responder
+
+- A small Liquid model takes pages that match a known noise entry: two confirming queries, then dismiss. Everything else goes to Claude.
+- It also does the daily handoff reviews. In this morning's 12-day run, those two jobs took 74 of the combined agent's 86 calls and $1.37 of its $1.66.
+- Day 12 is its test, because that incident's first alert has the same name as the noise alert.
+
+### Nimble: the outside world
+
+- At generation time, pull a real payment provider's incident history from its public status page: time of day, duration and wording.
+- Plant two outages from that history. Agents read them in the provider status table.
+- Stretch: a live status-page tool through Nimble for the demo, unscored.
+
+## Demo and pitch
+
+Lead with the question and the charts, not the architecture: judges should see a flat line next to a sawtooth within the first minute.
+
+1. **The question (0:00–0:20):** everyone here is building explicit state instead of history. We measured whether it wins.
+2. **The world (0:20–0:50):** 30 days of on-call at a fake store, with planted causes, decoys and a nightly false alarm. Every page has ground truth, and agents can't see the future.
+3. **Three agents (0:50–1:10):** history plus summaries; a notebook that sees only its last result; and the combined design.
+4. **The charts (1:10–2:10):** context size across the month (flat vs. sawtooth), accuracy and queries per incident, and cost with and without the Liquid first responder.
+5. **Failure stories (2:10–2:40):** memory that never saved its key lesson; an agent re-running its own queries; a shortcut that skipped the check where the baseline spotted an outage 8 hours early.
+6. **What builders should do (2:40–3:00):** keep full history within a task, keep only evidence-backed memory across tasks, and never let a shortcut skip the "what changed?" check.
+
+The dashboard needs three charts and a memory replay slider ("what did the agent believe on day N"). The failure stories above come from this morning's 12-day runs; swap in today's evidence where it differs. Demo finished runs live and keep the backup video ready.
+
+## Risks and fallbacks
+
+Cut scope in this order: the live Nimble tool, the notebook agent, then days 21–30.
+
+- **Runs take too long:** cut the world to 20 days. The combined-plus-Liquid run must start by 2:45.
+- **Tinybird stalls past 12:45:** keep local DuckDB for agent queries, and use Tinybird only for run events and the dashboard.
+- **No Liquid access:** run the open-weight model locally, or show the cost split without it.
+- **The Nimble timebox runs out:** make the provider outages synthetic and move on.
+- **The baseline still wins at 30 days:** make that the headline, and show where explicit state helps (flat context) and where it hurts.
+- **Budget:** plan on $10–15 of Claude for the day, and set `COST_CAP` on every run.

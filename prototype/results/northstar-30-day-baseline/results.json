@@ -1,0 +1,968 @@
+{
+ "agent": "baseline",
+ "totals": {
+  "pages": 39,
+  "correct": 39,
+  "queries": 104,
+  "calls": 99,
+  "max_context": 31784,
+  "cost": 2.4
+ },
+ "pages": [
+  {
+   "page_id": "p-001",
+   "when": "day 1, Tue 2026-09-01 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 rose only from a ~67ms baseline to a 75-84ms peak during the evening traffic ramp (request_count went 1450 -> 2785, ~+85%), and had already fallen back to ~68ms by 22:00. Error rate (~0.006), CPU (~0.40) and memory were flat throughout; logs show only routine CACHE_HIT with 2 QUERY_SLOW warnings spread over 10 hours, and there were no deployments. The only change today was search.log_level info->debug (config-day01-search-service), which did not track the latency curve (latency follows traffic, not the 16:10 change). Warning-level, load-correlated latency with no user impact \u2014 not a real incident.",
+   "result": "correct",
+   "queries": 9
+  },
+  {
+   "page_id": "p-002",
+   "when": "day 2, Wed 2026-09-02 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 drifted from a ~90ms daytime baseline to a ~105ms peak exactly as evening traffic ramped (request_count 730 -> 1440) and was already back to ~90ms by 22:00. Error rate (~0.004), CPU (~0.25) and dependency latency were flat; logs show only STOCK_READ plus 3 QUERY_SLOW warnings over 10 hours, with no errors in any service. The only change was order-service v2.3.1 (tax-rounding), unrelated to inventory read latency and not matching the timing. Warning-level, traffic-correlated latency with no user impact \u2014 not a real incident.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-003",
+   "when": "day 3, Thu 2026-09-03 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service metrics are completely flat around the 15:20 alert: p95 oscillates in its normal 64-77ms band all day (69.98ms at 15:15), request_count steady ~1500, error_rate ~0.006, CPU ~0.40, memory ~0.62 \u2014 no deviation from baseline. No deployments or config changes since Sep 1. This is a noisy/flapping warning threshold, not a real problem.",
+   "result": "correct",
+   "queries": 3
+  },
+  {
+   "page_id": "p-004",
+   "when": "day 3, Thu 2026-09-03 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification-worker p95 rose only from its ~198ms baseline to a ~225ms peak while evening send volume nearly doubled (request_count 440 -> 854), and was back to 200ms by 22:00. Error rate (~0.008), CPU (~0.18) and Courierly dependency latency (250 -> 280ms) stayed in-band; Courierly/all vendor status pages show no change today; no deployments or config changes; logs show only MESSAGE_QUEUED with zero errors. Load-correlated warning threshold, no user impact \u2014 not a real incident.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-005",
+   "when": "day 4, Fri 2026-09-04 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-04",
+    "cause": [
+     "config-day04-reduce"
+    ],
+    "decoy": [
+     "deploy-day04-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "config-day04-reduce",
+   "result": "correct",
+   "queries": 7
+  },
+  {
+   "page_id": "p-006",
+   "when": "day 4, Fri 2026-09-04 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 is flat in its normal 123-138ms band through 22:00 with error_rate ~0.003, CPU ~0.21 and request volume declining (1150 -> 770). The earlier checkout-api pool incident (config-day04-reduce) was resolved at 19:28 and never affected order-service error or latency. No new deploys/config changes since. Warning threshold noise, no user impact.",
+   "result": "correct",
+   "queries": 3
+  },
+  {
+   "page_id": "p-007",
+   "when": "day 5, Sat 2026-09-05 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 never left its normal 61-78ms band all day (66.99ms at 22:00, peak 78.5ms during the evening traffic ramp 1070 \u2192 2036 rps), error_rate flat ~0.006, cpu ~0.40, memory ~0.61 unchanged. Logs show only CACHE_HIT plus a single QUERY_SLOW, no ERROR rows anywhere. No deploys or config changes involved. This is the recurring benign 15:10 PT latency warning tracking evening traffic, not a real problem.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-008",
+   "when": "day 6, Sun 2026-09-06 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 stayed in its normal ~81-97ms band all day (88.6ms at 22:00, peak 96.6ms during the evening traffic ramp 530 \u2192 1036 rps), error_rate flat ~0.004, cpu ~0.25 unchanged. Logs show only STOCK_READ plus 2 QUERY_SLOW warnings, no ERROR rows. No deploy or config change plausibly involved (today's only change was checkout gift_wrap feature flag on checkout-api). Recurring benign 15:10 PT latency warning tracking traffic.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-009",
+   "when": "day 7, Mon 2026-09-07 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification-worker p95 stayed in its normal ~192-222ms band (203ms at 22:00, peak 221.6ms at 19:30 during the evening send ramp 434 \u2192 842), error_rate flat ~0.008, Courierly dependency_latency 250 \u2192 277ms in lockstep with volume and already back to 253ms. No ERROR logs anywhere (only MESSAGE_QUEUED). Recurring benign 15:10 PT latency warning driven by the evening traffic ramp.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-010",
+   "when": "day 8, Tue 2026-09-08 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 stayed in its normal ~114-136ms band (129ms at 22:00, peak 135.7ms) while traffic ramped 590 \u2192 1117 and receded; error_rate flat ~0.003, cpu ~0.22 unchanged. No ERROR logs (only ORDER_SAVED). No changes yesterday or today touching order-service. Recurring benign 15:10 PT latency warning tracking the evening traffic ramp.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-011",
+   "when": "day 9, Wed 2026-09-09 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-09",
+    "cause": [
+     "vendor-payrail-20260909T192000Z"
+    ],
+    "decoy": [
+     "deploy-day09-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "vendor-payrail-20260909T192000Z",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-012",
+   "when": "day 9, Wed 2026-09-09 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 stayed in its normal 63-79ms band (66.7ms at 22:00) while traffic ramped 1455 \u2192 2726 and receded; error_rate ~0.006 and cpu ~0.40 flat, logs only CACHE_HIT + one QUERY_SLOW. Unrelated to today's PayRail incident (UPSTREAM_TIMEOUTs were confined to checkout-api/payment-orchestrator and stopped at 20:05). Recurring benign 15:10 PT latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-013",
+   "when": "day 10, Thu 2026-09-10 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Pure noise: search-service p95 stayed in its normal 62-77ms band all morning (76.9ms at 15:00, within normal jitter), request_count steady ~1450-1570, error_rate ~0.006, cpu ~0.40, memory ~0.61 all flat. Logs show only CACHE_HIT plus one QUERY_SLOW, no ERRORs. No deploys or config changes affecting search-service since v5.6.0 on 09-06, which caused no shift.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-014",
+   "when": "day 10, Thu 2026-09-10 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 rose from ~86ms to a peak of 105ms in lockstep with the evening traffic ramp (781 \u2192 1384 rps) and was already back to 88ms at 22:00; error_rate flat ~0.004, cpu ~0.25 unchanged. Only STOCK_READ logs plus one QUERY_SLOW, no ERRORs. Recurring benign 15:10 PT latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-015",
+   "when": "day 11, Fri 2026-09-11 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification-worker p95 stayed in its normal band, peaking at 227ms during the evening send ramp (481 \u2192 845) and back to 206ms at 22:00; error_rate flat ~0.008 and Courierly dependency_latency only moved 250 \u2192 279ms with volume. No ERROR logs (only MESSAGE_QUEUED). Recurring benign 15:10 PT latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-016",
+   "when": "day 12, Sat 2026-09-12 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 flat in its normal 110-127ms band all day (122ms at 22:00) with only a mild weekend traffic ramp (423 \u2192 811); error_rate ~0.003 and cpu ~0.22 unchanged, no ERROR logs. Yesterday's deploy-day11-order-service (v2.3.4 invoice footnote) produced no latency shift. Recurring benign 15:10 PT latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-017",
+   "when": "day 13, Sun 2026-09-13 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 stayed inside its normal 62-76ms band all day (69.4ms at 22:00) during the usual evening traffic ramp (1072 \u2192 2034 and back down); error_rate ~0.006 and cpu ~0.40 flat; logs only CACHE_HIT + one QUERY_SLOW, no ERRORs. No search-service changes. Recurring benign 15:10 PT latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-018",
+   "when": "day 14, Mon 2026-09-14 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Noise: search-service p95 held its normal 62-77ms band through the morning (71.2ms at 15:00), traffic flat ~1450-1550, error_rate ~0.006 and cpu ~0.40 unchanged, no ERROR logs. Yesterday's only change was a checkout-api footer link deploy, unrelated to search.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-019",
+   "when": "day 14, Mon 2026-09-14 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 rose only from ~89ms to a 103ms peak while traffic ramped 804 \u2192 1405, and is back to 93ms at 22:00; error_rate flat ~0.004, cpu ~0.25 unchanged, no ERROR logs (only STOCK_READ + one QUERY_SLOW). The 09-12 cache_ttl 60\u219230 config produced no step change. Recurring benign 15:10 PT latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-020",
+   "when": "day 15, Tue 2026-09-15 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification-worker p95 peaked at 226ms during the evening send ramp (498 \u2192 837) and is back to 212ms at 22:00, all within the normal ~195-230ms band; error_rate flat ~0.008 and Courierly dependency_latency only 250 \u2192 277ms tracking volume. No ERROR logs. Recurring benign 15:10 PT latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-021",
+   "when": "day 16, Wed 2026-09-16 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 stayed in its normal 115-134ms band (122ms at 22:00) while evening traffic ramped 638 \u2192 1145 and receded; error_rate ~0.003 and cpu ~0.22 flat, no ERROR logs. Yesterday's inventory-service v8.1.0 deploy shows no knock-on effect (order dep/latency unchanged). Recurring benign 15:10 PT latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-022",
+   "when": "day 17, Thu 2026-09-17 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Noise / expected evening traffic ramp. search-service p95 stayed inside its normal 62-84ms band (72ms at 22:00) while request_count ramped to ~2800 and had already declined by alert time; error_rate (0.0056-0.0065), cpu (~0.40) and memory (~0.61) were flat at baseline. Logs in the window are INFO CACHE_HIT plus a single WARN QUERY_SLOW, no ERRORs, and no deployment or config change correlates. Same pattern as p-001/003/007/012/013/017/018.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-023",
+   "when": "day 18, Fri 2026-09-18 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Noise. inventory-service p95 stayed within its normal 81-106ms band (92ms at 22:00, already declining), tracking the evening request_count ramp (972\u21921429\u2192960). error_rate ~0.004, cpu ~0.25, memory ~0.45 all flat at baseline; logs show only INFO STOCK_READ plus one WARN QUERY_SLOW, no ERRORs, and no deploy/config change today. Identical to p-002/008/014/019.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-024",
+   "when": "day 19, Sat 2026-09-19 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Flat-line noise, the recurring 15:20 UTC search warning. p95 sat in the usual 62-77ms band across the whole window (65ms at 14:00) with traffic flat ~1050-1100, error_rate ~0.006, cpu ~0.40, memory ~0.63 at baseline. No step across yesterday's search-service v5.6.2 deploy (20:15 UTC 09-18) \u2014 p95 before and after is indistinguishable. Logs are INFO CACHE_HIT plus a single WARN QUERY_SLOW, no ERRORs.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-025",
+   "when": "day 19, Sat 2026-09-19 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Benign. notification-worker p95 stayed in its normal 190-215ms band (202ms at 22:00) with send volume ramping modestly (421\u2192609\u2192389), error_rate ~0.008 and Courierly dependency_latency 250-264ms \u2014 all baseline. No ERROR logs (only INFO MESSAGE_QUEUED), no deploy/config change. Same daily rotation warning as p-004/009/015/020.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-026",
+   "when": "day 20, Sun 2026-09-20 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Noise. order-service p95 flat inside the normal 110-136ms band (116-129ms all evening) with the usual weekend traffic ramp (553\u2192799\u2192540), error_rate ~0.003 and cpu ~0.22 at baseline. No ERROR logs anywhere, no deployments or config changes. Same daily rotation warning as p-006/010/016/021.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-027",
+   "when": "day 21, Mon 2026-09-21 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Noise. search-service p95 stayed in the usual 65-83ms band (77ms at 22:00) tracking the evening request ramp (1833\u21922781\u21921803); error_rate ~0.006, cpu ~0.40, memory ~0.63 all flat at baseline. Logs are INFO CACHE_HIT plus one WARN QUERY_SLOW, no ERRORs; no change today and no step from the earlier search v5.6.2 deploy. Same daily rotation warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-028",
+   "when": "day 22, Tue 2026-09-22 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-22",
+    "cause": [
+     "config-day22-reduce"
+    ],
+    "decoy": [
+     "deploy-day22-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "config-day22-reduce",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-029",
+   "when": "day 22, Tue 2026-09-22 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Benign daily-rotation warning. inventory-service p95 stayed in its normal 86-101ms band (95ms at 22:00) tracking the evening ramp (934\u21921382\u2192962), error_rate ~0.004 and cpu ~0.25 flat. No ERROR logs \u2014 the earlier CONNECTION_POOL_TIMEOUT burst on checkout-api stopped after 19:20 and never touched inventory-service, so this is unrelated to p-028.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-030",
+   "when": "day 23, Wed 2026-09-23 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Benign. notification-worker p95 peaked at 221ms inside the normal 192-230ms band and was already down to 199ms at 22:00, tracking the evening send ramp (580\u2192835\u2192576). error_rate ~0.008 and Courierly dependency_latency \u2264280ms are at baseline; logs show only INFO MESSAGE_QUEUED, no ERRORs, and no change today. Same recurring rotation warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-031",
+   "when": "day 24, Thu 2026-09-24 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-24",
+    "cause": [
+     "deploy-day24-enrichment"
+    ],
+    "decoy": [
+     "config-day24-log-level"
+    ]
+   },
+   "action": "resolve",
+   "answer": "deploy-day24-enrichment",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-032",
+   "when": "day 24, Thu 2026-09-24 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Benign rotation warning. order-service p95 stayed inside the normal 110-139ms band (123ms at 22:00) tracking the evening ramp (742\u21921150\u2192734); error_rate ~0.003 and cpu ~0.21 flat. No ERROR logs after 20:00 \u2014 the p-031 payment-orchestrator QUERY_SLOW / checkout CONNECTION_POOL_TIMEOUT burst ended by 19:20 and never affected order-service.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-033",
+   "when": "day 25, Fri 2026-09-25 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Noise. search-service p95 stayed in the usual 66-81ms band (68ms at 22:00) tracking the evening request ramp (1916\u21922762\u21921866); error_rate ~0.006, cpu ~0.40, memory ~0.62 all at baseline. Logs are INFO CACHE_HIT plus one WARN QUERY_SLOW, no ERRORs, and no change today. Same recurring 22:10 rotation warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-034",
+   "when": "day 26, Sat 2026-09-26 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Noise. inventory-service p95 flat in the 85-94ms range (91ms at 22:00), well inside the 81-106ms baseline band, with the usual weekend evening ramp (660\u21921028\u2192691); error_rate ~0.004 and cpu ~0.25 unchanged. Only INFO STOCK_READ plus one WARN QUERY_SLOW in logs, no ERRORs, and no deploy/config change today.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-035",
+   "when": "day 27, Sun 2026-09-27 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Flat-line noise, the recurring 15:20 UTC search warning. p95 oscillated 60-73ms all day (66ms at 15:00) \u2014 entirely inside the 62-79ms baseline \u2014 with traffic flat ~1050-1110, error_rate ~0.006, cpu ~0.40, memory ~0.62 unchanged. No ERROR logs and no search-service change; yesterday's order-service v2.4.0 packing-slip deploy is a different service with no effect here.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-036",
+   "when": "day 27, Sun 2026-09-27 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Benign. notification-worker p95 stayed 194-212ms, inside the 192-230ms baseline (205ms at 22:00), tracking the weekend evening send ramp (414\u2192594\u2192396); error_rate ~0.008 and Courierly dependency_latency 246-265ms are normal. Only INFO MESSAGE_QUEUED logs, no ERRORs, no change today. Same recurring rotation warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-037",
+   "when": "day 28, Mon 2026-09-28 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 never left baseline: 112-140ms all day (peak 139.8ms at 19:15, within the normal 110-139ms band) and only 117ms at the 22:00 point nearest the 22:10 alert. error_rate ~0.003, cpu ~0.22, memory ~0.40 all flat; request_count ramped and was already declining (1124 \u2192 757). No ERROR logs anywhere in the fleet today (only INFO plus the usual few WARN QUERY_SLOW on inventory/search). Benign latency-monitor noise, same shape as the recurring daily rotation warnings.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-038",
+   "when": "day 29, Tue 2026-09-29 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 stayed in its 60-85ms baseline band all day (peak 84.7ms at 20:00, back to 70ms by 22:00) while request_count nearly doubled 1450\u21922800 in the evening ramp. error_rate ~0.006, cpu ~0.40, memory ~0.62 all flat. No ERROR logs fleet-wide, only the usual INFO plus 2 WARN QUERY_SLOW. Same benign traffic-tracking latency warning as the recurring daily noise.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-039",
+   "when": "day 30, Wed 2026-09-30 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 stayed at baseline (83-101ms vs normal 81-106ms) while request_count roughly doubled 740\u21921416 on the evening ramp and was already falling to 922 by 22:00. error_rate ~0.004, cpu ~0.25, memory ~0.44 all flat. No ERROR logs anywhere, only INFO plus the routine 3 WARN QUERY_SLOW. Benign traffic-tracking latency warning, same shape as the recurring daily noise.",
+   "result": "correct",
+   "queries": 2
+  }
+ ],
+ "carried_forward": "**Rotation summary through day 4 (Fri 2026-09-04)**\n\n**Pages so far**\n\n- **p-001 (day 1, Tue 09-01, 22:10 UTC) search_latency_high, warning \u2014 DISMISSED.** search-service p95 67ms baseline \u2192 75-84ms peak while request_count went 1450 \u2192 2785 (evening ramp); back to ~68ms by 22:00. error_rate ~0.006, cpu ~0.40, memory ~0.62 all flat; logs only CACHE_HIT + 2 QUERY_SLOW. No deploys. Ruled out `config-day01-search-service` (search.log_level info\u2192debug, 16:10 UTC) because latency tracked traffic, not the 16:10 change.\n- **p-002 (day 2, Wed 09-02, 22:10 UTC) inventory_latency_high, warning \u2014 DISMISSED.** p95 ~90ms \u2192 ~105ms peak as request_count 730 \u2192 1440, back to 90ms by 22:00; error_rate ~0.004, cpu ~0.25, dep latency flat; only STOCK_READ + 3 QUERY_SLOW logs. Ruled out `deploy-day02-order-service` (v2.3.1 tax-rounding) \u2014 wrong service/mechanism.\n- **p-003 (day 3, Thu 09-03, 15:20 UTC) search_latency_high, warning \u2014 DISMISSED.** Pure noise: p95 stayed in its normal 64-77ms band all day (69.9ms at 15:15), request_count steady ~1500, everything flat, zero changes since Sep 1.\n- **p-004 (day 3, Thu 09-03, 22:10 UTC) notification_latency_high, warning \u2014 DISMISSED.** p95 198 \u2192 225ms peak while send volume 440 \u2192 854; Courierly dependency_latency 250 \u2192 280ms; error_rate ~0.008 flat; all vendor_snapshots that day had changed=False; no errors in logs.\n- **p-005 (day 4, Fri 09-04, 19:05 UTC) checkout_error_rate_high, CRITICAL \u2014 RESOLVED, cause `config-day04-reduce`.** Sharp onset exactly at 19:00 UTC: payment-orchestrator connection_pool_utilization 0.22 \u2192 0.99, connection_pool_wait_ms 12 \u2192 ~4800, checkout-api error_rate 0.005 \u2192 0.18, p95 300ms \u2192 5200ms, 61 \u00d7 CONNECTION_POOL_TIMEOUT errors in checkout-api logs. Cause: `config-day04-reduce` (cost-optimizer, 09:00 UTC) payments.max_connections 100 \u2192 20; impact appeared ~10h later as load/connection churn caught up. Ruled out `deploy-day04-decoy` (checkout-api v4.18.0, 18:40 UTC, analytics-banner/checkout-copy only) \u2014 cosmetic, cannot exhaust the payments DB pool. Note payment_success_rate stayed ~0.996 (PayRail fine) \u2014 failure was internal pool starvation. Fixed by `config-day04-restore` (12:25 PT / 19:25 UTC, back to 100) + `action-day04-recycle` pod recycle; alert resolved 19:28 UTC.\n- **p-006 (day 4, Fri 09-04, 22:10 UTC) order_latency_high, warning \u2014 DISMISSED.** order-service p95 flat 123-138ms, error_rate ~0.003, cpu ~0.21, traffic declining 1150 \u2192 770. Prior checkout incident already resolved at 19:28 and never touched order-service.\n\n**Recurring patterns / heuristics learned**\n\n- There is a **recurring 22:10 UTC (15:10 PT) \"\u2026_latency_high\" warning** that fires on a rotating service (search, inventory, notification, order). Every instance so far has been benign: p95 rises ~15-30% in lockstep with the evening request_count ramp (often ~2x), while error_rate, cpu, memory and dependency_latency stay flat, logs show only INFO codes plus a couple of QUERY_SLOW, and it auto-resolves ~22:35. Default posture: dismiss, but always verify flat error_rate + traffic correlation first.\n- **Real incidents look different:** step-function onset at a single minute, error_rate jumping 30x+, p95 10x+, plus a matching ERROR log code (e.g. CONNECTION_POOL_TIMEOUT), and severity=critical.\n- **Checks that pay off (cheap, in this order):** (1) one pivoted metrics query with `max(CASE WHEN signal=...)` over the service \u00b1 its dependency, comparing p95 vs request_count vs error_rate; (2) `logs GROUP BY service, level, code` for the window \u2014 any ERROR row is the tell; (3) union of deployments + config_changes in the last ~36h; (4) vendor_snapshots filtered on `changed = true` (all-operational rows are pure noise, thousands of duplicates).\n- Metrics are 15-min normally but switch to **per-minute granularity around incidents** (e.g. from 18:00 UTC on day 4), so wide time ranges blow the 50-row limit \u2014 filter `minute(event_time) IN (0,15,30,45)` or narrow the window.\n- Baseline p95 by service: checkout-api ~280-300ms, order-service ~125-135ms, notification-worker ~200ms (Courierly dep ~250ms), inventory-service ~90ms, search-service ~70ms. Typical error rates: checkout 0.005, payment-orch 0.004, order 0.003, inventory 0.004, search 0.006, notification 0.008. payment_success_rate ~0.996.\n- `runbooks` returned nothing for search/latency queries; `past_incidents` advice can be stale (e.g. INC-176 blames search GC pauses at p99 > 2s \u2014 did not match our mild warnings).\n- Deploy/config events are named suggestively (`deploy-day04-decoy`) \u2014 do not rely on names; match mechanism and timing.\n\n**Open/standing context for later pages**\n\n- Still in effect: search.log_level = debug on search-service since 09-01 (no observed impact); order-service v2.3.1 tax-rounding (09-02); inventory-service v8.0.4 \"Serve stock reads with stale-while-revalidate\" (deployed 09-03 23:05 UTC) \u2014 watch for stale-stock/oversell symptoms; checkout-api v4.18.0 (09-04).\n- A \"cost-optimizer\" actor made the day-4 breaking config change; treat future cost-optimizer config edits (pool sizes, limits, timeouts) as prime suspects, and note their impact can lag hours behind the change.\n\n**Rotation summary through day 16 (Wed 2026-09-16)**\n\n**Pages closed so far**\n\n- **p-001 (d1 Tue 09-01, 22:10) search_latency_high warn \u2014 DISMISSED.** p95 67\u219284ms as request_count 1450\u21922785; err/cpu/mem flat. Ruled out `config-day01-search-service` (search.log_level info\u2192debug, 16:10) \u2014 latency tracked traffic, not the 16:10 edit.\n- **p-002 (d2 09-02, 22:10) inventory_latency_high warn \u2014 DISMISSED.** p95 90\u2192105ms, reqs 730\u21921440. Ruled out `deploy-day02-order-service` (v2.3.1 tax rounding) \u2014 wrong service.\n- **p-003 (d3 09-03, 15:20) search_latency_high warn \u2014 DISMISSED.** Pure noise, p95 inside 64-77ms band, traffic flat, zero changes.\n- **p-004 (d3 09-03, 22:10) notification_latency_high warn \u2014 DISMISSED.** p95 198\u2192225ms, sends 440\u2192854, Courierly dep 250\u2192280ms; all vendor snapshots changed=false.\n- **p-005 (d4 Fri 09-04, 19:05) checkout_error_rate_high CRITICAL \u2014 RESOLVED \u2192 `config-day04-reduce`.** At 19:00 exactly: payment-orch pool utilization 0.22\u21920.99, pool_wait 12\u21924800ms, checkout err 0.005\u21920.18, p95 300\u21925200ms, 61\u00d7 CONNECTION_POOL_TIMEOUT. Cause: cost-optimizer set payments.max_connections 100\u219220 at 09:00 (impact lagged ~10h). Ruled out `deploy-day04-decoy` (checkout v4.18.0 cosmetic). payment_success_rate stayed 0.996 \u2192 internal, not PayRail. Fixed by `config-day04-restore` + `action-day04-recycle`.\n- **p-006 (d4 09-04, 22:10) order_latency_high warn \u2014 DISMISSED.** p95 flat 123-138ms, traffic declining.\n- **p-007 (d5 Sat 09-05, 22:10) search_latency_high \u2014 DISMISSED.** p95 61-78ms band, reqs 1070\u21922036, err 0.006 flat, only CACHE_HIT/1 QUERY_SLOW.\n- **p-008 (d6 Sun 09-06, 22:10) inventory_latency_high \u2014 DISMISSED.** p95 81-97ms, reqs 530\u21921036, err 0.004, cpu 0.25.\n- **p-009 (d7 Mon 09-07, 22:10) notification_latency_high \u2014 DISMISSED.** p95 192-222ms, sends 434\u2192842, dep 250\u2192277ms, err 0.008.\n- **p-010 (d8 09-08, 22:10) order_latency_high \u2014 DISMISSED.** p95 114-136ms, reqs 590\u21921117, err 0.003.\n- **p-011 (d9 Wed 09-09, 19:05 + 19:06) checkout_error_rate_high & payrail_upstream_timeout CRITICAL \u2014 RESOLVED \u2192 `vendor-payrail-20260909T192000Z`.** Step at 19:00: dependency_latency 325\u2192~8000ms on both checkout-api and payment-orchestrator, payment_success_rate 0.995\u21920.60, err\u21920.21, 60+ UPSTREAM_TIMEOUT logs (ended 20:05); pool utilization normal ~0.25-0.30 \u21d2 external. PayRail status page flipped \"Payments API - US West\" operational\u2192investigating at 19:17. Ruled out `deploy-day09-decoy` (checkout v4.19.0 receipt footer, 18:50) \u2014 cosmetic and can't affect payment-orch's vendor calls.\n- **p-012 (d9 09-09, 22:10) search_latency_high \u2014 DISMISSED.** p95 63-79ms during ramp to 2726; PayRail errors confined to checkout/payment-orch.\n- **p-013 (d10 09-10, 15:20) search_latency_high \u2014 DISMISSED.** Noise; p95 62-77ms, traffic flat ~1500.\n- **p-014 (d10 09-10, 22:10) inventory_latency_high \u2014 DISMISSED.** p95 86\u2192105ms peak, reqs 781\u21921384, back to 88ms.\n- **p-015 (d11 09-11, 22:10) notification_latency_high \u2014 DISMISSED.** p95 peak 227ms, sends 481\u2192845, dep \u2264279ms.\n- **p-016 (d12 Sat 09-12, 22:10) order_latency_high \u2014 DISMISSED.** p95 110-127ms, weekend ramp 423\u2192811; `deploy-day11-order-service` v2.3.4 (invoice footnote) caused no shift.\n- **p-017 (d13 Sun 09-13, 22:10) search_latency_high \u2014 DISMISSED.** p95 62-76ms, reqs 1072\u21922034.\n- **p-018 (d14 Mon 09-14, 15:20) search_latency_high \u2014 DISMISSED.** Noise; p95 62-77ms, traffic flat ~1500.\n- **p-019 (d14 09-14, 22:10) inventory_latency_high \u2014 DISMISSED.** p95 89\u2192103ms peak, reqs 804\u21921405; `config-day12-inventory-service` (cache_ttl 60\u219230) produced no step.\n- **p-020 (d15 09-15, 22:10) notification_latency_high \u2014 DISMISSED.** p95 peak 226ms, sends 498\u2192837, dep \u2264277ms.\n- **p-021 (d16 09-16, 22:10) order_latency_high \u2014 DISMISSED.** p95 115-134ms, reqs 638\u21921145; inventory v8.1.0 deploy no knock-on.\n\n**Recurring patterns**\n\n- A **22:10 UTC (15:10 PT) \"\u2026_latency_high\" warning rotates daily** across search \u2192 inventory \u2192 notification \u2192 order. Every one has been benign: p95 +15-30% tracking the evening request_count ramp (~2x), flat error_rate/cpu/memory/dep latency, logs only INFO + 1-2 QUERY_SLOW, auto-resolves ~22:35. Also a rarer **15:20 UTC (08:20 PT)** search warning that is flat-line noise.\n- **Real incidents (both so far) fire as severity=critical on checkout-api/payment-orchestrator**, with step onset at an exact minute, error_rate 30x+, p95 10x+, and a matching ERROR code. Discriminator: `connection_pool_*` spiking + payment_success_rate normal \u21d2 internal config (day 4); dependency_latency ~8s + payment_success_rate collapsing + UPSTREAM_TIMEOUT \u21d2 vendor PayRail (day 9).\n- **Two-query playbook that has closed every page:** (1) pivoted metrics `max(CASE WHEN signal=...)` for the service (\u00b1 dependency) over the day, filtering `minute(event_time) IN (0,30)`; (2) `logs GROUP BY service, level, code` for the window \u2014 any ERROR row is the tell. If critical: (3) union deployments+config_changes over last ~36h; (4) `vendor_snapshots WHERE changed = true` (operational rows are pure noise).\n- Metrics switch to per-minute near incidents \u2192 always filter minutes or narrow the window (50-row cap). `vendor_snapshots.published_at` breaks DuckDB (missing pytz) \u2014 do not select that column.\n- Baselines: checkout-api p95 ~280-310ms/err 0.005; payment-orch ~250-265ms/err 0.004, payment_success_rate ~0.996, dep ~320ms; order-service 110-136ms/err 0.003/cpu 0.22; inventory 81-105ms/err 0.004/cpu 0.25; search 62-79ms/err 0.006/cpu 0.40/mem 0.61; notification 192-230ms/err 0.008, Courierly dep 250-280ms.\n- Event names are deliberately misleading (`deploy-dayNN-decoy`) \u2014 match mechanism + timing, not names. `past_incidents`/`runbooks` have been unhelpful/stale (e.g. INC-176 search GC advice).\n\n**Standing context**\n\n- Active changes with no observed impact: search.log_level=debug (09-01); order-service v2.3.4 (09-11); inventory cache_ttl_seconds 30 (09-12); checkout-api v4.20.0 (09-13); inventory-service v8.1.0 \"merchant SKU on reservation lines\" (09-15); checkout.log_sample_rate 1\u21920.2 by observability (09-16 \u2014 note: fewer checkout logs now, so log-count evidence may be thinner); notifications.batch_size 100\u219280 by cost-optimizer (09-08); inventory-service v8.0.4 stale-while-revalidate (09-03, watch for stale-stock/oversell).\n- **cost-optimizer** config edits (pool sizes, limits, batch sizes, timeouts) are prime suspects for future criticals, and their impact can lag hours behind the change.\n\n**Rotation summary through day 27 (Sun 2026-09-27)**\n\n**Pages closed (p-001 \u2026 p-036)**\n\nBenign daily-rotation latency warnings \u2014 all DISMISSED (same shape every time: p95 rises \u226430% tracking a ~2x evening request_count ramp, error_rate/cpu/memory/dependency_latency flat at baseline, logs only INFO + 1-2 WARN QUERY_SLOW, no ERRORs, auto-resolves ~22:35):\n- p-001 (d1 09-01) search; ruled out `config-day01-search-service` (log_level info\u2192debug) \u2014 latency tracked traffic, not the 16:10 edit.\n- p-002 (d2) inventory; ruled out `deploy-day02-order-service` v2.3.1 (wrong service).\n- p-003 (d3, 15:20) search \u2014 pure flat-line noise.\n- p-004 (d3) notification; Courierly dep 250-280ms, all vendor snapshots changed=false.\n- p-006 (d4) order; p-007 (d5) search; p-008 (d6) inventory; p-009 (d7) notification; p-010 (d8) order; p-012 (d9) search (PayRail errors confined to checkout/payment-orch); p-013 (d10, 15:20) search; p-014 (d10) inventory; p-015 (d11) notification; p-016 (d12) order (ruled out `deploy-day11-order-service` v2.3.4 \u2014 no step); p-017 (d13) search; p-018 (d14, 15:20) search; p-019 (d14) inventory (ruled out `config-day12-inventory-service` cache_ttl 60\u219230); p-020 (d15) notification; p-021 (d16) order (inventory v8.1.0 no knock-on); p-022 (d17) search; p-023 (d18) inventory; p-024 (d19, 15:20) search (ruled out `deploy-day18-search-service` v5.6.2 typo-tolerance \u2014 p95 identical before/after); p-025 (d19) notification; p-026 (d20) order; p-027 (d21) search; p-029 (d22) inventory (p-028's pool errors ended 19:20, never touched inventory); p-030 (d23) notification; p-032 (d24) order (p-031 errors ended 19:20, order unaffected); p-033 (d25) search; p-034 (d26) inventory; p-035 (d27, 15:20) search; p-036 (d27) notification.\n\nReal incidents \u2014 all severity=critical on checkout-api/payment-orchestrator, onset at an exact minute (19:00 UTC), err 30x+, p95 10x+, matching ERROR code:\n- **p-005 (d4 09-04, 19:05) \u2192 RESOLVED `config-day04-reduce`.** cost-optimizer set payments.max_connections 100\u219220 at 09:00; pool utilization 0.22\u21920.99, wait 12\u21924800ms, checkout err 0.005\u21920.18, p95 300\u21925200ms, 61\u00d7 CONNECTION_POOL_TIMEOUT. payment_success_rate stayed 0.996 \u21d2 internal. Ruled out `deploy-day04-decoy` (cosmetic). Fixed by `config-day04-restore` + `action-day04-recycle`.\n- **p-011 (d9 09-09, 19:05/19:06) \u2192 RESOLVED `vendor-payrail-20260909T192000Z`.** dependency_latency 325\u2192~8000ms on both services, payment_success_rate 0.995\u21920.60, err 0.21, 60+ UPSTREAM_TIMEOUT; pool normal \u21d2 external. PayRail page flipped \"Payments API - US West\" operational\u2192investigating 19:17. Ruled out `deploy-day09-decoy` (receipt footer).\n- **p-028 (d22 09-22, 19:05) \u2192 RESOLVED `config-day22-reduce`.** Exact repeat of day 4: max_connections 100\u219220 at 09:00, pool 0.28\u21920.99, wait\u21924800ms, err\u21920.18, p95\u21925200ms, 61\u00d7 CONNECTION_POOL_TIMEOUT, psr 0.996 / dep ~330ms normal. Ruled out `deploy-day22-decoy` v4.22.0 (analytics banner). Fixed by `config-day22-restore` + `action-day22-recycle` (12:25 PT).\n- **p-031 (d24 09-24, 19:05) \u2192 RESOLVED `deploy-day24-enrichment`.** payment-orchestrator v9.4.2 \"Compute merchant risk tier from payment history\" (changed_components=payment-enrichment-query) at 18:35 \u2192 by 19:00 payments_db_cpu 0.30\u21920.85, 20\u00d7 payment-orch ERROR QUERY_SLOW, pool 0.23\u21920.97 / wait\u21924000ms, checkout err\u21920.16, p95\u21924500ms, 41\u00d7 CONNECTION_POOL_TIMEOUT. psr 0.996, dep ~325ms \u21d2 not PayRail; max_connections already back at 100. Ruled out `config-day24-log-level` (checkout log_level info\u2192debug, 17:05). Rolled back via `deploy-day24-rollback` (v9.4.1, 12:22 PT).\n\n**Discriminator for criticals (pivot checkout-api + payment-orchestrator on err/p95/dep/psr/pool/wait/payments_db_cpu):**\n- pool_utilization ~1.0 + wait ~4-5s + psr normal + payments_db_cpu normal \u21d2 **connection-pool config cut** (cost-optimizer, impact lags ~10h to evening peak).\n- pool ~1.0 + **payments_db_cpu spiking (0.30\u21920.85) + payment-orch ERROR QUERY_SLOW** \u21d2 **bad query in a deploy** (pool saturation is the symptom, not the cause).\n- dependency_latency ~8s + psr collapsing + UPSTREAM_TIMEOUT + pool normal \u21d2 **PayRail vendor**; confirm with `vendor_snapshots WHERE changed = true`.\n\n**Working playbook (2-4 queries closes every page):** (1) pivoted metrics `max(CASE WHEN signal=\u2026)` for the service (\u00b1 dependency/pool/db cpu) filtering `minute(event_time) IN (0,30)` (or 0,15,30,45 for criticals) over the relevant window; (2) `logs GROUP BY service, level, code` with min/max event_time \u2014 any ERROR row is the tell; if critical: (3) deployments + config_changes since ~36h prior; (4) vendor_snapshots changed=true.\n\n**Gotchas:** metrics go per-minute near incidents \u2192 always filter minutes (50-row cap). `vendor_snapshots.published_at` breaks DuckDB (missing pytz) \u2014 never select it. Event names are deliberately misleading (`deploy-dayNN-decoy`) \u2014 match mechanism + timing. `past_incidents`/`runbooks` have been stale/unhelpful. Since 09-16 `checkout.log_sample_rate`=0.2, so checkout log counts are thinner (but ERROR bursts still show).\n\n**Baselines:** checkout-api p95 280-311ms / err 0.005 / pool ~0.28 / wait ~16ms; payment-orch p95 243-269ms / err 0.004 / psr ~0.996 / dep ~310-335ms / payments_db_cpu ~0.30; order-service 110-139ms / err 0.003 / cpu 0.21; inventory 81-106ms / err 0.004 / cpu 0.25; search 60-84ms / err 0.006 / cpu 0.40 / mem 0.62; notification 190-230ms / err 0.008, Courierly dep 246-280ms. Evening traffic ramps: search ~1050\u21922800, inventory ~660\u21921430, order ~550\u21921150, notification ~410\u2192840.\n\n**Standing context / active changes with no observed impact:** search.log_level=debug (09-01); inventory v8.0.4 stale-while-revalidate (09-03, watch oversell); notifications.batch_size 100\u219280 (09-08); order v2.3.4 (09-11); inventory cache_ttl 30 (09-12); checkout v4.20.0 (09-13); inventory v8.1.0 (09-15); checkout.log_sample_rate 0.2 (09-16); search v5.6.2 (09-18); notification-worker v3.1.3 quiet-hours copy (09-20); checkout v4.22.0 (09-22); checkout.log_level=debug (09-24, still on); payment-orch back on v9.4.1 (09-24); order-service v2.4.0 packing slip (09-26). **cost-optimizer config edits are the prime repeat offender** (day 4 and day 22 identical) \u2014 check config_changes for max_connections/limits/timeouts first on any checkout critical.",
+ "trace": [
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 1491
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 1901
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 3671
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 5051
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 5594
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 6326
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 6752
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 7254
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 7755
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 9811
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 10221
+  },
+  {
+   "t": "2026-09-03 15:20:15",
+   "wake": "p-003",
+   "context": 10713
+  },
+  {
+   "t": "2026-09-03 15:20:15",
+   "wake": "p-003",
+   "context": 13030
+  },
+  {
+   "t": "2026-09-03 15:20:15",
+   "wake": "p-003",
+   "context": 13306
+  },
+  {
+   "t": "2026-09-03 22:10:15",
+   "wake": "p-004",
+   "context": 13576
+  },
+  {
+   "t": "2026-09-03 22:10:15",
+   "wake": "p-004",
+   "context": 17245
+  },
+  {
+   "t": "2026-09-03 22:10:15",
+   "wake": "p-004",
+   "context": 17817
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 18282
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 19119
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 21922
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 24752
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 26613
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 27774
+  },
+  {
+   "t": "2026-09-04 22:10:15",
+   "wake": "p-006",
+   "context": 28330
+  },
+  {
+   "t": "2026-09-04 22:10:15",
+   "wake": "p-006",
+   "context": 30398
+  },
+  {
+   "t": "2026-09-04 22:10:15",
+   "wake": "p-006",
+   "context": 31153
+  },
+  {
+   "t": "2026-09-05 22:10:15",
+   "wake": "p-007",
+   "context": 31784
+  },
+  {
+   "t": "2026-09-05 22:10:15",
+   "wake": "p-007",
+   "context": 3800
+  },
+  {
+   "t": "2026-09-05 22:10:15",
+   "wake": "p-007",
+   "context": 5299
+  },
+  {
+   "t": "2026-09-06 22:10:15",
+   "wake": "p-008",
+   "context": 5775
+  },
+  {
+   "t": "2026-09-06 22:10:15",
+   "wake": "p-008",
+   "context": 7109
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 7562
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 8884
+  },
+  {
+   "t": "2026-09-08 22:10:15",
+   "wake": "p-010",
+   "context": 9250
+  },
+  {
+   "t": "2026-09-08 22:10:15",
+   "wake": "p-010",
+   "context": 10572
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 11012
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 12907
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 13720
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 14130
+  },
+  {
+   "t": "2026-09-09 22:10:15",
+   "wake": "p-012",
+   "context": 14648
+  },
+  {
+   "t": "2026-09-09 22:10:15",
+   "wake": "p-012",
+   "context": 16084
+  },
+  {
+   "t": "2026-09-10 15:20:15",
+   "wake": "p-013",
+   "context": 16558
+  },
+  {
+   "t": "2026-09-10 15:20:15",
+   "wake": "p-013",
+   "context": 18135
+  },
+  {
+   "t": "2026-09-10 22:10:15",
+   "wake": "p-014",
+   "context": 18429
+  },
+  {
+   "t": "2026-09-10 22:10:15",
+   "wake": "p-014",
+   "context": 19618
+  },
+  {
+   "t": "2026-09-11 22:10:15",
+   "wake": "p-015",
+   "context": 19972
+  },
+  {
+   "t": "2026-09-11 22:10:15",
+   "wake": "p-015",
+   "context": 21156
+  },
+  {
+   "t": "2026-09-12 22:10:15",
+   "wake": "p-016",
+   "context": 21533
+  },
+  {
+   "t": "2026-09-12 22:10:15",
+   "wake": "p-016",
+   "context": 22875
+  },
+  {
+   "t": "2026-09-13 22:10:15",
+   "wake": "p-017",
+   "context": 23261
+  },
+  {
+   "t": "2026-09-13 22:10:15",
+   "wake": "p-017",
+   "context": 24584
+  },
+  {
+   "t": "2026-09-14 15:20:15",
+   "wake": "p-018",
+   "context": 24971
+  },
+  {
+   "t": "2026-09-14 15:20:15",
+   "wake": "p-018",
+   "context": 26228
+  },
+  {
+   "t": "2026-09-14 22:10:15",
+   "wake": "p-019",
+   "context": 26474
+  },
+  {
+   "t": "2026-09-14 22:10:15",
+   "wake": "p-019",
+   "context": 27663
+  },
+  {
+   "t": "2026-09-15 22:10:15",
+   "wake": "p-020",
+   "context": 28026
+  },
+  {
+   "t": "2026-09-15 22:10:15",
+   "wake": "p-020",
+   "context": 29210
+  },
+  {
+   "t": "2026-09-16 22:10:15",
+   "wake": "p-021",
+   "context": 29588
+  },
+  {
+   "t": "2026-09-16 22:10:15",
+   "wake": "p-021",
+   "context": 30771
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 31215
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 4648
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 5775
+  },
+  {
+   "t": "2026-09-18 22:10:15",
+   "wake": "p-023",
+   "context": 6192
+  },
+  {
+   "t": "2026-09-18 22:10:15",
+   "wake": "p-023",
+   "context": 7309
+  },
+  {
+   "t": "2026-09-19 15:20:15",
+   "wake": "p-024",
+   "context": 7723
+  },
+  {
+   "t": "2026-09-19 15:20:15",
+   "wake": "p-024",
+   "context": 8923
+  },
+  {
+   "t": "2026-09-19 22:10:15",
+   "wake": "p-025",
+   "context": 9269
+  },
+  {
+   "t": "2026-09-19 22:10:15",
+   "wake": "p-025",
+   "context": 10275
+  },
+  {
+   "t": "2026-09-20 22:10:15",
+   "wake": "p-026",
+   "context": 10623
+  },
+  {
+   "t": "2026-09-20 22:10:15",
+   "wake": "p-026",
+   "context": 11623
+  },
+  {
+   "t": "2026-09-21 22:10:15",
+   "wake": "p-027",
+   "context": 11994
+  },
+  {
+   "t": "2026-09-21 22:10:15",
+   "wake": "p-027",
+   "context": 13089
+  },
+  {
+   "t": "2026-09-22 19:05:15",
+   "wake": "p-028",
+   "context": 13446
+  },
+  {
+   "t": "2026-09-22 19:05:15",
+   "wake": "p-028",
+   "context": 15513
+  },
+  {
+   "t": "2026-09-22 19:05:15",
+   "wake": "p-028",
+   "context": 16117
+  },
+  {
+   "t": "2026-09-22 22:10:15",
+   "wake": "p-029",
+   "context": 16622
+  },
+  {
+   "t": "2026-09-22 22:10:15",
+   "wake": "p-029",
+   "context": 17930
+  },
+  {
+   "t": "2026-09-23 22:10:15",
+   "wake": "p-030",
+   "context": 18548
+  },
+  {
+   "t": "2026-09-23 22:10:15",
+   "wake": "p-030",
+   "context": 19554
+  },
+  {
+   "t": "2026-09-24 19:05:15",
+   "wake": "p-031",
+   "context": 19892
+  },
+  {
+   "t": "2026-09-24 19:05:15",
+   "wake": "p-031",
+   "context": 21870
+  },
+  {
+   "t": "2026-09-24 19:05:15",
+   "wake": "p-031",
+   "context": 22487
+  },
+  {
+   "t": "2026-09-24 22:10:15",
+   "wake": "p-032",
+   "context": 23091
+  },
+  {
+   "t": "2026-09-24 22:10:15",
+   "wake": "p-032",
+   "context": 24329
+  },
+  {
+   "t": "2026-09-25 22:10:15",
+   "wake": "p-033",
+   "context": 24877
+  },
+  {
+   "t": "2026-09-25 22:10:15",
+   "wake": "p-033",
+   "context": 25972
+  },
+  {
+   "t": "2026-09-26 22:10:15",
+   "wake": "p-034",
+   "context": 26313
+  },
+  {
+   "t": "2026-09-26 22:10:15",
+   "wake": "p-034",
+   "context": 27316
+  },
+  {
+   "t": "2026-09-27 15:20:15",
+   "wake": "p-035",
+   "context": 27705
+  },
+  {
+   "t": "2026-09-27 15:20:15",
+   "wake": "p-035",
+   "context": 29104
+  },
+  {
+   "t": "2026-09-27 22:10:15",
+   "wake": "p-036",
+   "context": 29396
+  },
+  {
+   "t": "2026-09-27 22:10:15",
+   "wake": "p-036",
+   "context": 30402
+  },
+  {
+   "t": "2026-09-28 22:10:15",
+   "wake": "p-037",
+   "context": 30812
+  },
+  {
+   "t": "2026-09-28 22:10:15",
+   "wake": "p-037",
+   "context": 4530
+  },
+  {
+   "t": "2026-09-28 22:10:15",
+   "wake": "p-037",
+   "context": 7019
+  },
+  {
+   "t": "2026-09-29 22:10:15",
+   "wake": "p-038",
+   "context": 7589
+  },
+  {
+   "t": "2026-09-29 22:10:15",
+   "wake": "p-038",
+   "context": 9286
+  },
+  {
+   "t": "2026-09-30 22:10:15",
+   "wake": "p-039",
+   "context": 9651
+  },
+  {
+   "t": "2026-09-30 22:10:15",
+   "wake": "p-039",
+   "context": 11320
+  }
+ ]
+}

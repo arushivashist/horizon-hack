@@ -1,0 +1,343 @@
+<title>On-Call Memory Experiment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #f3f5f7; --surface: #ffffff; --inset: #f6f8fa; --ink: #17212b; --muted: #5a6672; --faint: #8a95a0;
+    --line: #d3dae1; --grid: #e7ebef; --naive: #3e63a8; --mem: #0f8a78; --good: #0b7a0b; --bad: #c23434; --warn: #b4540b;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark; --bg: #0f151b; --surface: #161e26; --inset: #1b242d; --ink: #e6ebf0; --muted: #9aa6b2; --faint: #74808c;
+      --line: #2f3b47; --grid: #222c36; --naive: #3987e5; --mem: #199e70; --good: #3fbf52; --bad: #f06a6a; --warn: #f0a050;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark; --bg: #0f151b; --surface: #161e26; --inset: #1b242d; --ink: #e6ebf0; --muted: #9aa6b2; --faint: #74808c;
+    --line: #2f3b47; --grid: #222c36; --naive: #3987e5; --mem: #199e70; --good: #3fbf52; --bad: #f06a6a; --warn: #f0a050;
+  }
+  body { background: var(--bg); color: var(--ink); font: 400 15px/1.55 var(--sans); padding-inline: 16px; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-block: 32px 56px; display: grid; gap: 22px; }
+  header { display: grid; gap: 8px; }
+  .eyebrow { font: 500 12px/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0; font: 700 clamp(26px, 4vw, 40px)/1.12 var(--sans); letter-spacing: -0.02em; text-wrap: balance; }
+  h2 { margin: 0; font: 600 18px/1.3 var(--sans); }
+  h3 { margin: 0; font: 600 15px/1.3 var(--sans); }
+  p { margin: 0; }
+  .lead { color: var(--muted); font-size: 17px; max-width: 72ch; }
+  .sub { color: var(--muted); font-size: 14px; max-width: 80ch; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+  .kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 8px; }
+  .kpi .label { font-size: 13px; color: var(--muted); }
+  .kpi .row { display: flex; align-items: baseline; gap: 8px; }
+  .kpi .val { font: 600 22px/1 var(--sans); }
+  .who { font-size: 13px; color: var(--muted); }
+  .key { display: inline-block; width: 14px; height: 3px; border-radius: 2px; flex: none; transform: translateY(-4px); }
+  .key.naive { background: var(--naive); } .key.mem { background: var(--mem); }
+  .scroll { overflow-x: auto; position: relative; }
+  .scroll svg { display: block; width: 100%; min-width: 720px; height: auto; }
+  svg text { font-family: var(--sans); }
+  .t-ink { fill: var(--ink); font-size: 13px; font-weight: 600; }
+  .t-mut { fill: var(--muted); font-size: 12px; }
+  .t-tick { fill: var(--faint); font: 500 11px var(--mono); }
+  .grid { stroke: var(--grid); stroke-width: 1; } .axis { stroke: var(--line); stroke-width: 1; }
+  .l-naive { stroke: var(--naive); stroke-width: 2; fill: none; stroke-linejoin: round; }
+  .l-mem { stroke: var(--mem); stroke-width: 2; fill: none; stroke-linejoin: round; }
+  .ceil { stroke: var(--mem); stroke-width: 2; stroke-dasharray: 6 5; }
+  .cap { stroke: var(--faint); stroke-width: 1; stroke-dasharray: 4 4; }
+  .ring { fill: var(--surface); stroke: var(--naive); stroke-width: 2; }
+  .f-naive { fill: var(--naive); } .f-mem { fill: var(--mem); } .f-inset { fill: var(--inset); stroke: var(--line); }
+  .f-naive-soft { fill: var(--naive); opacity: 0.18; } .f-mem-soft { fill: var(--mem); opacity: 0.22; }
+  .pg { fill: var(--faint); cursor: pointer; }
+  .pg.inc { fill: var(--warn); }
+  .pg.sel { stroke: var(--ink); stroke-width: 2.5; }
+  .hit { fill: transparent; cursor: pointer; }
+  .hit:focus-visible { outline: none; stroke: var(--naive); stroke-width: 2; }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: 500 13px var(--sans); color: var(--ink); background: var(--inset); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+  button[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  button:focus-visible { outline: 2px solid var(--naive); outline-offset: 2px; }
+  .detail { display: grid; gap: 14px; }
+  .dhead { display: grid; gap: 4px; }
+  .dwhen { font: 500 12px var(--mono); color: var(--muted); }
+  .cols { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .col { background: var(--inset); border-radius: 10px; padding: 14px; display: grid; gap: 8px; align-content: start; }
+  .col h3 { display: flex; align-items: center; gap: 8px; }
+  .chip { font: 600 13px var(--sans); }
+  .chip.good { color: var(--good); } .chip.bad { color: var(--bad); }
+  .mono { font: 13px var(--mono); overflow-wrap: anywhere; }
+  .quote { color: var(--muted); font-size: 14px; }
+  .edits { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .edits li { font-size: 13px; border-left: 2px solid var(--mem); padding-left: 8px; }
+  .edits b { font-family: var(--mono); font-size: 12px; color: var(--mem); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { font: 600 12px var(--sans); color: var(--muted); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num { font: 14px var(--mono); font-variant-numeric: tabular-nums; }
+  .two { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+  .mem-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 440px; overflow: auto; }
+  .mem-list li { background: var(--inset); border-radius: 8px; padding: 10px 12px; font-size: 14px; display: grid; gap: 3px; }
+  .mem-list .id { font: 600 12px var(--mono); color: var(--mem); }
+  .mem-list .ev { font: 12px var(--mono); color: var(--muted); }
+  .takeaways { margin: 0; padding-left: 18px; display: grid; gap: 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); align-items: center; }
+  .legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .legend .key { transform: none; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px; box-shadow: 0 6px 18px rgba(0,0,0,.12); }
+  a { color: var(--naive); text-underline-offset: 3px; }
+  footer { color: var(--muted); font-size: 14px; }
+</style>
+
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Long Horizon Agents Hackathon · Northstar Commerce · 30 simulated days · Claude Opus 5</div>
+    <h1>Two agents, one on-call month</h1>
+    <p class="lead">Both agents were paged 39 times over a simulated month: 35 false alarms and 4 real incidents, including a repeat and a look-alike built to trap a stale lesson. One agent keeps its whole history and summarizes it; the other keeps only short, checked lessons. Click any page on the timeline to see what each one did.</p>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Results for the month"></section>
+
+  <section class="card">
+    <h2>How each agent remembers</h2>
+    <div class="scroll">
+      <svg viewBox="0 0 1000 250" role="img" aria-label="The naive agent keeps one growing conversation across pages and squashes it into a summary when it gets long. The memory agent starts each page fresh with only a small memory, and after each page saves a few checked lessons.">
+        <text class="t-ink" x="20" y="34" fill="currentColor">Naive agent</text>
+        <text class="t-mut" x="20" y="52">history + summaries</text>
+        <rect class="f-naive-soft" x="200" y="22" width="130" height="36" rx="6"/>
+        <rect class="f-naive-soft" x="200" y="22" width="300" height="36" rx="6"/>
+        <rect class="f-naive-soft" x="200" y="22" width="470" height="36" rx="6"/>
+        <text class="t-mut" x="215" y="45">page 1</text><text class="t-mut" x="385" y="45">+ page 2</text><text class="t-mut" x="555" y="45">+ page 3 …</text>
+        <rect class="f-naive" x="700" y="22" width="60" height="36" rx="6"/>
+        <text class="t-mut" x="772" y="37">at 30k tokens: squash into</text><text class="t-mut" x="772" y="53">its own summary, grow again</text>
+        <text class="t-mut" x="200" y="80">One conversation for the whole month. Every step re-reads everything since the last summary.</text>
+
+        <text class="t-ink" x="20" y="150">Memory agent</text>
+        <text class="t-mut" x="20" y="168">safe, checked memory</text>
+        <rect class="f-mem" x="200" y="138" width="40" height="36" rx="6"/><rect class="f-inset" x="242" y="138" width="110" height="36" rx="6"/>
+        <text class="t-mut" x="252" y="161">page 1</text>
+        <rect class="f-mem" x="420" y="138" width="46" height="36" rx="6"/><rect class="f-inset" x="468" y="138" width="110" height="36" rx="6"/>
+        <text class="t-mut" x="478" y="161">page 2</text>
+        <rect class="f-mem" x="646" y="138" width="52" height="36" rx="6"/><rect class="f-inset" x="700" y="138" width="110" height="36" rx="6"/>
+        <text class="t-mut" x="710" y="161">page 3</text>
+        <path d="M352 156 L416 156" stroke="var(--mem)" stroke-width="2" marker-end="url(#ah)"/><path d="M578 156 L642 156" stroke="var(--mem)" stroke-width="2" marker-end="url(#ah)"/>
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--mem)"/></marker></defs>
+        <text class="t-mut" x="362" y="200">only checked lessons carry over</text>
+        <text class="t-mut" x="200" y="226">Each page starts fresh: small memory (teal) plus that page's own work, thrown away when the page closes.</text>
+        <text class="t-mut" x="200" y="244">Every lesson must cite a page it closed; instructions, links and oversized entries are refused.</text>
+      </svg>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>The month, page by page</h2>
+    <p class="sub">Top: how much the naive agent had to read at each page (rings mark where it squashed its history into a summary). Middle: every page, with the four real incidents in orange. Bottom: how many lessons the memory agent held. Click or tab to any page.</p>
+    <div class="buttons" id="jump"></div>
+    <div class="scroll" id="timeline"></div>
+    <div class="detail" id="detail" aria-live="polite"></div>
+  </section>
+
+  <section class="card">
+    <h2>Context the model had to read</h2>
+    <div class="legend" id="ctx-legend"></div>
+    <div class="scroll" id="ctx"></div>
+    <p class="sub" id="ctx-note"></p>
+  </section>
+
+  <section class="two">
+    <div class="card">
+      <h2>The four real incidents</h2>
+      <div class="table-wrap"><table id="inc"><thead><tr><th>Day</th><th>Incident</th><th>Naive agent</th><th>Memory agent</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>What we learned</h2>
+      <ul class="takeaways">
+        <li><strong>Accuracy tied.</strong> Both agents got all 39 pages right, including the day-24 look-alike. At 30 days, a strong model with good summaries holds up.</li>
+        <li><strong>The naive agent was faster and cheaper here</strong>: fewer queries, and its growing history is cheap to re-read thanks to caching.</li>
+        <li><strong>The memory agent's context has a hard ceiling</strong>, about half the naive agent's peak, and it doesn't depend on when a summary happens to run.</li>
+        <li><strong>Its memory is auditable</strong>: every lesson cites the pages behind it and can be replayed as of any day. On day 22 it reused its own day-4 lesson, and on day 24 it checked that lesson against the evidence instead of applying it blindly.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>What the memory agent knew at the end of the month</h2>
+    <p class="sub">Written entirely by the agent. Every entry passed the safety checks and cites its evidence.</p>
+    <ul class="mem-list" id="final"></ul>
+  </section>
+
+  <footer>Code, prompts, run logs and results: <a href="https://github.com/arushivashist/horizon-hack">github.com/arushivashist/horizon-hack</a> · Mock world by our teammate: <a href="https://github.com/Cioran123/wallymartdata">github.com/Cioran123/wallymartdata</a></footer>
+</main>
+
+<script>
+const DATA = /*DATA*/null;
+const NS = "http://www.w3.org/2000/svg";
+const fmtN = (n) => n.toLocaleString("en-US");
+const fmtK = (n) => n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "")}k` : String(n);
+function el(tag, attrs, parent) { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; }
+function txt(parent, x, y, cls, s, anchor = "start") { const t = el("text", { x, y, class: cls, "text-anchor": anchor }, parent); t.textContent = s; return t; }
+function h(tag, cls, s) { const n = document.createElement(tag); if (cls) n.className = cls; if (s != null) n.textContent = s; return n; }
+
+function kpis() {
+  const n = DATA.totals.naive, m = DATA.totals.memory;
+  const tiles = [["Pages right", `${n.correct}/${n.pages}`, `${m.correct}/${m.pages}`],
+                 ["Largest context", `${fmtK(n.max_context)} tokens`, `${fmtK(m.max_context)} tokens`],
+                 ["Queries over the month", fmtN(n.queries), fmtN(m.queries)],
+                 ["Cost for 30 days", `$${n.cost.toFixed(2)}`, `$${m.cost.toFixed(2)}`]];
+  const host = document.getElementById("kpis");
+  for (const [label, nv, mv] of tiles) {
+    const t = h("div", "kpi"); t.appendChild(h("div", "label", label));
+    for (const [cls, who, v] of [["naive", "Naive agent", nv], ["mem", "Memory agent", mv]]) {
+      const r = h("div", "row"); r.appendChild(h("i", `key ${cls}`)); r.appendChild(h("span", "val", v)); r.appendChild(h("span", "who", who)); t.appendChild(r);
+    }
+    host.appendChild(t);
+  }
+}
+
+let selected = null;
+const markers = {};
+function timeline() {
+  const W = 1000, L = 60, R = 20, x = (d) => L + ((d - 1) / 30) * (W - L - R);
+  const svg = el("svg", { viewBox: `0 0 ${W} 330`, role: "img", "aria-label": "Thirty-day timeline of pages, naive agent context and memory size." }, document.getElementById("timeline"));
+  // naive context band
+  const cTop = 20, cBot = 120, cMax = Math.ceil(Math.max(...DATA.naive_context.map((p) => p.v)) / 10000) * 10000;
+  const cy = (v) => cBot - (v / cMax) * (cBot - cTop);
+  for (const v of [0, cMax / 2, cMax]) { el("line", { x1: L, x2: W - R, y1: cy(v), y2: cy(v), class: v ? "grid" : "axis" }, svg); txt(svg, L - 8, cy(v) + 4, "t-tick", fmtK(v), "end"); }
+  txt(svg, L, cTop - 6, "t-tick", "NAIVE AGENT · TOKENS READ");
+  el("path", { d: DATA.naive_context.map((p, i) => `${i ? "L" : "M"}${x(p.day).toFixed(1)},${cy(p.v).toFixed(1)}`).join(" "), class: "l-naive" }, svg);
+  for (const r of DATA.resets) { const p = DATA.naive_context.find((q) => q.day === r); if (p) el("circle", { cx: x(p.day), cy: cy(p.v), r: 4, class: "ring" }, svg); }
+  // pages lane
+  const py = 170;
+  el("line", { x1: L, x2: W - R, y1: py, y2: py, class: "axis" }, svg);
+  txt(svg, L, py - 22, "t-tick", "PAGES");
+  for (const p of DATA.pages) {
+    const inc = !!p.incident, cx = x(p.day);
+    const c = el("circle", { cx, cy: py, r: inc ? 8 : 4.5, class: `pg${inc ? " inc" : ""}` }, svg);
+    markers[p.id] = c;
+    if (inc) txt(svg, cx, py + 26, "t-ink", `Day ${Math.floor(p.day)}`, "middle");
+    const hit = el("circle", { cx, cy: py, r: 12, class: "hit", tabindex: 0, role: "button", "aria-label": `${p.when}: ${inc ? DATA.story[p.incident].title : "false alarm"}` }, svg);
+    hit.addEventListener("click", () => select(p.id));
+    hit.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { select(p.id); e.preventDefault(); } });
+  }
+  // memory lane
+  const mTop = 215, mBot = 290, cap = 15, my = (v) => mBot - (v / 16) * (mBot - mTop);
+  txt(svg, L, mTop - 8, "t-tick", "MEMORY AGENT · LESSONS HELD");
+  el("line", { x1: L, x2: W - R, y1: my(0), y2: my(0), class: "axis" }, svg);
+  el("line", { x1: L, x2: W - R, y1: my(cap), y2: my(cap), class: "cap" }, svg);
+  txt(svg, W - R, my(cap) - 5, "t-tick", "15-slot cap", "end");
+  txt(svg, L - 8, my(0) + 4, "t-tick", "0", "end"); txt(svg, L - 8, my(cap) + 4, "t-tick", "15", "end");
+  let d = `M${x(1)},${my(0)}`, prev = 0;
+  for (const p of DATA.memory) { d += ` L${x(p.day).toFixed(1)},${my(prev).toFixed(1)} L${x(p.day).toFixed(1)},${my(p.n).toFixed(1)}`; prev = p.n; }
+  el("path", { d: d + ` L${x(31)},${my(prev)}`, class: "l-mem" }, svg);
+  for (const dd of [1, 5, 10, 15, 20, 25, 30]) txt(svg, x(dd), 318, "t-tick", `Day ${dd}`, "middle");
+
+  const jump = document.getElementById("jump");
+  for (const p of DATA.pages.filter((q) => q.incident)) {
+    const b = h("button", null, `Day ${Math.floor(p.day)}: ${DATA.story[p.incident].title}`); b.dataset.id = p.id;
+    b.addEventListener("click", () => select(p.id)); jump.appendChild(b);
+  }
+  const prev_ = h("button", null, "← Previous page"), next_ = h("button", null, "Next page →");
+  prev_.addEventListener("click", () => step(-1)); next_.addEventListener("click", () => step(1));
+  jump.append(prev_, next_);
+}
+function step(dir) { const i = DATA.pages.findIndex((p) => p.id === selected); select(DATA.pages[Math.min(Math.max(i + dir, 0), DATA.pages.length - 1)].id); }
+
+function verdict(r) {
+  const ok = r.result === "correct";
+  const c = h("div", `chip ${ok ? "good" : "bad"}`, ok ? "✓ Right call" : r.result === "decoy" ? "✗ Blamed the decoy" : `✗ ${r.result}`);
+  return c;
+}
+function select(id) {
+  if (selected && markers[selected]) markers[selected].classList.remove("sel");
+  selected = id; markers[id].classList.add("sel");
+  for (const b of document.querySelectorAll("#jump button[data-id]")) b.setAttribute("aria-pressed", String(b.dataset.id === id));
+  const p = DATA.pages.find((q) => q.id === id), s = p.incident ? DATA.story[p.incident] : null;
+  const host = document.getElementById("detail"); host.replaceChildren();
+  const head = h("div", "dhead");
+  head.appendChild(h("div", "dwhen", `${p.when} · page ${p.id} · ${p.monitor} on ${p.service}`));
+  head.appendChild(h("h3", null, s ? s.title : "False alarm"));
+  head.appendChild(h("p", "quote", s ? s.what : "A latency warning that cleared on its own. The right move is to check it and dismiss it quickly."));
+  if (s) head.appendChild(h("p", "mono", `Real cause: ${s.cause}   ·   Decoy: ${s.decoy}`));
+  host.appendChild(head);
+  const cols = h("div", "cols");
+  for (const [k, name, cls] of [["naive", "Naive agent", "naive"], ["memory", "Memory agent", "mem"]]) {
+    const r = p[k], col = h("div", "col");
+    const t = h("h3"); t.appendChild(h("i", `key ${cls}`)); t.appendChild(document.createTextNode(name)); col.appendChild(t);
+    col.appendChild(verdict(r));
+    col.appendChild(h("div", "mono", r.action === "resolve" ? `Resolved: ${r.answer}` : "Dismissed"));
+    if (r.action !== "resolve") col.appendChild(h("p", "quote", `“${r.answer}”`));
+    col.appendChild(h("div", "who", `${r.queries} of 15 queries`));
+    if (k === "naive") {
+      if (r.context) col.appendChild(h("div", "who", `Read up to ${fmtN(r.context)} tokens on this page`));
+      if (p.summarized) col.appendChild(h("div", "who", "Squashed its history into a summary before this page"));
+    } else {
+      if (p.edits.length) {
+        col.appendChild(h("div", "who", "Memory edits after closing the page:"));
+        const ul = h("ul", "edits");
+        for (const e of p.edits) { const li = h("li"); li.appendChild(h("b", null, `${e.op} ${e.id} `)); li.appendChild(document.createTextNode(e.text)); if (e.evidence.length) li.appendChild(h("div", "who", `evidence: ${e.evidence.join(", ")}`)); ul.appendChild(li); }
+        col.appendChild(ul);
+      } else col.appendChild(h("div", "who", "No memory change needed after this page"));
+    }
+    cols.appendChild(col);
+  }
+  host.appendChild(cols);
+}
+
+function contextChart() {
+  const W = 1000, H = 340, L = 60, R = 190, T = 24, B = 40, x = (d) => L + ((d - 1) / 30) * (W - L - R);
+  const n = DATA.naive_context, m = DATA.memory_context;
+  const maxV = Math.max(...n.map((p) => p.v), DATA.totals.memory.max_context, ...(m || []).map((p) => p.v));
+  const top = Math.ceil(maxV / 10000) * 10000, y = (v) => H - B - (v / top) * (H - T - B);
+  const host = document.getElementById("ctx");
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `Naive agent context peaks at ${fmtN(DATA.totals.naive.max_context)} tokens; memory agent at ${fmtN(DATA.totals.memory.max_context)}.` }, host);
+  for (let v = 0; v <= top; v += 10000) { el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), class: v ? "grid" : "axis" }, svg); txt(svg, L - 8, y(v) + 4, "t-tick", fmtK(v), "end"); }
+  for (const dd of [1, 5, 10, 15, 20, 25, 30]) txt(svg, x(dd), H - B + 20, "t-tick", `Day ${dd}`, "middle");
+  el("path", { d: n.map((p, i) => `${i ? "L" : "M"}${x(p.day).toFixed(1)},${y(p.v).toFixed(1)}`).join(" "), class: "l-naive" }, svg);
+  for (const r of DATA.resets) { const p = n.find((q) => q.day === r); if (p) el("circle", { cx: x(p.day), cy: y(p.v), r: 4, class: "ring" }, svg); }
+  const nEnd = n[n.length - 1];
+  txt(svg, x(31) + 10, y(nEnd.v) + 4, "t-ink", `Naive agent ${fmtK(nEnd.v)}`);
+  const legend = document.getElementById("ctx-legend");
+  const item = (cls, label) => { const s = h("span"); s.appendChild(h("i", `key ${cls}`)); s.appendChild(document.createTextNode(label)); legend.appendChild(s); };
+  item("naive", "Naive agent: largest context at each wake-up");
+  if (m) {
+    el("path", { d: m.map((p, i) => `${i ? "L" : "M"}${x(p.day).toFixed(1)},${y(p.v).toFixed(1)}`).join(" "), class: "l-mem" }, svg);
+    const mEnd = m[m.length - 1];
+    let ly = y(mEnd.v) + 4; if (Math.abs(ly - (y(nEnd.v) + 4)) < 18) ly += 18;
+    txt(svg, x(31) + 10, ly, "t-ink", `Memory agent ${fmtK(mEnd.v)}`);
+    item("mem", "Memory agent: largest context at each wake-up");
+    document.getElementById("ctx-note").textContent = "Rings mark where the naive agent squashed its history into a summary. The memory agent's context resets at every page, so it never builds up.";
+  } else {
+    const mv = DATA.totals.memory.max_context;
+    el("line", { x1: L, x2: W - R, y1: y(mv), y2: y(mv), class: "ceil" }, svg);
+    txt(svg, x(31) + 10, y(mv) + 4, "t-ink", `Memory agent max ${fmtK(mv)}`);
+    item("mem", "Memory agent: the most it ever read in the month");
+    document.getElementById("ctx-note").textContent = "Rings mark where the naive agent squashed its history into a summary. The memory agent's per-call trace is still being recorded; the dashed line is the most it read at any point in its full 30-day run.";
+  }
+}
+
+function incidents() {
+  const tb = document.querySelector("#inc tbody");
+  for (const p of DATA.pages.filter((q) => q.incident)) {
+    const tr = h("tr");
+    tr.appendChild(h("td", "num", String(Math.floor(p.day))));
+    tr.appendChild(h("td", null, DATA.story[p.incident].title));
+    for (const k of ["naive", "memory"]) { const td = h("td"); td.appendChild(verdict(p[k])); td.appendChild(h("div", "who", `${p[k].queries} queries`)); tr.appendChild(td); }
+    tr.style.cursor = "pointer"; tr.addEventListener("click", () => { select(p.id); document.getElementById("timeline").scrollIntoView({ behavior: "smooth", block: "center" }); });
+    tb.appendChild(tr);
+  }
+}
+function finalMemory() {
+  const host = document.getElementById("final");
+  for (const line of DATA.final_memory.split("\n")) {
+    const m = line.match(/^\[(\w+)\]\s+(.*?)(?:\s+\(evidence: ([^)]*)\))?$/); if (!m) continue;
+    const li = h("li"); li.appendChild(h("span", "id", `${m[1]} · ${m[1].startsWith("N") ? "known false alarm" : "lesson"}`));
+    li.appendChild(h("span", null, m[2])); if (m[3]) li.appendChild(h("span", "ev", `evidence: ${m[3]}`)); host.appendChild(li);
+  }
+}
+if (DATA) { kpis(); timeline(); contextChart(); incidents(); finalMemory(); select(DATA.pages.find((p) => p.incident).id); }
+</script>

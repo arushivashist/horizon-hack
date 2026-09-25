@@ -1,0 +1,140 @@
+full_30_day: 39 pages (4 incidents), 30 handoffs
+p-001 (day 1, Tue 2026-09-01 15:10 PT) noise: dismiss 'search-service p95 rose only from a ~67m' -> correct (9 queries)
+p-002 (day 2, Wed 2026-09-02 15:10 PT) noise: dismiss 'inventory-service p95 drifted from a ~90' -> correct (5 queries)
+p-003 (day 3, Thu 2026-09-03 08:20 PT) noise: dismiss 'search-service metrics are completely fl' -> correct (3 queries)
+p-004 (day 3, Thu 2026-09-03 15:10 PT) noise: dismiss 'notification-worker p95 rose only from i' -> correct (4 queries)
+p-005 (day 4, Fri 2026-09-04 12:05 PT) incident [inc-day-04]: resolve 'config-day04-reduce' -> correct (7 queries)
+p-006 (day 4, Fri 2026-09-04 15:10 PT) noise: dismiss 'order-service p95 is flat in its normal ' -> correct (3 queries)
+p-007 (day 5, Sat 2026-09-05 15:10 PT) noise: dismiss 'search-service p95 never left its normal' -> correct (2 queries)
+p-008 (day 6, Sun 2026-09-06 15:10 PT) noise: dismiss 'inventory-service p95 stayed in its norm' -> correct (2 queries)
+p-009 (day 7, Mon 2026-09-07 15:10 PT) noise: dismiss 'notification-worker p95 stayed in its no' -> correct (2 queries)
+p-010 (day 8, Tue 2026-09-08 15:10 PT) noise: dismiss 'order-service p95 stayed in its normal ~' -> correct (2 queries)
+p-011 (day 9, Wed 2026-09-09 12:05 PT) incident [inc-day-09]: resolve 'vendor-payrail-20260909T192000Z' -> correct (5 queries)
+p-012 (day 9, Wed 2026-09-09 15:10 PT) noise: dismiss 'search-service p95 stayed in its normal ' -> correct (2 queries)
+p-013 (day 10, Thu 2026-09-10 08:20 PT) noise: dismiss 'Pure noise: search-service p95 stayed in' -> correct (2 queries)
+p-014 (day 10, Thu 2026-09-10 15:10 PT) noise: dismiss 'inventory-service p95 rose from ~86ms to' -> correct (2 queries)
+p-015 (day 11, Fri 2026-09-11 15:10 PT) noise: dismiss 'notification-worker p95 stayed in its no' -> correct (2 queries)
+p-016 (day 12, Sat 2026-09-12 15:10 PT) noise: dismiss 'order-service p95 flat in its normal 110' -> correct (2 queries)
+p-017 (day 13, Sun 2026-09-13 15:10 PT) noise: dismiss 'search-service p95 stayed inside its nor' -> correct (2 queries)
+p-018 (day 14, Mon 2026-09-14 08:20 PT) noise: dismiss 'Noise: search-service p95 held its norma' -> correct (2 queries)
+p-019 (day 14, Mon 2026-09-14 15:10 PT) noise: dismiss 'inventory-service p95 rose only from ~89' -> correct (2 queries)
+p-020 (day 15, Tue 2026-09-15 15:10 PT) noise: dismiss 'notification-worker p95 peaked at 226ms ' -> correct (2 queries)
+p-021 (day 16, Wed 2026-09-16 15:10 PT) noise: dismiss 'order-service p95 stayed in its normal 1' -> correct (2 queries)
+p-022 (day 17, Thu 2026-09-17 15:10 PT) noise: dismiss 'Noise / expected evening traffic ramp. s' -> correct (2 queries)
+p-023 (day 18, Fri 2026-09-18 15:10 PT) noise: dismiss 'Noise. inventory-service p95 stayed with' -> correct (2 queries)
+p-024 (day 19, Sat 2026-09-19 08:20 PT) noise: dismiss 'Flat-line noise, the recurring 15:20 UTC' -> correct (2 queries)
+p-025 (day 19, Sat 2026-09-19 15:10 PT) noise: dismiss 'Benign. notification-worker p95 stayed i' -> correct (2 queries)
+p-026 (day 20, Sun 2026-09-20 15:10 PT) noise: dismiss 'Noise. order-service p95 flat inside the' -> correct (2 queries)
+p-027 (day 21, Mon 2026-09-21 15:10 PT) noise: dismiss 'Noise. search-service p95 stayed in the ' -> correct (2 queries)
+p-028 (day 22, Tue 2026-09-22 12:05 PT) incident [inc-day-22]: resolve 'config-day22-reduce' -> correct (4 queries)
+p-029 (day 22, Tue 2026-09-22 15:10 PT) noise: dismiss 'Benign daily-rotation warning. inventory' -> correct (2 queries)
+p-030 (day 23, Wed 2026-09-23 15:10 PT) noise: dismiss 'Benign. notification-worker p95 peaked a' -> correct (2 queries)
+p-031 (day 24, Thu 2026-09-24 12:05 PT) incident [inc-day-24]: resolve 'deploy-day24-enrichment' -> correct (4 queries)
+p-032 (day 24, Thu 2026-09-24 15:10 PT) noise: dismiss 'Benign rotation warning. order-service p' -> correct (2 queries)
+p-033 (day 25, Fri 2026-09-25 15:10 PT) noise: dismiss 'Noise. search-service p95 stayed in the ' -> correct (2 queries)
+p-034 (day 26, Sat 2026-09-26 15:10 PT) noise: dismiss 'Noise. inventory-service p95 flat in the' -> correct (2 queries)
+p-035 (day 27, Sun 2026-09-27 08:20 PT) noise: dismiss 'Flat-line noise, the recurring 15:20 UTC' -> correct (2 queries)
+p-036 (day 27, Sun 2026-09-27 15:10 PT) noise: dismiss 'Benign. notification-worker p95 stayed 1' -> correct (2 queries)
+p-037 (day 28, Mon 2026-09-28 15:10 PT) noise: dismiss 'order-service p95 never left baseline: 1' -> correct (2 queries)
+p-038 (day 29, Tue 2026-09-29 15:10 PT) noise: dismiss 'search-service p95 stayed in its 60-85ms' -> correct (2 queries)
+p-039 (day 30, Wed 2026-09-30 15:10 PT) noise: dismiss 'inventory-service p95 stayed at baseline' -> correct (2 queries)
+
+CARRIED FORWARD
+**Rotation summary through day 4 (Fri 2026-09-04)**
+
+**Pages so far**
+
+- **p-001 (day 1, Tue 09-01, 22:10 UTC) search_latency_high, warning — DISMISSED.** search-service p95 67ms baseline → 75-84ms peak while request_count went 1450 → 2785 (evening ramp); back to ~68ms by 22:00. error_rate ~0.006, cpu ~0.40, memory ~0.62 all flat; logs only CACHE_HIT + 2 QUERY_SLOW. No deploys. Ruled out `config-day01-search-service` (search.log_level info→debug, 16:10 UTC) because latency tracked traffic, not the 16:10 change.
+- **p-002 (day 2, Wed 09-02, 22:10 UTC) inventory_latency_high, warning — DISMISSED.** p95 ~90ms → ~105ms peak as request_count 730 → 1440, back to 90ms by 22:00; error_rate ~0.004, cpu ~0.25, dep latency flat; only STOCK_READ + 3 QUERY_SLOW logs. Ruled out `deploy-day02-order-service` (v2.3.1 tax-rounding) — wrong service/mechanism.
+- **p-003 (day 3, Thu 09-03, 15:20 UTC) search_latency_high, warning — DISMISSED.** Pure noise: p95 stayed in its normal 64-77ms band all day (69.9ms at 15:15), request_count steady ~1500, everything flat, zero changes since Sep 1.
+- **p-004 (day 3, Thu 09-03, 22:10 UTC) notification_latency_high, warning — DISMISSED.** p95 198 → 225ms peak while send volume 440 → 854; Courierly dependency_latency 250 → 280ms; error_rate ~0.008 flat; all vendor_snapshots that day had changed=False; no errors in logs.
+- **p-005 (day 4, Fri 09-04, 19:05 UTC) checkout_error_rate_high, CRITICAL — RESOLVED, cause `config-day04-reduce`.** Sharp onset exactly at 19:00 UTC: payment-orchestrator connection_pool_utilization 0.22 → 0.99, connection_pool_wait_ms 12 → ~4800, checkout-api error_rate 0.005 → 0.18, p95 300ms → 5200ms, 61 × CONNECTION_POOL_TIMEOUT errors in checkout-api logs. Cause: `config-day04-reduce` (cost-optimizer, 09:00 UTC) payments.max_connections 100 → 20; impact appeared ~10h later as load/connection churn caught up. Ruled out `deploy-day04-decoy` (checkout-api v4.18.0, 18:40 UTC, analytics-banner/checkout-copy only) — cosmetic, cannot exhaust the payments DB pool. Note payment_success_rate stayed ~0.996 (PayRail fine) — failure was internal pool starvation. Fixed by `config-day04-restore` (12:25 PT / 19:25 UTC, back to 100) + `action-day04-recycle` pod recycle; alert resolved 19:28 UTC.
+- **p-006 (day 4, Fri 09-04, 22:10 UTC) order_latency_high, warning — DISMISSED.** order-service p95 flat 123-138ms, error_rate ~0.003, cpu ~0.21, traffic declining 1150 → 770. Prior checkout incident already resolved at 19:28 and never touched order-service.
+
+**Recurring patterns / heuristics learned**
+
+- There is a **recurring 22:10 UTC (15:10 PT) "…_latency_high" warning** that fires on a rotating service (search, inventory, notification, order). Every instance so far has been benign: p95 rises ~15-30% in lockstep with the evening request_count ramp (often ~2x), while error_rate, cpu, memory and dependency_latency stay flat, logs show only INFO codes plus a couple of QUERY_SLOW, and it auto-resolves ~22:35. Default posture: dismiss, but always verify flat error_rate + traffic correlation first.
+- **Real incidents look different:** step-function onset at a single minute, error_rate jumping 30x+, p95 10x+, plus a matching ERROR log code (e.g. CONNECTION_POOL_TIMEOUT), and severity=critical.
+- **Checks that pay off (cheap, in this order):** (1) one pivoted metrics query with `max(CASE WHEN signal=...)` over the service ± its dependency, comparing p95 vs request_count vs error_rate; (2) `logs GROUP BY service, level, code` for the window — any ERROR row is the tell; (3) union of deployments + config_changes in the last ~36h; (4) vendor_snapshots filtered on `changed = true` (all-operational rows are pure noise, thousands of duplicates).
+- Metrics are 15-min normally but switch to **per-minute granularity around incidents** (e.g. from 18:00 UTC on day 4), so wide time ranges blow the 50-row limit — filter `minute(event_time) IN (0,15,30,45)` or narrow the window.
+- Baseline p95 by service: checkout-api ~280-300ms, order-service ~125-135ms, notification-worker ~200ms (Courierly dep ~250ms), inventory-service ~90ms, search-service ~70ms. Typical error rates: checkout 0.005, payment-orch 0.004, order 0.003, inventory 0.004, search 0.006, notification 0.008. payment_success_rate ~0.996.
+- `runbooks` returned nothing for search/latency queries; `past_incidents` advice can be stale (e.g. INC-176 blames search GC pauses at p99 > 2s — did not match our mild warnings).
+- Deploy/config events are named suggestively (`deploy-day04-decoy`) — do not rely on names; match mechanism and timing.
+
+**Open/standing context for later pages**
+
+- Still in effect: search.log_level = debug on search-service since 09-01 (no observed impact); order-service v2.3.1 tax-rounding (09-02); inventory-service v8.0.4 "Serve stock reads with stale-while-revalidate" (deployed 09-03 23:05 UTC) — watch for stale-stock/oversell symptoms; checkout-api v4.18.0 (09-04).
+- A "cost-optimizer" actor made the day-4 breaking config change; treat future cost-optimizer config edits (pool sizes, limits, timeouts) as prime suspects, and note their impact can lag hours behind the change.
+
+**Rotation summary through day 16 (Wed 2026-09-16)**
+
+**Pages closed so far**
+
+- **p-001 (d1 Tue 09-01, 22:10) search_latency_high warn — DISMISSED.** p95 67→84ms as request_count 1450→2785; err/cpu/mem flat. Ruled out `config-day01-search-service` (search.log_level info→debug, 16:10) — latency tracked traffic, not the 16:10 edit.
+- **p-002 (d2 09-02, 22:10) inventory_latency_high warn — DISMISSED.** p95 90→105ms, reqs 730→1440. Ruled out `deploy-day02-order-service` (v2.3.1 tax rounding) — wrong service.
+- **p-003 (d3 09-03, 15:20) search_latency_high warn — DISMISSED.** Pure noise, p95 inside 64-77ms band, traffic flat, zero changes.
+- **p-004 (d3 09-03, 22:10) notification_latency_high warn — DISMISSED.** p95 198→225ms, sends 440→854, Courierly dep 250→280ms; all vendor snapshots changed=false.
+- **p-005 (d4 Fri 09-04, 19:05) checkout_error_rate_high CRITICAL — RESOLVED → `config-day04-reduce`.** At 19:00 exactly: payment-orch pool utilization 0.22→0.99, pool_wait 12→4800ms, checkout err 0.005→0.18, p95 300→5200ms, 61× CONNECTION_POOL_TIMEOUT. Cause: cost-optimizer set payments.max_connections 100→20 at 09:00 (impact lagged ~10h). Ruled out `deploy-day04-decoy` (checkout v4.18.0 cosmetic). payment_success_rate stayed 0.996 → internal, not PayRail. Fixed by `config-day04-restore` + `action-day04-recycle`.
+- **p-006 (d4 09-04, 22:10) order_latency_high warn — DISMISSED.** p95 flat 123-138ms, traffic declining.
+- **p-007 (d5 Sat 09-05, 22:10) search_latency_high — DISMISSED.** p95 61-78ms band, reqs 1070→2036, err 0.006 flat, only CACHE_HIT/1 QUERY_SLOW.
+- **p-008 (d6 Sun 09-06, 22:10) inventory_latency_high — DISMISSED.** p95 81-97ms, reqs 530→1036, err 0.004, cpu 0.25.
+- **p-009 (d7 Mon 09-07, 22:10) notification_latency_high — DISMISSED.** p95 192-222ms, sends 434→842, dep 250→277ms, err 0.008.
+- **p-010 (d8 09-08, 22:10) order_latency_high — DISMISSED.** p95 114-136ms, reqs 590→1117, err 0.003.
+- **p-011 (d9 Wed 09-09, 19:05 + 19:06) checkout_error_rate_high & payrail_upstream_timeout CRITICAL — RESOLVED → `vendor-payrail-20260909T192000Z`.** Step at 19:00: dependency_latency 325→~8000ms on both checkout-api and payment-orchestrator, payment_success_rate 0.995→0.60, err→0.21, 60+ UPSTREAM_TIMEOUT logs (ended 20:05); pool utilization normal ~0.25-0.30 ⇒ external. PayRail status page flipped "Payments API - US West" operational→investigating at 19:17. Ruled out `deploy-day09-decoy` (checkout v4.19.0 receipt footer, 18:50) — cosmetic and can't affect payment-orch's vendor calls.
+- **p-012 (d9 09-09, 22:10) search_latency_high — DISMISSED.** p95 63-79ms during ramp to 2726; PayRail errors confined to checkout/payment-orch.
+- **p-013 (d10 09-10, 15:20) search_latency_high — DISMISSED.** Noise; p95 62-77ms, traffic flat ~1500.
+- **p-014 (d10 09-10, 22:10) inventory_latency_high — DISMISSED.** p95 86→105ms peak, reqs 781→1384, back to 88ms.
+- **p-015 (d11 09-11, 22:10) notification_latency_high — DISMISSED.** p95 peak 227ms, sends 481→845, dep ≤279ms.
+- **p-016 (d12 Sat 09-12, 22:10) order_latency_high — DISMISSED.** p95 110-127ms, weekend ramp 423→811; `deploy-day11-order-service` v2.3.4 (invoice footnote) caused no shift.
+- **p-017 (d13 Sun 09-13, 22:10) search_latency_high — DISMISSED.** p95 62-76ms, reqs 1072→2034.
+- **p-018 (d14 Mon 09-14, 15:20) search_latency_high — DISMISSED.** Noise; p95 62-77ms, traffic flat ~1500.
+- **p-019 (d14 09-14, 22:10) inventory_latency_high — DISMISSED.** p95 89→103ms peak, reqs 804→1405; `config-day12-inventory-service` (cache_ttl 60→30) produced no step.
+- **p-020 (d15 09-15, 22:10) notification_latency_high — DISMISSED.** p95 peak 226ms, sends 498→837, dep ≤277ms.
+- **p-021 (d16 09-16, 22:10) order_latency_high — DISMISSED.** p95 115-134ms, reqs 638→1145; inventory v8.1.0 deploy no knock-on.
+
+**Recurring patterns**
+
+- A **22:10 UTC (15:10 PT) "…_latency_high" warning rotates daily** across search → inventory → notification → order. Every one has been benign: p95 +15-30% tracking the evening request_count ramp (~2x), flat error_rate/cpu/memory/dep latency, logs only INFO + 1-2 QUERY_SLOW, auto-resolves ~22:35. Also a rarer **15:20 UTC (08:20 PT)** search warning that is flat-line noise.
+- **Real incidents (both so far) fire as severity=critical on checkout-api/payment-orchestrator**, with step onset at an exact minute, error_rate 30x+, p95 10x+, and a matching ERROR code. Discriminator: `connection_pool_*` spiking + payment_success_rate normal ⇒ internal config (day 4); dependency_latency ~8s + payment_success_rate collapsing + UPSTREAM_TIMEOUT ⇒ vendor PayRail (day 9).
+- **Two-query playbook that has closed every page:** (1) pivoted metrics `max(CASE WHEN signal=...)` for the service (± dependency) over the day, filtering `minute(event_time) IN (0,30)`; (2) `logs GROUP BY service, level, code` for the window — any ERROR row is the tell. If critical: (3) union deployments+config_changes over last ~36h; (4) `vendor_snapshots WHERE changed = true` (operational rows are pure noise).
+- Metrics switch to per-minute near incidents → always filter minutes or narrow the window (50-row cap). `vendor_snapshots.published_at` breaks DuckDB (missing pytz) — do not select that column.
+- Baselines: checkout-api p95 ~280-310ms/err 0.005; payment-orch ~250-265ms/err 0.004, payment_success_rate ~0.996, dep ~320ms; order-service 110-136ms/err 0.003/cpu 0.22; inventory 81-105ms/err 0.004/cpu 0.25; search 62-79ms/err 0.006/cpu 0.40/mem 0.61; notification 192-230ms/err 0.008, Courierly dep 250-280ms.
+- Event names are deliberately misleading (`deploy-dayNN-decoy`) — match mechanism + timing, not names. `past_incidents`/`runbooks` have been unhelpful/stale (e.g. INC-176 search GC advice).
+
+**Standing context**
+
+- Active changes with no observed impact: search.log_level=debug (09-01); order-service v2.3.4 (09-11); inventory cache_ttl_seconds 30 (09-12); checkout-api v4.20.0 (09-13); inventory-service v8.1.0 "merchant SKU on reservation lines" (09-15); checkout.log_sample_rate 1→0.2 by observability (09-16 — note: fewer checkout logs now, so log-count evidence may be thinner); notifications.batch_size 100→80 by cost-optimizer (09-08); inventory-service v8.0.4 stale-while-revalidate (09-03, watch for stale-stock/oversell).
+- **cost-optimizer** config edits (pool sizes, limits, batch sizes, timeouts) are prime suspects for future criticals, and their impact can lag hours behind the change.
+
+**Rotation summary through day 27 (Sun 2026-09-27)**
+
+**Pages closed (p-001 … p-036)**
+
+Benign daily-rotation latency warnings — all DISMISSED (same shape every time: p95 rises ≤30% tracking a ~2x evening request_count ramp, error_rate/cpu/memory/dependency_latency flat at baseline, logs only INFO + 1-2 WARN QUERY_SLOW, no ERRORs, auto-resolves ~22:35):
+- p-001 (d1 09-01) search; ruled out `config-day01-search-service` (log_level info→debug) — latency tracked traffic, not the 16:10 edit.
+- p-002 (d2) inventory; ruled out `deploy-day02-order-service` v2.3.1 (wrong service).
+- p-003 (d3, 15:20) search — pure flat-line noise.
+- p-004 (d3) notification; Courierly dep 250-280ms, all vendor snapshots changed=false.
+- p-006 (d4) order; p-007 (d5) search; p-008 (d6) inventory; p-009 (d7) notification; p-010 (d8) order; p-012 (d9) search (PayRail errors confined to checkout/payment-orch); p-013 (d10, 15:20) search; p-014 (d10) inventory; p-015 (d11) notification; p-016 (d12) order (ruled out `deploy-day11-order-service` v2.3.4 — no step); p-017 (d13) search; p-018 (d14, 15:20) search; p-019 (d14) inventory (ruled out `config-day12-inventory-service` cache_ttl 60→30); p-020 (d15) notification; p-021 (d16) order (inventory v8.1.0 no knock-on); p-022 (d17) search; p-023 (d18) inventory; p-024 (d19, 15:20) search (ruled out `deploy-day18-search-service` v5.6.2 typo-tolerance — p95 identical before/after); p-025 (d19) notification; p-026 (d20) order; p-027 (d21) search; p-029 (d22) inventory (p-028's pool errors ended 19:20, never touched inventory); p-030 (d23) notification; p-032 (d24) order (p-031 errors ended 19:20, order unaffected); p-033 (d25) search; p-034 (d26) inventory; p-035 (d27, 15:20) search; p-036 (d27) notification.
+
+Real incidents — all severity=critical on checkout-api/payment-orchestrator, onset at an exact minute (19:00 UTC), err 30x+, p95 10x+, matching ERROR code:
+- **p-005 (d4 09-04, 19:05) → RESOLVED `config-day04-reduce`.** cost-optimizer set payments.max_connections 100→20 at 09:00; pool utilization 0.22→0.99, wait 12→4800ms, checkout err 0.005→0.18, p95 300→5200ms, 61× CONNECTION_POOL_TIMEOUT. payment_success_rate stayed 0.996 ⇒ internal. Ruled out `deploy-day04-decoy` (cosmetic). Fixed by `config-day04-restore` + `action-day04-recycle`.
+- **p-011 (d9 09-09, 19:05/19:06) → RESOLVED `vendor-payrail-20260909T192000Z`.** dependency_latency 325→~8000ms on both services, payment_success_rate 0.995→0.60, err 0.21, 60+ UPSTREAM_TIMEOUT; pool normal ⇒ external. PayRail page flipped "Payments API - US West" operational→investigating 19:17. Ruled out `deploy-day09-decoy` (receipt footer).
+- **p-028 (d22 09-22, 19:05) → RESOLVED `config-day22-reduce`.** Exact repeat of day 4: max_connections 100→20 at 09:00, pool 0.28→0.99, wait→4800ms, err→0.18, p95→5200ms, 61× CONNECTION_POOL_TIMEOUT, psr 0.996 / dep ~330ms normal. Ruled out `deploy-day22-decoy` v4.22.0 (analytics banner). Fixed by `config-day22-restore` + `action-day22-recycle` (12:25 PT).
+- **p-031 (d24 09-24, 19:05) → RESOLVED `deploy-day24-enrichment`.** payment-orchestrator v9.4.2 "Compute merchant risk tier from payment history" (changed_components=payment-enrichment-query) at 18:35 → by 19:00 payments_db_cpu 0.30→0.85, 20× payment-orch ERROR QUERY_SLOW, pool 0.23→0.97 / wait→4000ms, checkout err→0.16, p95→4500ms, 41× CONNECTION_POOL_TIMEOUT. psr 0.996, dep ~325ms ⇒ not PayRail; max_connections already back at 100. Ruled out `config-day24-log-level` (checkout log_level info→debug, 17:05). Rolled back via `deploy-day24-rollback` (v9.4.1, 12:22 PT).
+
+**Discriminator for criticals (pivot checkout-api + payment-orchestrator on err/p95/dep/psr/pool/wait/payments_db_cpu):**
+- pool_utilization ~1.0 + wait ~4-5s + psr normal + payments_db_cpu normal ⇒ **connection-pool config cut** (cost-optimizer, impact lags ~10h to evening peak).
+- pool ~1.0 + **payments_db_cpu spiking (0.30→0.85) + payment-orch ERROR QUERY_SLOW** ⇒ **bad query in a deploy** (pool saturation is the symptom, not the cause).
+- dependency_latency ~8s + psr collapsing + UPSTREAM_TIMEOUT + pool normal ⇒ **PayRail vendor**; confirm with `vendor_snapshots WHERE changed = true`.
+
+**Working playbook (2-4 queries closes every page):** (1) pivoted metrics `max(CASE WHEN signal=…)` for the service (± dependency/pool/db cpu) filtering `minute(event_time) IN (0,30)` (or 0,15,30,45 for criticals) over the relevant window; (2) `logs GROUP BY service, level, code` with min/max event_time — any ERROR row is the tell; if critical: (3) deployments + config_changes since ~36h prior; (4) vendor_snapshots changed=true.
+
+**Gotchas:** metrics go per-minute near incidents → always filter minutes (50-row cap). `vendor_snapshots.published_at` breaks DuckDB (missing pytz) — never select it. Event names are deliberately misleading (`deploy-dayNN-decoy`) — match mechanism + timing. `past_incidents`/`runbooks` have been stale/unhelpful. Since 09-16 `checkout.log_sample_rate`=0.2, so checkout log counts are thinner (but ERROR bursts still show).
+
+**Baselines:** checkout-api p95 280-311ms / err 0.005 / pool ~0.28 / wait ~16ms; payment-orch p95 243-269ms / err 0.004 / psr ~0.996 / dep ~310-335ms / payments_db_cpu ~0.30; order-service 110-139ms / err 0.003 / cpu 0.21; inventory 81-106ms / err 0.004 / cpu 0.25; search 60-84ms / err 0.006 / cpu 0.40 / mem 0.62; notification 190-230ms / err 0.008, Courierly dep 246-280ms. Evening traffic ramps: search ~1050→2800, inventory ~660→1430, order ~550→1150, notification ~410→840.
+
+**Standing context / active changes with no observed impact:** search.log_level=debug (09-01); inventory v8.0.4 stale-while-revalidate (09-03, watch oversell); notifications.batch_size 100→80 (09-08); order v2.3.4 (09-11); inventory cache_ttl 30 (09-12); checkout v4.20.0 (09-13); inventory v8.1.0 (09-15); checkout.log_sample_rate 0.2 (09-16); search v5.6.2 (09-18); notification-worker v3.1.3 quiet-hours copy (09-20); checkout v4.22.0 (09-22); checkout.log_level=debug (09-24, still on); payment-orch back on v9.4.1 (09-24); order-service v2.4.0 packing slip (09-26). **cost-optimizer config edits are the prime repeat offender** (day 4 and day 22 identical) — check config_changes for max_connections/limits/timeouts first on any checkout critical.
+
+TOTALS: 39/39 correct, 104 queries, 99 model calls, largest context 31,784 tokens, $2.40
+exit 0
