@@ -1,0 +1,1763 @@
+{
+ "agent": "safe",
+ "totals": {
+  "pages": 39,
+  "correct": 39,
+  "queries": 116,
+  "calls": 258,
+  "max_context": 11564,
+  "cost": 6.07
+ },
+ "pages": [
+  {
+   "page_id": "p-001",
+   "when": "day 1, Tue 2026-09-01 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 only drifted from ~68ms to a peak of ~84ms and was back to 67.7ms at 22:00, tracking a normal evening traffic rise (request_count 1500 -> 2700/interval). Error rate flat at ~0.6%, no error logs (only CACHE_HIT/2x QUERY_SLOW), no deployments, and the only config change was a log-level bump to debug. Benign load-driven latency warning, not an incident.",
+   "result": "correct",
+   "queries": 7
+  },
+  {
+   "page_id": "p-002",
+   "when": "day 2, Wed 2026-09-02 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Load-driven noise, not a real problem. inventory-service p95 tracked the evening PT traffic ramp (request_count ~750 -> peak 1441 at 19:30, p95 ~89ms -> ~105ms) and has already receded at the latest point (22:00: p95 89.5ms, req 932). error_rate flat (~0.38-0.45%), dependency_latency_ms, cpu and memory all flat; only 3 WARN QUERY_SLOW logs and no ERROR logs all day. No deployments or config changes touched inventory-service (the only deploy, dep order-service/v2.3.1 tax-rounding at 17:15, left inventory dependency latency unchanged).",
+   "result": "correct",
+   "queries": 6
+  },
+  {
+   "page_id": "p-003",
+   "when": "day 3, Thu 2026-09-03 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service metrics show no regression: p95 oscillated in its normal 64-78ms band all morning (69.98ms at the 15:15 point just before the 15:20 alert), error_rate flat ~0.006, cpu ~0.40, memory ~0.62, dependency_latency within its usual 12-28ms range, request_count steady ~1450-1590. Logs show only routine CACHE_HIT INFO plus a single QUERY_SLOW WARN, no ERRORs. No deployments or config changes touched search-service (only an unrelated order-service tax-rounding deploy on day 2). This is a threshold blip/noisy alert, not a real problem.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-004",
+   "when": "day 3, Thu 2026-09-03 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification-worker p95 at the newest points (21:45 214ms, 22:00 200ms) is at/below its normal 198-226ms band for the day, and request_count is falling off the evening peak. error_rate (~0.008), dependency_latency_ms (~260ms) and cpu (~0.18) are all flat; no ERROR/WARN logs (only MESSAGE_QUEUED INFO), and no deployments or config changes in the prior 26h. Threshold blip, not a real problem.",
+   "result": "correct",
+   "queries": 6
+  },
+  {
+   "page_id": "p-005",
+   "when": "day 4, Fri 2026-09-04 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-04",
+    "cause": [
+     "config-day04-reduce"
+    ],
+    "decoy": [
+     "deploy-day04-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "config-day04-reduce",
+   "result": "correct",
+   "queries": 7
+  },
+  {
+   "page_id": "p-006",
+   "when": "day 4, Fri 2026-09-04 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 at the alert (130.9ms at 22:00) sits inside the day's normal 120-138ms band; error_rate (~0.003), dependency_latency (~46ms) and cpu (~0.21) are flat, request_count is falling off the evening peak, and the only logs are INFO ORDER_SAVED. No deploy or config touched order-service (the day's changes were payment-orchestrator max_connections, already restored at 19:25, and a checkout-api banner deploy). Threshold blip, not a real regression.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-007",
+   "when": "day 5, Sat 2026-09-05 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 at the latest point (22:00) was 67ms, mid-band vs the day's 61-80ms range; error_rate (~0.006), cpu (~0.40) and dependency_latency were flat and request_count was falling off the evening peak. No search-service deploys or config changes in the prior 26h (only a checkout-api gift_wrap flag) and no ERROR logs (one lone QUERY_SLOW warn). Threshold blip / known search latency noise.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-008",
+   "when": "day 6, Sun 2026-09-06 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 at 22:00 UTC was 88.6ms, mid-band vs the day's 82-98ms range; error_rate (~0.004), dependency_latency_ms (~22-36) and cpu (~0.25) flat all day, request_count already falling from the 19:30 peak. No deploys or config changes touched inventory-service in the prior 26h (only a search-service synonym deploy). Only 2 WARN QUERY_SLOW logs, no errors. Threshold blip / load noise.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-009",
+   "when": "day 7, Mon 2026-09-07 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "No deploys or config changes touched any service in the prior 28h. notification-worker's 15m points from 15:15-22:00 UTC stay flat: p95 195-225ms (inside its known 198-226ms band), error_rate ~0.008, dependency_latency_ms 245-282ms, cpu ~0.18, and request_count was already falling (842 -> 566) by the 22:10 alert. Logs show only INFO MESSAGE_QUEUED. Classic evening-ramp latency blip / threshold noise.",
+   "result": "correct",
+   "queries": 5
+  },
+  {
+   "page_id": "p-010",
+   "when": "day 8, Tue 2026-09-08 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 at the alert (129ms at 22:00) sits inside its own day band (114-136ms over the last 7h), error_rate flat ~0.003, dependency latency and cpu flat, and request_count is falling off the evening peak. No deployments or config changes touched order-service in the last 26h (only notification-worker items). Classic *_latency_high threshold blip (N1).",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-011",
+   "when": "day 9, Wed 2026-09-09 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-09",
+    "cause": [
+     "vendor-payrail-20260909T192000Z"
+    ],
+    "decoy": [
+     "deploy-day09-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "vendor-payrail-20260909T192000Z",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-012",
+   "when": "day 9, Wed 2026-09-09 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 at the alert time (22:00 bucket, 66.7ms) is at the low end of the day's own band (62-85ms, mean ~74ms); error_rate (~0.006), cpu (~0.40) and memory flat all day, and request_count is falling off the evening peak. No deployments or config changes touched search-service in the prior 26h (only a notification-worker template tweak and a checkout-api receipt-footer deploy). Threshold blip / known-noise latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-013",
+   "when": "day 10, Thu 2026-09-10 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 at 15:15 was 75ms, squarely inside the day's band (62-77ms over the last 9h); error_rate (~0.006), request_count (~1500), cpu and memory are all flat. No deployment or config change touched search-service in the prior 26h (only a checkout-api receipt-footer cosmetic deploy). Classic false-alarm latency blip (N1/L3).",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-014",
+   "when": "day 10, Thu 2026-09-10 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "No deployments or config changes anywhere in the prior 26h. inventory-service p95 tracked the traffic ramp (req 733->1400 then falling) within its own day band (82-105ms) and the newest bucket at 22:00 is 88ms \u2014 back to baseline \u2014 with error_rate flat ~0.004 and cpu flat ~0.25. Classic evening-ramp latency warning false alarm (N1).",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-015",
+   "when": "day 11, Fri 2026-09-11 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Textbook N1 evening-ramp false alarm: notification-worker p95 stayed in its 193\u2013227 ms band all day, peaking with the 18:00\u201319:45 UTC request ramp (447\u2192858 req) and already receding to 206 ms by 22:00 while error_rate (~0.008), cpu (~0.18) and dependency_latency (~265 ms) were flat. No deploy or config change on notification-worker in the prior 26h (only an order-service \"invoice footnote\" deploy, a decoy).",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-016",
+   "when": "day 12, Sat 2026-09-12 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 has been flat in its normal band all day (109-127 ms, newest bucket 122 at 22:00 UTC), with error_rate ~0.003, cpu ~0.22 and dependency_latency 33-48 ms unchanged; request_count is just coming down off the evening ramp. No deploy or config change on order-service in the prior 26h (only an inventory-service cache_ttl tweak at 11:15 by inventory-oncall, unrelated and not reflected in order-service dep latency). Classic false-alarm latency warning (N1).",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-017",
+   "when": "day 13, Sun 2026-09-13 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "No deployments or config changes anywhere in the prior 26h. search-service p95 is dead flat all day (60-80ms, newest bucket 69ms) with error_rate ~0.006 and cpu ~0.40 unchanged; request_count just rode the evening ramp (1040 -> 2050 -> 1332). Textbook false-alarm latency warning inside the day's band.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-018",
+   "when": "day 14, Mon 2026-09-14 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 is flat inside its normal band all day (62-78 ms, newest bucket 15:15 UTC = 70 ms), with error_rate ~0.006, cpu ~0.40 and memory ~0.62 all flat while request_count sits steady at ~1450-1550. No deployment or config change touched search-service in the prior 26h (only a cosmetic checkout-api footer-link deploy). Classic false-alarm search_latency_high.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-019",
+   "when": "day 14, Mon 2026-09-14 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 is dead flat in its normal band (82-103ms) all day through 22:00 UTC, error_rate ~0.004, cpu ~0.25, memory flat; request_count rose and already fell back from the evening ramp. The only change in the last 26h is checkout-api v4.20.0 \"footer link\" (different service, cosmetic). Textbook false-alarm latency warning.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-020",
+   "when": "day 15, Tue 2026-09-15 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Classic evening-ramp false alarm (N1). notification-worker p95 stayed in its day band (195-226ms) with error_rate flat ~0.008, cpu ~0.18, dependency_latency ~250-280ms; p95 merely tracked the 17:00-20:30 UTC request ramp (440->837) and is already receding. Only change in 26h was an inventory-service SKU-label deploy \u2014 a different service, unrelated.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-021",
+   "when": "day 16, Wed 2026-09-16 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Textbook N1 evening-ramp false alarm: order-service p95 stayed in its own day band (112-138ms, latest 122ms at 22:00) and tracked request_count (578->1145->742), with error_rate flat ~0.003, cpu ~0.22, memory ~0.40 and dependency_latency ~40ms unchanged. Only change in 26h was a checkout-api log_sample_rate tweak (different service, cannot affect order latency). No real problem.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-022",
+   "when": "day 17, Thu 2026-09-17 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 is flat in its own band all day (63-84ms, latest bucket 22:00 = 72ms) with error_rate ~0.006, cpu ~0.40, memory ~0.62 all flat; request_count merely rose and fell with the evening ramp (1450 -> 2820 -> 1856). No deployments or config changes on any service in the prior 26h. Classic N1 false latency warning.",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-023",
+   "when": "day 18, Fri 2026-09-18 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 stayed in its normal day band (83-106ms; latest bucket 92ms at 22:00) with error_rate ~0.004, cpu ~0.25, memory ~0.44 and dependency_latency ~30ms all flat; the only movement was request_count tracking the evening ramp (760 -> 1429 -> 960). No inventory-service deploy or config change in the prior 26h (only a search-service typo-tolerance deploy). Matches known-noise pattern N1.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-024",
+   "when": "day 19, Sat 2026-09-19 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 is flat inside its own band all day (60-78ms, newest bucket 15:15 = 70.6ms, indistinguishable from the 05:00-15:00 range) with error_rate ~0.006, request_count ~1080 and cpu/mem flat. No same-service change in the last 26h except a day-18 20:15 UTC typo-tolerance deploy that produced no step in any signal. Classic N1 false alarm.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-025",
+   "when": "day 19, Sat 2026-09-19 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Textbook N1 false alarm: notification-worker p95 stayed in its own band all day (186-214ms; newest bucket 202ms), tracking the evening request ramp (326->609 req) while error_rate (~0.008), cpu (~0.18), memory (~0.35) and dependency_latency (236-264ms) were flat. Only change in the prior 26h was a search-service typo-tolerance deploy (different service). No incident.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-026",
+   "when": "day 20, Sun 2026-09-20 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "False alarm (N1 pattern). Zero deployments or config changes across all services in the prior 26h. order-service p95 at 22:00 UTC was 125.8 ms, squarely inside its all-day band of 108-131 ms, with error_rate ~0.003, cpu ~0.22, memory ~0.40 and dependency_latency ~38 ms all flat, and request_count falling off its 19:00 peak. No user-visible impact.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-027",
+   "when": "day 21, Mon 2026-09-21 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "N1(b) pattern: search-service p95 has stayed flat in its normal band all day (62-83 ms, latest 22:00 bucket 77 ms) while error_rate (~0.006), cpu (~0.40) and memory (~0.62) are flat and request_count is actually declining off the evening peak (2781 -> 1803). No search-service deploy or config change in the prior 26h (only a notification-worker quiet-hours copy deploy). False alarm.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-028",
+   "when": "day 22, Tue 2026-09-22 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-22",
+    "cause": [
+     "config-day22-reduce"
+    ],
+    "decoy": [
+     "deploy-day22-decoy"
+    ]
+   },
+   "action": "resolve",
+   "answer": "config-day22-reduce",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-029",
+   "when": "day 22, Tue 2026-09-22 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "inventory-service p95 has sat in its normal 82-104ms band all day (12:00-22:15 UTC); the newest buckets (90-101ms) are no higher than the midday baseline, error_rate (~0.004), cpu (~0.25), memory (~0.44) and dependency_latency (~30ms) are flat, and request_count is already declining off the evening peak (1382 -> 962). No inventory-service deploy or config change in the last 26h (only a payment-orchestrator max_connections cut/restore and a checkout copy/banner deploy). Classic N1 evening-ramp latency false alarm.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-030",
+   "when": "day 23, Wed 2026-09-23 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Textbook N1 evening ramp on notification-worker: zero deployments or config changes anywhere in the prior 26h; p95 stayed in its daily band (193-222ms) tracking request_count (436->839->576) while error_rate (~0.008), cpu (~0.18), memory (~0.35) and dependency_latency (245-279ms) were flat, and p95 was already back to 199ms by 22:00 UTC. No real problem.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-031",
+   "when": "day 24, Thu 2026-09-24 12:05 PT",
+   "truth": {
+    "type": "incident",
+    "incident_id": "inc-day-24",
+    "cause": [
+     "deploy-day24-enrichment"
+    ],
+    "decoy": [
+     "config-day24-log-level"
+    ]
+   },
+   "action": "resolve",
+   "answer": "deploy-day24-enrichment",
+   "result": "correct",
+   "queries": 4
+  },
+  {
+   "page_id": "p-032",
+   "when": "day 24, Thu 2026-09-24 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "order-service p95 at 22:00 UTC was 123ms, squarely inside the day's band (112-139ms); error_rate (~0.003), cpu (~0.22), memory (~0.40) and dependency_latency (~46ms) are flat, and request_count is already falling off the evening peak (1150 -> 734). No order-service deploy or config change in the prior 26h (only checkout log_level and the payment-orchestrator v9.4.2 deploy + its 19:22 rollback, other services). Classic N1 evening-ramp latency noise.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-033",
+   "when": "day 25, Fri 2026-09-25 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "No deployments or config changes anywhere in the prior 26h. search-service p95 sits squarely in its own day band (66-82ms all day; newest bucket 22:00 = 68ms, one of the lowest), with error_rate flat ~0.006, cpu ~0.40, memory ~0.62 unchanged, and request_count already declining off the 19:45 peak (2860 -> 1866). Textbook false alarm (N1).",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-034",
+   "when": "day 26, Sat 2026-09-26 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "N1 pattern: inventory-service p95 has sat in an 81-97ms band all day and the latest bucket (22:00) is 91ms \u2014 squarely in band \u2014 while error_rate (~0.004), cpu (~0.25), memory (~0.43) and dependency_latency (~30ms) are flat and request_count is falling off the 19:15 peak (1031 -> 691). No inventory-service deploy or config change in the prior 26h; the only change anywhere is an order-service packing-slip deploy at 17:40 UTC (other service, UI-only decoy). No real problem.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-035",
+   "when": "day 27, Sun 2026-09-27 08:20 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 at 15:15 UTC was 71ms, squarely inside the day's band (59-75ms over the prior 11h); error_rate ~0.006, req ~1090, cpu ~0.40, mem ~0.62 all flat. Only change in the prior 26h was an order-service packing-slip deploy (different service, unrelated). Classic N1 false alarm.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-036",
+   "when": "day 27, Sun 2026-09-27 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "notification_latency_high is within normal band: p95 186-211ms all day, newest buckets ~205 (peak 211 at 20:30, now declining with the evening request ramp 312->619->396). error_rate flat ~0.008, cpu/memory/dependency_latency flat. Zero deployments or config changes across all services in the prior 26h. Textbook N1 evening-ramp false alarm.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-037",
+   "when": "day 28, Mon 2026-09-28 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Textbook N1 evening-ramp false alarm. No deployments or config changes anywhere in the prior 26h. order-service p95 stayed in its normal day band (112-140ms, peak 139.8 at 19:15 UTC) and simply tracked request_count (590 -> 1124 -> 757), while error_rate (~0.003), cpu (~0.22), memory (~0.40) and dependency_latency were flat. Latest bucket 22:00 is 117ms, the low end of the band. No real problem.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-038",
+   "when": "day 29, Tue 2026-09-29 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "search-service p95 sat in its normal day band (64-85ms) for the full 10h before and through the alert, with error_rate flat (~0.006), cpu ~0.40 and memory ~0.62 flat, while request_count swung 1450->2816->1906 (evening ramp). No search-service deployment or config change in the prior 26h (only a day-28 checkout-api help-link deploy). Classic N1 false alarm.",
+   "result": "correct",
+   "queries": 2
+  },
+  {
+   "page_id": "p-039",
+   "when": "day 30, Wed 2026-09-30 15:10 PT",
+   "truth": {
+    "type": "noise"
+   },
+   "action": "dismiss",
+   "answer": "Classic N1 false alarm: inventory-service p95 stayed within its usual 83-101ms band all day (newest bucket 96.6ms) while request_count varied 720->1419->922; error_rate (~0.004), cpu (~0.25), memory (~0.44) and dependency_latency all flat. Zero deployments or config changes for any service in the prior 26h, so nothing could have caused a regression.",
+   "result": "correct",
+   "queries": 2
+  }
+ ],
+ "carried_forward": "LESSONS (10 of 12 slots):\n[L3] Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 30 (p-039). (evidence: p-020, p-022, p-026, p-029, p-032, p-034, p-035, p-036, p-037, p-038, p-039)\n[L6] Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty (p-026/30/33/36/37, p-039) or only other-service rows (p-027, p-034, p-038) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change is innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page. (evidence: p-002, p-015, p-025, p-026, p-027, p-030, p-034, p-037, p-038, p-039)\n[L7] checkout_error_rate_high: ONE pivot of checkout err/p95 + payment-orch pool_util/pool_wait/success/dep_latency/payments_db_cpu picks the mode. (a) pool~1, wait>4s, db_cpu FLAT ~0.30 => payments.max_connections cut (p-005, p-028). (b) pool~1, wait>4s AND db_cpu 0.30->0.85 => a payment-orchestrator deploy added a heavy query (p-031). (c) dep_latency/success broken, pool flat => vendor (p-011). 4/4. (evidence: p-005, p-011, p-028, p-031)\n[L8] On checkout/payment error pages, first grep config_changes ~24h for payments.max_connections: cost-optimizer cut 100->20 at 09:00 UTC on days 5, 21, 22; pool exhausts ~19:00 UTC, page 19:05, oncall restores at 19:25 (remediation, not cause). If that key is ABSENT (p-031, day24), look instead for a payment-orchestrator deploy in the prior hour touching a query/DB component. 4x. (evidence: p-005, p-028, p-031)\n[L9] Query shapes: now() is REAL wall-clock, not sim time - \"now() - 26h\" windows silently return ZERO rows (p-022). Always use literal UTC timestamps from the page header. Metrics go per-minute near now, so always time_bucket(INTERVAL '15 minutes', event_time)+avg(CASE WHEN signal=...) (raw pivots blow the 50-row cap). vendor_snapshots.published_at errors with \"pytz\"; omit or cast it. (evidence: p-005, p-009, p-011, p-022)\n[L11] Timezones: handoffs and page headers quote PT, but event_time/visible_at in every table are UTC (PT+7). My MEMORY entries record UTC times. Before deciding a change is \"hours before\" or \"right at\" an alert, convert: e.g. p-005's config cut was 02:00 PT = 09:00 UTC and the page fired 12:05 PT = 19:05 UTC. Status: standard sanity check. (evidence: p-005, p-006)\n[L12] The change list often includes remediation, not causes: oncall restoring a value an automated actor (cost-optimizer) changed, pod recycles/restarts, or a ROLLBACK deploy (rollback_of set, version goes backwards - day24 payment-orch v9.4.1 at 12:22 PT, 17 min after p-031 fired). Anything stamped after the page, or by oncall, is the fix; blame the earlier change. Status: standard filter. (evidence: p-005, p-031)\n[L13] Vendor outages: the PayRail/Courierly status snapshot lands ~10-20 min AFTER our metrics break (p-011: onset 19:00 UTC, snapshot 19:17 flipping operational->investigating, \"Elevated API errors in US West\"), so query vendor_snapshots up to now, not just before the alert, and resolve with the snapshot event_id (vendor-<name>-<ts>). Status: worked. (evidence: p-011)\n[L14] Decoys near a page: deploys touching only copy/UI/banner/help-link or another service, AND config changes touching only observability (day16 checkout.log_sample_rate 1->0.2; day24 checkout.log_level info->debug 2h before p-031, moved nothing). Judge by changed_components/commit_subject/key. Day 9/11/13/14 footers, 15 SKU, 22 banner, 28 help link (no page). 13 confirmations, none guilty. (evidence: p-005, p-011, p-013, p-015, p-017, p-018, p-019, p-020, p-021, p-028, p-031, p-037)\n[L15] A deploy can bite ~25 min later: p-031 payment-orchestrator v9.4.2 18:35 UTC (changed_components=payment-enrichment-query) broke at 19:00. So don't reject a same-service deploy just because the step isn't instant; check changed_components for query/DB work and confirm with logs (QUERY_SLOW at payment-orch + CONNECTION_POOL_TIMEOUT at checkout). 4 queries total. Status: worked. (evidence: p-031)\nKNOWN NOISE (1 of 3 slots):\n[N1] *_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/25/30, p-036/37); (b) p95 flat in its day band while req swings (p-022/24, p-026/29, p-032/35/38, p-039 inventory: p95 83-101ms all day, req 720->1419->922). No same-service change in 26h => dismiss. (evidence: p-020, p-022, p-026, p-029, p-030, p-032, p-035, p-036, p-037, p-038, p-039)",
+ "trace": [
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 2237
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 2638
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 4576
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 5469
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 6444
+  },
+  {
+   "t": "2026-09-01 22:10:15",
+   "wake": "p-001",
+   "context": 6893
+  },
+  {
+   "t": "2026-09-02 01:00:00",
+   "wake": "handoff",
+   "context": 2792
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 2614
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 3491
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 5325
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 6426
+  },
+  {
+   "t": "2026-09-02 22:10:15",
+   "wake": "p-002",
+   "context": 7033
+  },
+  {
+   "t": "2026-09-03 01:00:00",
+   "wake": "handoff",
+   "context": 3138
+  },
+  {
+   "t": "2026-09-03 15:20:15",
+   "wake": "p-003",
+   "context": 2929
+  },
+  {
+   "t": "2026-09-03 15:20:15",
+   "wake": "p-003",
+   "context": 3796
+  },
+  {
+   "t": "2026-09-03 15:20:15",
+   "wake": "p-003",
+   "context": 5600
+  },
+  {
+   "t": "2026-09-03 15:20:15",
+   "wake": "p-003",
+   "context": 6174
+  },
+  {
+   "t": "2026-09-03 22:10:15",
+   "wake": "p-004",
+   "context": 3093
+  },
+  {
+   "t": "2026-09-03 22:10:15",
+   "wake": "p-004",
+   "context": 3885
+  },
+  {
+   "t": "2026-09-03 22:10:15",
+   "wake": "p-004",
+   "context": 5691
+  },
+  {
+   "t": "2026-09-03 22:10:15",
+   "wake": "p-004",
+   "context": 6637
+  },
+  {
+   "t": "2026-09-03 22:10:15",
+   "wake": "p-004",
+   "context": 7106
+  },
+  {
+   "t": "2026-09-04 01:00:00",
+   "wake": "handoff",
+   "context": 3460
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 3236
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 4119
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 6139
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 8075
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 8931
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 10062
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 10672
+  },
+  {
+   "t": "2026-09-04 19:05:15",
+   "wake": "p-005",
+   "context": 11564
+  },
+  {
+   "t": "2026-09-04 22:10:15",
+   "wake": "p-006",
+   "context": 3697
+  },
+  {
+   "t": "2026-09-04 22:10:15",
+   "wake": "p-006",
+   "context": 4748
+  },
+  {
+   "t": "2026-09-04 22:10:15",
+   "wake": "p-006",
+   "context": 6331
+  },
+  {
+   "t": "2026-09-04 22:10:15",
+   "wake": "p-006",
+   "context": 6767
+  },
+  {
+   "t": "2026-09-05 01:00:00",
+   "wake": "handoff",
+   "context": 4194
+  },
+  {
+   "t": "2026-09-05 01:00:00",
+   "wake": "handoff",
+   "context": 6045
+  },
+  {
+   "t": "2026-09-05 22:10:15",
+   "wake": "p-007",
+   "context": 4169
+  },
+  {
+   "t": "2026-09-05 22:10:15",
+   "wake": "p-007",
+   "context": 5182
+  },
+  {
+   "t": "2026-09-05 22:10:15",
+   "wake": "p-007",
+   "context": 6761
+  },
+  {
+   "t": "2026-09-05 22:10:15",
+   "wake": "p-007",
+   "context": 7180
+  },
+  {
+   "t": "2026-09-06 01:00:00",
+   "wake": "handoff",
+   "context": 4409
+  },
+  {
+   "t": "2026-09-06 22:10:15",
+   "wake": "p-008",
+   "context": 4221
+  },
+  {
+   "t": "2026-09-06 22:10:15",
+   "wake": "p-008",
+   "context": 4727
+  },
+  {
+   "t": "2026-09-06 22:10:15",
+   "wake": "p-008",
+   "context": 6441
+  },
+  {
+   "t": "2026-09-06 22:10:15",
+   "wake": "p-008",
+   "context": 6854
+  },
+  {
+   "t": "2026-09-06 22:10:15",
+   "wake": "p-008",
+   "context": 7676
+  },
+  {
+   "t": "2026-09-06 22:10:15",
+   "wake": "p-008",
+   "context": 8343
+  },
+  {
+   "t": "2026-09-07 01:00:00",
+   "wake": "handoff",
+   "context": 4438
+  },
+  {
+   "t": "2026-09-07 01:00:00",
+   "wake": "handoff",
+   "context": 5037
+  },
+  {
+   "t": "2026-09-07 01:00:00",
+   "wake": "handoff",
+   "context": 5321
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 4239
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 4924
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 6581
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 6897
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 7277
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 8166
+  },
+  {
+   "t": "2026-09-07 22:10:15",
+   "wake": "p-009",
+   "context": 8465
+  },
+  {
+   "t": "2026-09-08 01:00:00",
+   "wake": "handoff",
+   "context": 4440
+  },
+  {
+   "t": "2026-09-08 01:00:00",
+   "wake": "handoff",
+   "context": 5325
+  },
+  {
+   "t": "2026-09-08 01:00:00",
+   "wake": "handoff",
+   "context": 5631
+  },
+  {
+   "t": "2026-09-08 22:10:15",
+   "wake": "p-010",
+   "context": 4163
+  },
+  {
+   "t": "2026-09-08 22:10:15",
+   "wake": "p-010",
+   "context": 5983
+  },
+  {
+   "t": "2026-09-08 22:10:15",
+   "wake": "p-010",
+   "context": 6365
+  },
+  {
+   "t": "2026-09-09 01:00:00",
+   "wake": "handoff",
+   "context": 4379
+  },
+  {
+   "t": "2026-09-09 01:00:00",
+   "wake": "handoff",
+   "context": 5795
+  },
+  {
+   "t": "2026-09-09 01:00:00",
+   "wake": "handoff",
+   "context": 6405
+  },
+  {
+   "t": "2026-09-09 01:00:00",
+   "wake": "handoff",
+   "context": 6654
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 3972
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 4641
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 6630
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 7291
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 8514
+  },
+  {
+   "t": "2026-09-09 19:05:15",
+   "wake": "p-011",
+   "context": 8839
+  },
+  {
+   "t": "2026-09-09 22:10:15",
+   "wake": "p-012",
+   "context": 4241
+  },
+  {
+   "t": "2026-09-09 22:10:15",
+   "wake": "p-012",
+   "context": 6241
+  },
+  {
+   "t": "2026-09-09 22:10:15",
+   "wake": "p-012",
+   "context": 6709
+  },
+  {
+   "t": "2026-09-09 22:10:15",
+   "wake": "p-012",
+   "context": 7862
+  },
+  {
+   "t": "2026-09-10 01:00:00",
+   "wake": "handoff",
+   "context": 4470
+  },
+  {
+   "t": "2026-09-10 01:00:00",
+   "wake": "handoff",
+   "context": 6465
+  },
+  {
+   "t": "2026-09-10 01:00:00",
+   "wake": "handoff",
+   "context": 6771
+  },
+  {
+   "t": "2026-09-10 15:20:15",
+   "wake": "p-013",
+   "context": 4089
+  },
+  {
+   "t": "2026-09-10 15:20:15",
+   "wake": "p-013",
+   "context": 6302
+  },
+  {
+   "t": "2026-09-10 15:20:15",
+   "wake": "p-013",
+   "context": 6682
+  },
+  {
+   "t": "2026-09-10 15:20:15",
+   "wake": "p-013",
+   "context": 7909
+  },
+  {
+   "t": "2026-09-10 15:20:15",
+   "wake": "p-013",
+   "context": 8705
+  },
+  {
+   "t": "2026-09-10 22:10:15",
+   "wake": "p-014",
+   "context": 4109
+  },
+  {
+   "t": "2026-09-10 22:10:15",
+   "wake": "p-014",
+   "context": 5992
+  },
+  {
+   "t": "2026-09-10 22:10:15",
+   "wake": "p-014",
+   "context": 6400
+  },
+  {
+   "t": "2026-09-11 01:00:00",
+   "wake": "handoff",
+   "context": 4285
+  },
+  {
+   "t": "2026-09-11 01:00:00",
+   "wake": "handoff",
+   "context": 5423
+  },
+  {
+   "t": "2026-09-11 22:10:15",
+   "wake": "p-015",
+   "context": 4100
+  },
+  {
+   "t": "2026-09-11 22:10:15",
+   "wake": "p-015",
+   "context": 6228
+  },
+  {
+   "t": "2026-09-11 22:10:15",
+   "wake": "p-015",
+   "context": 6671
+  },
+  {
+   "t": "2026-09-11 22:10:15",
+   "wake": "p-015",
+   "context": 7828
+  },
+  {
+   "t": "2026-09-11 22:10:15",
+   "wake": "p-015",
+   "context": 8523
+  },
+  {
+   "t": "2026-09-12 01:00:00",
+   "wake": "handoff",
+   "context": 4309
+  },
+  {
+   "t": "2026-09-12 01:00:00",
+   "wake": "handoff",
+   "context": 4913
+  },
+  {
+   "t": "2026-09-12 01:00:00",
+   "wake": "handoff",
+   "context": 5220
+  },
+  {
+   "t": "2026-09-12 22:10:15",
+   "wake": "p-016",
+   "context": 4113
+  },
+  {
+   "t": "2026-09-12 22:10:15",
+   "wake": "p-016",
+   "context": 6207
+  },
+  {
+   "t": "2026-09-12 22:10:15",
+   "wake": "p-016",
+   "context": 6737
+  },
+  {
+   "t": "2026-09-12 22:10:15",
+   "wake": "p-016",
+   "context": 7939
+  },
+  {
+   "t": "2026-09-13 01:00:00",
+   "wake": "handoff",
+   "context": 4345
+  },
+  {
+   "t": "2026-09-13 22:10:15",
+   "wake": "p-017",
+   "context": 4145
+  },
+  {
+   "t": "2026-09-13 22:10:15",
+   "wake": "p-017",
+   "context": 6316
+  },
+  {
+   "t": "2026-09-13 22:10:15",
+   "wake": "p-017",
+   "context": 6696
+  },
+  {
+   "t": "2026-09-13 22:10:15",
+   "wake": "p-017",
+   "context": 7865
+  },
+  {
+   "t": "2026-09-13 22:10:15",
+   "wake": "p-017",
+   "context": 8226
+  },
+  {
+   "t": "2026-09-13 22:10:15",
+   "wake": "p-017",
+   "context": 8524
+  },
+  {
+   "t": "2026-09-14 01:00:00",
+   "wake": "handoff",
+   "context": 4366
+  },
+  {
+   "t": "2026-09-14 01:00:00",
+   "wake": "handoff",
+   "context": 5217
+  },
+  {
+   "t": "2026-09-14 01:00:00",
+   "wake": "handoff",
+   "context": 5516
+  },
+  {
+   "t": "2026-09-14 15:20:15",
+   "wake": "p-018",
+   "context": 4167
+  },
+  {
+   "t": "2026-09-14 15:20:15",
+   "wake": "p-018",
+   "context": 6282
+  },
+  {
+   "t": "2026-09-14 15:20:15",
+   "wake": "p-018",
+   "context": 6739
+  },
+  {
+   "t": "2026-09-14 15:20:15",
+   "wake": "p-018",
+   "context": 7925
+  },
+  {
+   "t": "2026-09-14 15:20:15",
+   "wake": "p-018",
+   "context": 8658
+  },
+  {
+   "t": "2026-09-14 22:10:15",
+   "wake": "p-019",
+   "context": 4184
+  },
+  {
+   "t": "2026-09-14 22:10:15",
+   "wake": "p-019",
+   "context": 6334
+  },
+  {
+   "t": "2026-09-14 22:10:15",
+   "wake": "p-019",
+   "context": 6719
+  },
+  {
+   "t": "2026-09-14 22:10:15",
+   "wake": "p-019",
+   "context": 8026
+  },
+  {
+   "t": "2026-09-14 22:10:15",
+   "wake": "p-019",
+   "context": 9114
+  },
+  {
+   "t": "2026-09-15 01:00:00",
+   "wake": "handoff",
+   "context": 4302
+  },
+  {
+   "t": "2026-09-15 01:00:00",
+   "wake": "handoff",
+   "context": 5657
+  },
+  {
+   "t": "2026-09-15 01:00:00",
+   "wake": "handoff",
+   "context": 6342
+  },
+  {
+   "t": "2026-09-15 22:10:15",
+   "wake": "p-020",
+   "context": 4135
+  },
+  {
+   "t": "2026-09-15 22:10:15",
+   "wake": "p-020",
+   "context": 6351
+  },
+  {
+   "t": "2026-09-15 22:10:15",
+   "wake": "p-020",
+   "context": 6763
+  },
+  {
+   "t": "2026-09-15 22:10:15",
+   "wake": "p-020",
+   "context": 8000
+  },
+  {
+   "t": "2026-09-15 22:10:15",
+   "wake": "p-020",
+   "context": 8733
+  },
+  {
+   "t": "2026-09-15 22:10:15",
+   "wake": "p-020",
+   "context": 9406
+  },
+  {
+   "t": "2026-09-16 01:00:00",
+   "wake": "handoff",
+   "context": 4331
+  },
+  {
+   "t": "2026-09-16 01:00:00",
+   "wake": "handoff",
+   "context": 5445
+  },
+  {
+   "t": "2026-09-16 01:00:00",
+   "wake": "handoff",
+   "context": 6112
+  },
+  {
+   "t": "2026-09-16 22:10:15",
+   "wake": "p-021",
+   "context": 4109
+  },
+  {
+   "t": "2026-09-16 22:10:15",
+   "wake": "p-021",
+   "context": 6646
+  },
+  {
+   "t": "2026-09-16 22:10:15",
+   "wake": "p-021",
+   "context": 7054
+  },
+  {
+   "t": "2026-09-16 22:10:15",
+   "wake": "p-021",
+   "context": 8138
+  },
+  {
+   "t": "2026-09-17 01:00:00",
+   "wake": "handoff",
+   "context": 4307
+  },
+  {
+   "t": "2026-09-17 01:00:00",
+   "wake": "handoff",
+   "context": 5184
+  },
+  {
+   "t": "2026-09-17 01:00:00",
+   "wake": "handoff",
+   "context": 5503
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 4120
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 4759
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 6996
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 7469
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 8696
+  },
+  {
+   "t": "2026-09-17 22:10:15",
+   "wake": "p-022",
+   "context": 9401
+  },
+  {
+   "t": "2026-09-18 01:00:00",
+   "wake": "handoff",
+   "context": 4322
+  },
+  {
+   "t": "2026-09-18 22:10:15",
+   "wake": "p-023",
+   "context": 4179
+  },
+  {
+   "t": "2026-09-18 22:10:15",
+   "wake": "p-023",
+   "context": 6764
+  },
+  {
+   "t": "2026-09-18 22:10:15",
+   "wake": "p-023",
+   "context": 7182
+  },
+  {
+   "t": "2026-09-18 22:10:15",
+   "wake": "p-023",
+   "context": 8383
+  },
+  {
+   "t": "2026-09-18 22:10:15",
+   "wake": "p-023",
+   "context": 9422
+  },
+  {
+   "t": "2026-09-19 01:00:00",
+   "wake": "handoff",
+   "context": 4387
+  },
+  {
+   "t": "2026-09-19 15:20:15",
+   "wake": "p-024",
+   "context": 4182
+  },
+  {
+   "t": "2026-09-19 15:20:15",
+   "wake": "p-024",
+   "context": 6663
+  },
+  {
+   "t": "2026-09-19 15:20:15",
+   "wake": "p-024",
+   "context": 7092
+  },
+  {
+   "t": "2026-09-19 15:20:15",
+   "wake": "p-024",
+   "context": 8269
+  },
+  {
+   "t": "2026-09-19 15:20:15",
+   "wake": "p-024",
+   "context": 8964
+  },
+  {
+   "t": "2026-09-19 22:10:15",
+   "wake": "p-025",
+   "context": 4201
+  },
+  {
+   "t": "2026-09-19 22:10:15",
+   "wake": "p-025",
+   "context": 6800
+  },
+  {
+   "t": "2026-09-19 22:10:15",
+   "wake": "p-025",
+   "context": 7203
+  },
+  {
+   "t": "2026-09-19 22:10:15",
+   "wake": "p-025",
+   "context": 8436
+  },
+  {
+   "t": "2026-09-19 22:10:15",
+   "wake": "p-025",
+   "context": 9415
+  },
+  {
+   "t": "2026-09-19 22:10:15",
+   "wake": "p-025",
+   "context": 9693
+  },
+  {
+   "t": "2026-09-20 01:00:00",
+   "wake": "handoff",
+   "context": 4301
+  },
+  {
+   "t": "2026-09-20 22:10:15",
+   "wake": "p-026",
+   "context": 4136
+  },
+  {
+   "t": "2026-09-20 22:10:15",
+   "wake": "p-026",
+   "context": 6810
+  },
+  {
+   "t": "2026-09-20 22:10:15",
+   "wake": "p-026",
+   "context": 7314
+  },
+  {
+   "t": "2026-09-20 22:10:15",
+   "wake": "p-026",
+   "context": 8545
+  },
+  {
+   "t": "2026-09-20 22:10:15",
+   "wake": "p-026",
+   "context": 9550
+  },
+  {
+   "t": "2026-09-21 01:00:00",
+   "wake": "handoff",
+   "context": 4362
+  },
+  {
+   "t": "2026-09-21 01:00:00",
+   "wake": "handoff",
+   "context": 5333
+  },
+  {
+   "t": "2026-09-21 22:10:15",
+   "wake": "p-027",
+   "context": 4162
+  },
+  {
+   "t": "2026-09-21 22:10:15",
+   "wake": "p-027",
+   "context": 6586
+  },
+  {
+   "t": "2026-09-21 22:10:15",
+   "wake": "p-027",
+   "context": 7040
+  },
+  {
+   "t": "2026-09-21 22:10:15",
+   "wake": "p-027",
+   "context": 8168
+  },
+  {
+   "t": "2026-09-21 22:10:15",
+   "wake": "p-027",
+   "context": 8484
+  },
+  {
+   "t": "2026-09-22 01:00:00",
+   "wake": "handoff",
+   "context": 4327
+  },
+  {
+   "t": "2026-09-22 19:05:15",
+   "wake": "p-028",
+   "context": 4186
+  },
+  {
+   "t": "2026-09-22 19:05:15",
+   "wake": "p-028",
+   "context": 6821
+  },
+  {
+   "t": "2026-09-22 19:05:15",
+   "wake": "p-028",
+   "context": 7410
+  },
+  {
+   "t": "2026-09-22 19:05:15",
+   "wake": "p-028",
+   "context": 8602
+  },
+  {
+   "t": "2026-09-22 19:05:15",
+   "wake": "p-028",
+   "context": 9262
+  },
+  {
+   "t": "2026-09-22 22:10:15",
+   "wake": "p-029",
+   "context": 4230
+  },
+  {
+   "t": "2026-09-22 22:10:15",
+   "wake": "p-029",
+   "context": 6918
+  },
+  {
+   "t": "2026-09-22 22:10:15",
+   "wake": "p-029",
+   "context": 7427
+  },
+  {
+   "t": "2026-09-22 22:10:15",
+   "wake": "p-029",
+   "context": 8690
+  },
+  {
+   "t": "2026-09-23 01:00:00",
+   "wake": "handoff",
+   "context": 4600
+  },
+  {
+   "t": "2026-09-23 01:00:00",
+   "wake": "handoff",
+   "context": 5861
+  },
+  {
+   "t": "2026-09-23 01:00:00",
+   "wake": "handoff",
+   "context": 6188
+  },
+  {
+   "t": "2026-09-23 01:00:00",
+   "wake": "handoff",
+   "context": 6514
+  },
+  {
+   "t": "2026-09-23 22:10:15",
+   "wake": "p-030",
+   "context": 4236
+  },
+  {
+   "t": "2026-09-23 22:10:15",
+   "wake": "p-030",
+   "context": 6766
+  },
+  {
+   "t": "2026-09-23 22:10:15",
+   "wake": "p-030",
+   "context": 7184
+  },
+  {
+   "t": "2026-09-23 22:10:15",
+   "wake": "p-030",
+   "context": 8394
+  },
+  {
+   "t": "2026-09-23 22:10:15",
+   "wake": "p-030",
+   "context": 9089
+  },
+  {
+   "t": "2026-09-24 01:00:00",
+   "wake": "handoff",
+   "context": 4388
+  },
+  {
+   "t": "2026-09-24 19:05:15",
+   "wake": "p-031",
+   "context": 4246
+  },
+  {
+   "t": "2026-09-24 19:05:15",
+   "wake": "p-031",
+   "context": 4888
+  },
+  {
+   "t": "2026-09-24 19:05:15",
+   "wake": "p-031",
+   "context": 7223
+  },
+  {
+   "t": "2026-09-24 19:05:15",
+   "wake": "p-031",
+   "context": 7969
+  },
+  {
+   "t": "2026-09-24 19:05:15",
+   "wake": "p-031",
+   "context": 8468
+  },
+  {
+   "t": "2026-09-24 22:10:15",
+   "wake": "p-032",
+   "context": 4427
+  },
+  {
+   "t": "2026-09-24 22:10:15",
+   "wake": "p-032",
+   "context": 7137
+  },
+  {
+   "t": "2026-09-24 22:10:15",
+   "wake": "p-032",
+   "context": 7572
+  },
+  {
+   "t": "2026-09-24 22:10:15",
+   "wake": "p-032",
+   "context": 8597
+  },
+  {
+   "t": "2026-09-24 22:10:15",
+   "wake": "p-032",
+   "context": 9293
+  },
+  {
+   "t": "2026-09-25 01:00:00",
+   "wake": "handoff",
+   "context": 4772
+  },
+  {
+   "t": "2026-09-25 22:10:15",
+   "wake": "p-033",
+   "context": 4454
+  },
+  {
+   "t": "2026-09-25 22:10:15",
+   "wake": "p-033",
+   "context": 6781
+  },
+  {
+   "t": "2026-09-25 22:10:15",
+   "wake": "p-033",
+   "context": 7186
+  },
+  {
+   "t": "2026-09-25 22:10:15",
+   "wake": "p-033",
+   "context": 8355
+  },
+  {
+   "t": "2026-09-25 22:10:15",
+   "wake": "p-033",
+   "context": 8718
+  },
+  {
+   "t": "2026-09-26 01:00:00",
+   "wake": "handoff",
+   "context": 4624
+  },
+  {
+   "t": "2026-09-26 22:10:15",
+   "wake": "p-034",
+   "context": 4481
+  },
+  {
+   "t": "2026-09-26 22:10:15",
+   "wake": "p-034",
+   "context": 7064
+  },
+  {
+   "t": "2026-09-26 22:10:15",
+   "wake": "p-034",
+   "context": 7537
+  },
+  {
+   "t": "2026-09-26 22:10:15",
+   "wake": "p-034",
+   "context": 8726
+  },
+  {
+   "t": "2026-09-26 22:10:15",
+   "wake": "p-034",
+   "context": 9547
+  },
+  {
+   "t": "2026-09-27 01:00:00",
+   "wake": "handoff",
+   "context": 4688
+  },
+  {
+   "t": "2026-09-27 15:20:15",
+   "wake": "p-035",
+   "context": 4484
+  },
+  {
+   "t": "2026-09-27 15:20:15",
+   "wake": "p-035",
+   "context": 7126
+  },
+  {
+   "t": "2026-09-27 15:20:15",
+   "wake": "p-035",
+   "context": 7498
+  },
+  {
+   "t": "2026-09-27 15:20:15",
+   "wake": "p-035",
+   "context": 8709
+  },
+  {
+   "t": "2026-09-27 15:20:15",
+   "wake": "p-035",
+   "context": 9086
+  },
+  {
+   "t": "2026-09-27 15:20:15",
+   "wake": "p-035",
+   "context": 9408
+  },
+  {
+   "t": "2026-09-27 22:10:15",
+   "wake": "p-036",
+   "context": 4501
+  },
+  {
+   "t": "2026-09-27 22:10:15",
+   "wake": "p-036",
+   "context": 6996
+  },
+  {
+   "t": "2026-09-27 22:10:15",
+   "wake": "p-036",
+   "context": 7388
+  },
+  {
+   "t": "2026-09-27 22:10:15",
+   "wake": "p-036",
+   "context": 8593
+  },
+  {
+   "t": "2026-09-27 22:10:15",
+   "wake": "p-036",
+   "context": 8911
+  },
+  {
+   "t": "2026-09-28 01:00:00",
+   "wake": "handoff",
+   "context": 4676
+  },
+  {
+   "t": "2026-09-28 01:00:00",
+   "wake": "handoff",
+   "context": 5610
+  },
+  {
+   "t": "2026-09-28 01:00:00",
+   "wake": "handoff",
+   "context": 5960
+  },
+  {
+   "t": "2026-09-28 01:00:00",
+   "wake": "handoff",
+   "context": 6306
+  },
+  {
+   "t": "2026-09-28 22:10:15",
+   "wake": "p-037",
+   "context": 4373
+  },
+  {
+   "t": "2026-09-28 22:10:15",
+   "wake": "p-037",
+   "context": 7086
+  },
+  {
+   "t": "2026-09-28 22:10:15",
+   "wake": "p-037",
+   "context": 7507
+  },
+  {
+   "t": "2026-09-28 22:10:15",
+   "wake": "p-037",
+   "context": 8824
+  },
+  {
+   "t": "2026-09-28 22:10:15",
+   "wake": "p-037",
+   "context": 9894
+  },
+  {
+   "t": "2026-09-29 01:00:00",
+   "wake": "handoff",
+   "context": 4537
+  },
+  {
+   "t": "2026-09-29 01:00:00",
+   "wake": "handoff",
+   "context": 5307
+  },
+  {
+   "t": "2026-09-29 01:00:00",
+   "wake": "handoff",
+   "context": 5677
+  },
+  {
+   "t": "2026-09-29 22:10:15",
+   "wake": "p-038",
+   "context": 4329
+  },
+  {
+   "t": "2026-09-29 22:10:15",
+   "wake": "p-038",
+   "context": 6669
+  },
+  {
+   "t": "2026-09-29 22:10:15",
+   "wake": "p-038",
+   "context": 7055
+  },
+  {
+   "t": "2026-09-29 22:10:15",
+   "wake": "p-038",
+   "context": 8222
+  },
+  {
+   "t": "2026-09-29 22:10:15",
+   "wake": "p-038",
+   "context": 8579
+  },
+  {
+   "t": "2026-09-30 01:00:00",
+   "wake": "handoff",
+   "context": 4479
+  },
+  {
+   "t": "2026-09-30 22:10:15",
+   "wake": "p-039",
+   "context": 4336
+  },
+  {
+   "t": "2026-09-30 22:10:15",
+   "wake": "p-039",
+   "context": 7030
+  },
+  {
+   "t": "2026-09-30 22:10:15",
+   "wake": "p-039",
+   "context": 7492
+  },
+  {
+   "t": "2026-09-30 22:10:15",
+   "wake": "p-039",
+   "context": 8646
+  },
+  {
+   "t": "2026-09-30 22:10:15",
+   "wake": "p-039",
+   "context": 8975
+  },
+  {
+   "t": "2026-10-01 01:00:00",
+   "wake": "handoff",
+   "context": 4494
+  },
+  {
+   "t": "2026-10-01 01:00:00",
+   "wake": "handoff",
+   "context": 5225
+  }
+ ]
+}

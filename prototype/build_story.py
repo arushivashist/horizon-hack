@@ -36,7 +36,10 @@ def main():
     if rerun and rerun["totals"]["max_context"] < 2000:  # a leftover fake-model check, not a real run
         rerun = None
 
-    log = [json.loads(line) for line in (R / "northstar_full_30_day_memory.jsonl").read_text().splitlines()]
+    if rerun:  # the instrumented run has the per-call trace, so use it for everything to keep the numbers consistent
+        safe = rerun | {"memory": rerun["carried_forward"]}
+    log_path = R / ("northstar_full_30_day_safe_memory.jsonl" if rerun else "northstar_full_30_day_memory.jsonl")
+    log = [json.loads(line) for line in log_path.read_text().splitlines()]
     edits_at, entries, mem_series = {}, {}, []
     for e in log:
         if e["result"].startswith("refused"):

@@ -31,6 +31,7 @@ uv run --with anthropic --with duckdb python northstar.py --env-file PATH       
 ```
 
 - `results/northstar-30-day-run1/`: the safe-memory agent on all 30 days (39 pages, 4 incidents). 39/39, including the day-24 look-alike whose old runbook advice is wrong. 200 queries, a largest context of 16,110 tokens, and $6.41.
+- `results/northstar-30-day-safe-traced/`: a second safe-memory run with a per-call context trace, used by the dashboard. 39/39, 116 queries, a largest context of 11,564 tokens, $6.07, and 2 queries on the day-22 repeat.
 - `results/northstar-30-day-baseline/`: the history-plus-summaries agent on the same 30 days, with a per-call context trace. 39/39 as well, 104 queries, a largest context of 31,784 tokens, and $2.40.
 
 ## Dashboard
