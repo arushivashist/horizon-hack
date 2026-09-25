@@ -109,8 +109,11 @@ def main():
         client.ingest_events("dejavu_live_demo_points", [row])
 
         prefix = "✓" if item["step"] == 7 else f"[{item['step']}]"
-        print(f"{prefix} {item['title']}")
+        timestamp = datetime.now().astimezone().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {prefix} {item['title']}")
         print(f"    {item['detail']}")
+        if item["step"] == 2:
+            print("\033[1m    ISSUE FOUND → payments.max_connections reduced from 100 → 20\033[0m")
         if item["step"] == 3:
             print("    institutional memory → Day 4 lesson retrieved")
         if item["step"] == 4:
@@ -122,7 +125,6 @@ def main():
         if item["step"] != len(demo["steps"]):
             time.sleep(args.delay)
 
-    print("✓ Incident resolved")
     print("  Live-demo records are isolated from the validated 30-day experiment.\n")
 
 
