@@ -8,62 +8,102 @@ Two scenarios exercise the system:
 1. **External API contract change** — an API/SDK/documentation change makes previously correct knowledge or mitigations stale.
 2. **Past log/metric trajectory** — the system remembers the sequence preceding a historical failure and recognizes that trajectory before a future failure.
 
-## Complete flow
+## 1. Complete top-level flow
 
-> Clickable Mermaid links jump to component deep dives where supported. Anchor links below are the fallback.
+This is the **one diagram to understand DéjàVu**. There are two inputs into the same long-horizon memory system:
+
+- **Internal:** production logs, metrics, events, errors.
+- **External:** SDK/API/docs/changelog changes.
+
+The key idea is simple: **Institutional Memory can keep growing, while the Context Builder gives the LLM a small, fixed working context.**
 
 ```mermaid
-flowchart TB
-    EXT["External World<br/>APIs · SDKs · Docs · Web"]:::source
-    PROD["Production<br/>Logs · Metrics · Traces · Events"]:::source
-    TB["Tinybird<br/>Real-time event stream + rolling windows"]:::component
-    OBS["Observation Engine<br/>Normalize signals + build trajectories"]:::component
-    NIM["Nimble<br/>Search · Extract · Web Agent"]:::component
-    LIQ["Liquid AI<br/>Pattern / change classification"]:::component
-    MUE["Memory Update Engine<br/>ADD · REVALIDATE · SUPERSEDE<br/>INVALIDATE · CONSOLIDATE · ARCHIVE"]:::core
-    MEM["Institutional Memory<br/>Evidence · Incidents · Trajectories<br/>Patterns · Knowledge · Recommendations"]:::memory
-    TM["Trajectory Matcher<br/>Current behavior vs historical precursors"]:::component
-    KR["Knowledge Retriever<br/>Relevant + currently valid memory"]:::component
-    DEC["Agent Decision<br/>What is happening? What is safe now?"]:::component
-    ACT["Action / Alert<br/>Recommendation or human intervention"]:::component
-    OUT["Outcome Observer<br/>Did the system recover?"]:::component
+flowchart LR
+    INT["INTERNAL<br/>Logs · Metrics · Errors"] --> TB["Tinybird<br/>live windows"]
+    TB --> OBS["Observation Engine<br/>signals + trends"]
+    OBS --> LIQ["Liquid AI<br/>classify"]
+    OBS --> TM["Trajectory Matcher<br/>seen this pattern?"]
 
-    EXT --> NIM
-    PROD --> TB --> OBS
-    OBS --> LIQ
-    OBS --> MUE
-    NIM --> LIQ
+    EXT["EXTERNAL<br/>SDK · API · Docs"] --> NIM["Nimble<br/>search + extract"]
+
+    LIQ --> MUE["Memory Update Engine<br/>ADD · REVALIDATE · SUPERSEDE<br/>INVALIDATE · CONSOLIDATE · ARCHIVE"]
+    TM --> MUE
     NIM --> MUE
-    LIQ --> MUE
-    MUE --> MEM
-    MEM --> TM
-    MEM --> KR
-    OBS --> TM
-    TM --> DEC
-    KR --> DEC
-    DEC --> ACT --> OUT
+
+    MUE <--> MEM["INSTITUTIONAL MEMORY<br/>Evidence · Incidents · Trajectories<br/>Patterns · Knowledge · Recommendations"]
+
+    MEM --> CB["CONTEXT BUILDER<br/>Retrieve → Freshness → Rank → Budget"]
+    TM --> CB
+    CB --> WC["BOUNDED WORKING CONTEXT<br/>small fixed set"]
+    WC --> DEC["Agent Decision"]
+    DEC --> ACT["Action / Alert"]
+    ACT --> OUT["Outcome Observer"]
     OUT --> MUE
-    EXT -. "API/contract changes" .-> MUE
-    TM -. "Known pre-failure trajectory" .-> DEC
-    DEC -. "No trusted precedent" .-> NIM
+
+    DEC -. "unknown / stale?" .-> NIM
 
     click TB "#tinybird"
     click OBS "#observation-engine"
-    click NIM "#nimble"
     click LIQ "#liquid-ai"
+    click TM "#trajectory-matcher"
+    click NIM "#nimble"
     click MUE "#memory-update-engine"
     click MEM "#institutional-memory"
-    click TM "#trajectory-matcher"
-    click KR "#knowledge-retriever"
+    click CB "#context-builder"
     click DEC "#agent-decision"
     click ACT "#action--alert"
     click OUT "#outcome-observer"
-
-    classDef source fill:#f6f7f9,stroke:#64748b;
-    classDef component fill:#eef6ff,stroke:#2563eb;
-    classDef core fill:#fff7ed,stroke:#ea580c,stroke-width:2px;
-    classDef memory fill:#f5f3ff,stroke:#7c3aed,stroke-width:2px;
 ```
+
+### Read it in one sentence
+
+```text
+Internal events OR external changes
+        ↓
+understand what changed
+        ↓
+update / retrieve Institutional Memory
+        ↓
+Context Builder selects only what matters NOW
+        ↓
+fixed-size Working Context
+        ↓
+Agent decides
+        ↓
+outcome becomes new memory
+```
+
+## 2. Flat context: memory grows, context does not
+
+This is a core long-horizon property, not an optimization detail.
+
+```mermaid
+flowchart LR
+    LIFE["Agent lifetime<br/>Day 1 → Day 365"] --> MEMG["Institutional Memory<br/>100 → 1K → 10K+ items<br/>GROWS"]
+    MEMG --> CB2["Context Builder<br/>retrieve + validate + rank"]
+    CB2 --> BUD["Context Budget<br/>max N selected items"]
+    BUD --> FLAT["Working Context<br/>≤ N items<br/>STAYS FLAT"]
+    FLAT --> LLM["Agent / LLM"]
+```
+
+```text
+Institutional Memory
+10K |                              /
+    |                          /
+ 5K |                     /
+    |                /
+ 1K |          /
+    |     /
+  0 +--------------------------------→ time
+       Day 1      Day 30      Day 365
+
+Working Context
+ N  |--------------------------------  ← fixed budget
+    |
+  0 +--------------------------------→ time
+```
+
+**DéjàVu's memory grows with the lifetime of the agent. Its context window doesn't.**
 
 ## Struct object model
 
@@ -190,22 +230,88 @@ Historical truth and current truth are different objects connected by provenance
 
 ## Institutional Memory
 
-**Purpose:** store both what happened historically and what the agent currently trusts.
+**Purpose:** preserve the agent's experience across time while keeping current knowledge trustworthy.
+
+Institutional Memory stores six simple things:
+
+```text
+Evidence → Incidents → Trajectories → Patterns
+    │                                   │
+    └────────→ Knowledge ─────────→ Recommendations
+```
+
+Raw evidence and historical incidents are preserved. Derived knowledge can change status or version as the world changes.
+
+### How memory is managed
+
+```mermaid
+flowchart TD
+    NEW["New evidence"] --> FIND{"Related memory?"}
+    FIND -- "No" --> ADD["ADD new memory"]
+    FIND -- "Yes" --> SAME{"Still agrees?"}
+    SAME -- "Yes" --> REV["REVALIDATE"]
+    SAME -- "No" --> AUTH{"New evidence authoritative?"}
+    AUTH -- "Yes" --> SUP["SUPERSEDE old<br/>ADD new version"]
+    AUTH -- "Unclear" --> CON["Mark CONFLICTED<br/>investigate"]
+    ADD --> STORE["Institutional Memory"]
+    REV --> STORE
+    SUP --> STORE
+    CON --> STORE
+    STORE --> RET["RETRIEVE when needed"]
+```
+
+### Internal path — logs / events / errors
+
+This is how production experience becomes memory.
 
 ```mermaid
 flowchart LR
-    E["Evidence<br/>immutable"] --> I["Incidents<br/>what happened"]
-    E --> K["Knowledge<br/>what is believed"]
-    I --> T["Trajectories<br/>what happened before"]
-    T --> P["Failure Patterns<br/>generalized precursor"]
-    K --> R["Recommendations<br/>what to do now"]
-    P --> R
-    K -. supersedes .-> K2["Older Knowledge<br/>preserved"]
+    LOG["Logs · Metrics · Errors"] --> TB3["Tinybird"]
+    TB3 --> OBS3["Observation Window"]
+    OBS3 --> TM3["Trajectory Matcher"]
+    TM3 --> KNOWN{"Seen before?"}
+    KNOWN -- "Yes" --> RET3["Retrieve Incident / Pattern"]
+    KNOWN -- "No" --> INV3["Investigate"]
+    RET3 --> OUT3["Action + Outcome"]
+    INV3 --> OUT3
+    OUT3 --> ADD3["ADD / refine<br/>Incident + Trajectory + Pattern"]
+    ADD3 --> MEM3["Institutional Memory"]
 ```
 
-Every retrievable memory carries **source, timestamps, confidence, version, validation time, dependencies, and status**.
+Example: `pool ↑ → queue ↑ → p99 ↑ → timeouts ↑ → outage`. The pre-failure sequence is stored so the next occurrence can be recognized earlier.
 
-[↑ Back to complete flow](#complete-flow)
+### External path — SDK / API / docs change
+
+This is how the agent prevents old knowledge from becoming bad advice.
+
+```mermaid
+flowchart LR
+    CHANGE["SDK / API / Docs change"] --> NIM3["Nimble<br/>find current source"]
+    NIM3 --> EV3["New immutable Evidence"]
+    EV3 --> CHECK3["Compare with stored Knowledge"]
+    CHECK3 --> OLD3["Old version<br/>SUPERSEDED"]
+    CHECK3 --> NEW3["New version<br/>ACTIVE"]
+    OLD3 --> IMP3["Find dependent Patterns / Recommendations"]
+    NEW3 --> IMP3
+    IMP3 --> VAL3["Mark affected items<br/>NEEDS_VALIDATION"]
+    VAL3 --> MEM4["Institutional Memory updated"]
+```
+
+**Important:** the old knowledge is not deleted. We preserve **what was true then** separately from **what is safe to recommend now**.
+
+### ADD vs UPDATE vs RETRIEVE
+
+| Operation | Meaning |
+|---|---|
+| **ADD** | New incident, evidence, trajectory, pattern, or knowledge |
+| **REVALIDATE** | Existing knowledge is checked and still true |
+| **SUPERSEDE** | New authoritative version replaces current use of old knowledge |
+| **INVALIDATE** | A belief is shown to be wrong; history is preserved |
+| **CONSOLIDATE** | Merge duplicate derived memories without deleting source evidence |
+| **ARCHIVE** | Remove old items from normal retrieval, not from history |
+| **RETRIEVE** | Context Builder selects relevant, valid memories for the current decision |
+
+[↑ Back to top-level flow](#1-complete-top-level-flow)
 
 ## Trajectory Matcher
 
@@ -233,26 +339,45 @@ The trajectory itself is the warning.
 
 [↑ Back to complete flow](#complete-flow)
 
-## Knowledge Retriever
+## Context Builder
 
-**Purpose:** retrieve relevant memory **without returning stale advice as current advice**.
+**Purpose:** convert a large, growing Institutional Memory into a **small, trustworthy, bounded working set** for the current decision.
 
 ```mermaid
 flowchart TD
-    Q["Agent question / detected pattern"] --> RET["Retrieve relevant memory"]
-    RET --> STATUS{"Memory status?"}
-    STATUS -- ACTIVE --> DEP{"Dependencies still valid?"}
-    STATUS -- STALE --> VALID["Revalidate before use"]
-    STATUS -- SUPERSEDED --> NEW["Follow supersededBy"]
-    STATUS -- CONFLICTED --> INVEST["Investigate"]
-    DEP -- Yes --> USE["Use in decision"]
-    DEP -- No --> VALID
-    VALID --> USE
-    NEW --> USE
-    INVEST --> USE
+    Q["Current observation / question"] --> RET["Retrieve candidates"]
+    MEM["Institutional Memory<br/>can be very large"] --> RET
+    RET --> REL["Relevance filter<br/>Does it matter now?"]
+    REL --> STATUS["Freshness filter<br/>Active? stale? superseded?"]
+    STATUS --> DEP["Dependency check<br/>API/SDK still valid?"]
+    DEP --> RANK["Rank by relevance + confidence + provenance"]
+    RANK --> BUD["Context Budget<br/>take at most N items"]
+    BUD --> CTX["BOUNDED WORKING CONTEXT<br/>≤ N items"]
+    CTX --> DEC["Agent Decision"]
+
+    STATUS -. "stale/conflicted" .-> NIM["Nimble revalidation"]
+    NIM --> STATUS
 ```
 
-[↑ Back to complete flow](#complete-flow)
+The Context Builder does **not** summarize the entire lifetime into the prompt. Old evidence stays in Institutional Memory for history/provenance, but only relevant and currently valid items consume working context.
+
+Example:
+
+```text
+12,481 memory objects
+        ↓ retrieve
+       37 candidates
+        ↓ relevance
+       11
+        ↓ freshness/dependency validation
+        6
+        ↓ context budget (max 8)
+   WORKING CONTEXT = 6 / 8
+        ↓
+   Agent Decision
+```
+
+[↑ Back to top-level flow](#1-complete-top-level-flow)
 
 ## Observation Engine
 
