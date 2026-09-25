@@ -15,7 +15,7 @@ def incident_memory_row(row):
 def run_pipeline(now,situation,live_events=None,use_sponsors=True,scenario="demo"):
     tb=TinybirdClient()
     safe_now=now.replace("'","")
-    incident_rows=tb.rows(f"SELECT * FROM dejavu_incidents WHERE visible_at <= '{safe_now}' ORDER BY visible_at")
+    incident_rows=tb.rows(f"SELECT event_id,event_type,service,timestamp,visible_at,scenario,payload FROM dejavu_incidents WHERE parseDateTimeBestEffortOrNull(visible_at) <= parseDateTimeBestEffort('{safe_now}') ORDER BY parseDateTimeBestEffortOrNull(visible_at)")
     memories=[incident_memory_row(x) for x in incident_rows]
     engine=MemoryUpdateEngine(memories)
     budget=int(os.getenv("MAX_MEMORY_CONTEXT_TOKENS","1200"))
