@@ -1,0 +1,3521 @@
+{
+  "experiment_id": "northstar-30-day-safe-traced",
+  "source": "existing Claude 30-day traced experiment",
+  "totals": {
+    "naive": {
+      "pages": 39,
+      "correct": 39,
+      "queries": 104,
+      "calls": 99,
+      "max_context": 31784,
+      "cost": 2.4
+    },
+    "memory": {
+      "pages": 39,
+      "correct": 39,
+      "queries": 116,
+      "calls": 258,
+      "max_context": 11564,
+      "cost": 6.07
+    }
+  },
+  "pages": [
+    {
+      "id": "p-001",
+      "day": 1.6321,
+      "when": "day 1, Tue 2026-09-01 15:10 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "search-service p95 rose only from a ~67ms baseline to a 75-84ms peak during the evening traffic ramp (request_count went 1450 -> 2785, ~+85%), and had already fallen back to ~68ms by 22:00. Error rate (~0.006), CPU (~0.40) and memory were flat throughout; logs show only routine CACHE_HIT with 2 QUERY_SLOW warnings spread over 10 hours, and there were no deployments. The only change today was search.log_level info->debug (config-day01-search-service), which did not track the latency curve (latency follows traffic, not the 16:10 change). Warning-level, load-correlated latency with no user impact — not a real incident.",
+        "result": "correct",
+        "queries": 9,
+        "context": 6752
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 only drifted from ~68ms to a peak of ~84ms and was back to 67.7ms at 22:00, tracking a normal evening traffic rise (request_count 1500 -> 2700/interval). Error rate flat at ~0.6%, no error logs (only CACHE_HIT/2x QUERY_SLOW), no deployments, and the only config change was a log-level bump to debug. Benign load-driven latency warning, not an incident.",
+        "result": "correct",
+        "queries": 7
+      },
+      "edits": [
+        {
+          "op": "add",
+          "id": "N1",
+          "text": "search-service search_latency_high (warning only): check request_count first. Evening PT traffic ramp (~1500 -> ~2700 per 15m) lifts p95 from ~68ms to ~80-85ms with flat error_rate (~0.6%), no ERROR logs, no deploys. If latency scales with traffic and is already receding at the latest point, dismiss as load-driven noise.",
+          "evidence": [
+            "p-001"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L1",
+          "text": "Triage order that worked: (1) alerts in the window, (2) deployments + config_changes in the prior ~24h, (3) the alerting service's metrics by 15m point (p95, error_rate, request_count), (4) logs grouped by level/code. Metrics arrive ~16 min late, so the newest point is ~15-30 min behind the alert. Status: standard opening.",
+          "evidence": [
+            "p-001"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L2",
+          "text": "A config change close in time to an alert is not automatically the cause. p-001: search.log_level info->debug 2h before a latency warning, but latency tracked traffic and error_rate was flat, so it was not causal. Require a metric step change aligned to the change timestamp before blaming it.",
+          "evidence": [
+            "p-001"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-002",
+      "day": 2.6321,
+      "when": "day 2, Wed 2026-09-02 15:10 PT",
+      "incident": null,
+      "monitor": "inventory_latency_high",
+      "service": "inventory-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 drifted from a ~90ms daytime baseline to a ~105ms peak exactly as evening traffic ramped (request_count 730 -> 1440) and was already back to ~90ms by 22:00. Error rate (~0.004), CPU (~0.25) and dependency latency were flat; logs show only STOCK_READ plus 3 QUERY_SLOW warnings over 10 hours, with no errors in any service. The only change was order-service v2.3.1 (tax-rounding), unrelated to inventory read latency and not matching the timing. Warning-level, traffic-correlated latency with no user impact — not a real incident.",
+        "result": "correct",
+        "queries": 5,
+        "context": 10221
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "Load-driven noise, not a real problem. inventory-service p95 tracked the evening PT traffic ramp (request_count ~750 -> peak 1441 at 19:30, p95 ~89ms -> ~105ms) and has already receded at the latest point (22:00: p95 89.5ms, req 932). error_rate flat (~0.38-0.45%), dependency_latency_ms, cpu and memory all flat; only 3 WARN QUERY_SLOW logs and no ERROR logs all day. No deployments or config changes touched inventory-service (the only deploy, dep order-service/v2.3.1 tax-rounding at 17:15, left inventory dependency latency unchanged).",
+        "result": "correct",
+        "queries": 6
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warning on search-service or inventory-service: check request_count first. Evening PT traffic ramp (peaks ~18:30-20:00 UTC... i.e. ~19:00-20:00 UTC peak) lifts p95 ~20% (search 68->85ms, inventory 89->105ms) with flat error_rate, flat cpu/dependency_latency, no ERROR logs, no deploys. If p95 tracks traffic and is receding at the newest point, dismiss as load-driven noise.",
+          "evidence": [
+            "p-001",
+            "p-002"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L3",
+          "text": "Fast dismissal check for a lone latency warning: pivot the service's metrics with one query (p95, request_count, error_rate, dependency_latency_ms, cpu per 15m point) and group logs by level/code. If error_rate + dependency_latency + cpu are flat while p95 moves with request_count, it is load, not a regression. Status: worked on p-001, p-002.",
+          "evidence": [
+            "p-001",
+            "p-002"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L4",
+          "text": "Don't blame the nearest deploy just because it is the only one. p-002: order-service tax-rounding deploy ~1h before an inventory-service latency warning was unrelated - inventory's dependency_latency_ms was flat across the deploy time. Confirm the deploy touches the alerting service or shows up in its dependency metrics/logs. Status: standard check.",
+          "evidence": [
+            "p-002"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-003",
+      "day": 3.3474,
+      "when": "day 3, Thu 2026-09-03 08:20 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "search-service metrics are completely flat around the 15:20 alert: p95 oscillates in its normal 64-77ms band all day (69.98ms at 15:15), request_count steady ~1500, error_rate ~0.006, CPU ~0.40, memory ~0.62 — no deviation from baseline. No deployments or config changes since Sep 1. This is a noisy/flapping warning threshold, not a real problem.",
+        "result": "correct",
+        "queries": 3,
+        "context": 13306
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service metrics show no regression: p95 oscillated in its normal 64-78ms band all morning (69.98ms at the 15:15 point just before the 15:20 alert), error_rate flat ~0.006, cpu ~0.40, memory ~0.62, dependency_latency within its usual 12-28ms range, request_count steady ~1450-1590. Logs show only routine CACHE_HIT INFO plus a single QUERY_SLOW WARN, no ERRORs. No deployments or config changes touched search-service (only an unrelated order-service tax-rounding deploy on day 2). This is a threshold blip/noisy alert, not a real problem.",
+        "result": "correct",
+        "queries": 5
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "search_latency_high / inventory_latency_high warnings are usually false alarms. Two flavors: (a) evening PT ramp (~18:30-20:00 UTC) lifts p95 ~20% (search 68->85, inventory 89->105) with flat error_rate/cpu/dep; (b) pure blip - p95 at the newest point is inside its normal band (search 64-78ms) and nothing moved. Both: no ERROR logs, no deploy on that service. Dismiss. (p-001, p-002, p-003)",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L5",
+          "text": "First confirm the alert's metric is actually elevated before hunting a cause. p-003: search_latency_high at 15:20, but the 15:15 p95 (70ms) sat mid-band vs the day's 64-78ms range, so there was nothing to explain. Establish the service's own baseline band from the last ~5h of 15m points; if the latest points are inside it, dismiss as a threshold blip. Status: standard opening check.",
+          "evidence": [
+            "p-003"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-004",
+      "day": 3.6321,
+      "when": "day 3, Thu 2026-09-03 15:10 PT",
+      "incident": null,
+      "monitor": "notification_latency_high",
+      "service": "notification-worker",
+      "naive": {
+        "action": "dismiss",
+        "answer": "notification-worker p95 rose only from its ~198ms baseline to a ~225ms peak while evening send volume nearly doubled (request_count 440 -> 854), and was back to 200ms by 22:00. Error rate (~0.008), CPU (~0.18) and Courierly dependency latency (250 -> 280ms) stayed in-band; Courierly/all vendor status pages show no change today; no deployments or config changes; logs show only MESSAGE_QUEUED with zero errors. Load-correlated warning threshold, no user impact — not a real incident.",
+        "result": "correct",
+        "queries": 4,
+        "context": 17817
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "notification-worker p95 at the newest points (21:45 214ms, 22:00 200ms) is at/below its normal 198-226ms band for the day, and request_count is falling off the evening peak. error_rate (~0.008), dependency_latency_ms (~260ms) and cpu (~0.18) are all flat; no ERROR/WARN logs (only MESSAGE_QUEUED INFO), and no deployments or config changes in the prior 26h. Threshold blip, not a real problem.",
+        "result": "correct",
+        "queries": 6
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search-service, inventory-service and notification-worker are usually false alarms. Two flavors: (a) evening PT ramp (~18:30-20:00 UTC) lifts p95 ~20% with flat error_rate/cpu/dep; (b) blip - newest p95 is inside the day's normal band (search 64-78, notification 198-226ms) while req_count falls. No ERROR logs, no deploy/config on that service. Dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Fast dismissal check for a lone latency warning: one pivot query of the service's 15m points (p95, request_count, error_rate, dependency_latency_ms, cpu) plus logs grouped by level/code. If error_rate, dependency_latency and cpu are flat and p95 tracks request_count or is inside its band, it is load/noise, not a regression. Status: worked on p-001, p-002, p-004.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-004"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L6",
+          "text": "Cheap early filter: query deployments and config_changes for the prior ~24-26h first. If both are empty, no deploy/config can be the cause, so the page is either a vendor issue (check vendor_snapshots / dependency_latency_ms) or noise. p-004: zero deploys/configs + flat dependency latency -> dismissed in 6 queries. Status: standard opening.",
+          "evidence": [
+            "p-004"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-005",
+      "day": 4.5036,
+      "when": "day 4, Fri 2026-09-04 12:05 PT",
+      "incident": "inc-day-04",
+      "monitor": "checkout_error_rate_high",
+      "service": "checkout-api",
+      "naive": {
+        "action": "resolve",
+        "answer": "config-day04-reduce",
+        "result": "correct",
+        "queries": 7,
+        "context": 27774
+      },
+      "memory": {
+        "action": "resolve",
+        "answer": "config-day04-reduce",
+        "result": "correct",
+        "queries": 7
+      },
+      "edits": [
+        {
+          "op": "add",
+          "id": "L7",
+          "text": "checkout_error_rate_high (critical) on checkout-api: pivot payment-orchestrator connection_pool_utilization/connection_pool_wait_ms/payment_success_rate next to checkout error_rate, then group logs by code. p-005: err 0.005->0.18 with CONNECTION_POOL_TIMEOUT logs, pool util 0.24->0.99, wait 11ms->4800ms, payment_success_rate normal => internal pool exhaustion, not PayRail. Status: worked.",
+          "evidence": [
+            "p-005"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L8",
+          "text": "A config change can bite hours after it lands, so widen the config window to ~24h and don't prefer the nearest deploy. p-005: cost-optimizer cut payments.max_connections 100->20 at 09:00; nothing broke until 19:00 when evening concurrency passed 20. The deploy 25 min before the page only touched banner/copy (changed_components) and was a decoy. Status: standard check.",
+          "evidence": [
+            "p-005"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L9",
+          "text": "Metric granularity can switch (15m points become per-minute near the present), so raw pivots blow past the 50-row cap and request_count drops ~10x for granularity reasons only. Use time_bucket(INTERVAL '15 minutes', event_time) with avg(CASE WHEN service/signal...) to get one compact row per bucket. Status: standard query shape. (p-005)",
+          "evidence": [
+            "p-005"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-006",
+      "day": 4.6321,
+      "when": "day 4, Fri 2026-09-04 15:10 PT",
+      "incident": null,
+      "monitor": "order_latency_high",
+      "service": "order-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "order-service p95 is flat in its normal 123-138ms band through 22:00 with error_rate ~0.003, CPU ~0.21 and request volume declining (1150 -> 770). The earlier checkout-api pool incident (config-day04-reduce) was resolved at 19:28 and never affected order-service error or latency. No new deploys/config changes since. Warning threshold noise, no user impact.",
+        "result": "correct",
+        "queries": 3,
+        "context": 31153
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "order-service p95 at the alert (130.9ms at 22:00) sits inside the day's normal 120-138ms band; error_rate (~0.003), dependency_latency (~46ms) and cpu (~0.21) are flat, request_count is falling off the evening peak, and the only logs are INFO ORDER_SAVED. No deploy or config touched order-service (the day's changes were payment-orchestrator max_connections, already restored at 19:25, and a checkout-api banner deploy). Threshold blip, not a real regression.",
+        "result": "correct",
+        "queries": 5
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search, inventory, notification-worker and order-service are usually false alarms. Flavors: (a) evening PT ramp (~18:30-20:00 UTC) lifts p95 ~20% with flat error_rate/cpu/dep; (b) blip - newest p95 inside the day's band (search 64-78, notification 198-226, order 120-138ms) while req_count falls. No ERROR logs, no deploy/config on that service. Dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L10",
+          "text": "A warning hours after a resolved incident the same day is usually unrelated. p-006: order_latency_high 22:10, ~3h after the 19:05 checkout pool-exhaustion incident (payments.max_connections restored 19:25); order-service p95/err/dep/cpu were flat all evening. Check the new service's own band first instead of assuming aftershock. Status: worked.",
+          "evidence": [
+            "p-006"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-007",
+      "day": 5.6321,
+      "when": "day 5, Sat 2026-09-05 15:10 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "search-service p95 never left its normal 61-78ms band all day (66.99ms at 22:00, peak 78.5ms during the evening traffic ramp 1070 → 2036 rps), error_rate flat ~0.006, cpu ~0.40, memory ~0.61 unchanged. Logs show only CACHE_HIT plus a single QUERY_SLOW, no ERROR rows anywhere. No deploys or config changes involved. This is the recurring benign 15:10 PT latency warning tracking evening traffic, not a real problem.",
+        "result": "correct",
+        "queries": 2,
+        "context": 31784
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 at the latest point (22:00) was 67ms, mid-band vs the day's 61-80ms range; error_rate (~0.006), cpu (~0.40) and dependency_latency were flat and request_count was falling off the evening peak. No search-service deploys or config changes in the prior 26h (only a checkout-api gift_wrap flag) and no ERROR logs (one lone QUERY_SLOW warn). Threshold blip / known search latency noise.",
+        "result": "correct",
+        "queries": 5
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search, inventory, notification-worker, order-service are almost always false alarms (5+ so far). Flavors: (a) evening PT ramp ~18:30-20:30 UTC lifts p95 ~15-20% with flat error_rate/cpu/dep; (b) blip - newest p95 inside the day's band (search 61-80, notification 198-226, order 120-138ms) while req_count falls. No ERROR logs, no deploy/config on that service. Dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Fast dismissal for a lone latency warning: one time_bucket pivot of the service's 15m points (p95, request_count, error_rate, dependency_latency_ms, cpu) over the last ~6h plus logs grouped by level/code. If error_rate, dep latency and cpu are flat and p95 tracks request_count or sits inside the band, it is load/noise. 5 queries closed p-007. Status: worked on p-001..p-004, p-007.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-007"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Cheap early filter: query deployments and config_changes for the prior ~26h first. If nothing touches the alerting service, no deploy/config can be the cause, so the page is a vendor issue (check vendor_snapshots / dependency_latency_ms) or noise. Changes on other services (e.g. a checkout-api feature flag during a search page) are decoys. Status: standard opening (p-004, p-007).",
+          "evidence": [
+            "p-004",
+            "p-007"
+          ]
+        }
+      ],
+      "summarized": true
+    },
+    {
+      "id": "p-008",
+      "day": 6.6321,
+      "when": "day 6, Sun 2026-09-06 15:10 PT",
+      "incident": null,
+      "monitor": "inventory_latency_high",
+      "service": "inventory-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 stayed in its normal ~81-97ms band all day (88.6ms at 22:00, peak 96.6ms during the evening traffic ramp 530 → 1036 rps), error_rate flat ~0.004, cpu ~0.25 unchanged. Logs show only STOCK_READ plus 2 QUERY_SLOW warnings, no ERROR rows. No deploy or config change plausibly involved (today's only change was checkout gift_wrap feature flag on checkout-api). Recurring benign 15:10 PT latency warning tracking traffic.",
+        "result": "correct",
+        "queries": 2,
+        "context": 7109
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 at 22:00 UTC was 88.6ms, mid-band vs the day's 82-98ms range; error_rate (~0.004), dependency_latency_ms (~22-36) and cpu (~0.25) flat all day, request_count already falling from the 19:30 peak. No deploys or config changes touched inventory-service in the prior 26h (only a search-service synonym deploy). Only 2 WARN QUERY_SLOW logs, no errors. Threshold blip / load noise.",
+        "result": "correct",
+        "queries": 4
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search, inventory, notification-worker, order-service are almost always false alarms (6+). Flavors: (a) evening PT ramp ~18:30-20:30 UTC lifts p95 ~15-20% with flat err/cpu/dep; (b) blip - newest p95 inside day's band (search 61-80, notif 198-226, order 120-138, inventory 82-98ms) while req_count falls. No ERROR logs, no deploy/config on that service. Dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Fast dismissal for a lone latency warning: (1) deploys+config_changes last ~26h, (2) one time_bucket pivot of the service's 15m points (p95, error_rate, request_count, dep_latency, cpu) over ~6-8h, (3) logs by level/code. If err/dep/cpu flat and p95 tracks req_count or sits in band, it is load/noise. 4 queries closed p-008. Worked p-001..p-004, p-007, p-008.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-007",
+            "p-008"
+          ]
+        }
+      ],
+      "summarized": true
+    },
+    {
+      "id": "p-009",
+      "day": 7.6321,
+      "when": "day 7, Mon 2026-09-07 15:10 PT",
+      "incident": null,
+      "monitor": "notification_latency_high",
+      "service": "notification-worker",
+      "naive": {
+        "action": "dismiss",
+        "answer": "notification-worker p95 stayed in its normal ~192-222ms band (203ms at 22:00, peak 221.6ms at 19:30 during the evening send ramp 434 → 842), error_rate flat ~0.008, Courierly dependency_latency 250 → 277ms in lockstep with volume and already back to 253ms. No ERROR logs anywhere (only MESSAGE_QUEUED). Recurring benign 15:10 PT latency warning driven by the evening traffic ramp.",
+        "result": "correct",
+        "queries": 2,
+        "context": 8884
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "No deploys or config changes touched any service in the prior 28h. notification-worker's 15m points from 15:15-22:00 UTC stay flat: p95 195-225ms (inside its known 198-226ms band), error_rate ~0.008, dependency_latency_ms 245-282ms, cpu ~0.18, and request_count was already falling (842 -> 566) by the 22:10 alert. Logs show only INFO MESSAGE_QUEUED. Classic evening-ramp latency blip / threshold noise.",
+        "result": "correct",
+        "queries": 5
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search, inventory, notification-worker, order-service are almost always false alarms (7+). Flavors: (a) evening PT ramp ~18:30-20:30 UTC lifts p95 ~15-20% with flat err/cpu/dep; (b) blip - newest p95 inside day's band (search 61-80, notif 195-226, order 120-138, inventory 82-98ms) while req_count falls. No ERROR logs, no deploy/config on that service in 26h. Dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008",
+            "p-009"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L9",
+          "text": "Query shapes: metric granularity switches to per-minute near now, so always time_bucket(INTERVAL '15 minutes', event_time) + avg(CASE WHEN signal=...) for one row per bucket (raw pivots blow the 50-row cap; req_count drops ~10x for granularity only). Selecting vendor_snapshots.published_at errored with \"pytz\" in DuckDB - it's tz-aware; omit or cast it. (evidence: p-005, p-009)",
+          "evidence": [
+            "p-005",
+            "p-009"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Fast dismissal for a lone latency warning: (1) alerts + deploys/config_changes last ~26h (if nothing touched any service, cause must be vendor or noise), (2) one time_bucket pivot of the service's 15m points (p95, error_rate, request_count, dep_latency, cpu) over ~7h, (3) logs by level/code. If err/dep/cpu flat and p95 in band or tracking req_count, it's noise. 3-4 queries closed p-008, p-009.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-007",
+            "p-008",
+            "p-009"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-010",
+      "day": 8.6321,
+      "when": "day 8, Tue 2026-09-08 15:10 PT",
+      "incident": null,
+      "monitor": "order_latency_high",
+      "service": "order-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "order-service p95 stayed in its normal ~114-136ms band (129ms at 22:00, peak 135.7ms) while traffic ramped 590 → 1117 and receded; error_rate flat ~0.003, cpu ~0.22 unchanged. No ERROR logs (only ORDER_SAVED). No changes yesterday or today touching order-service. Recurring benign 15:10 PT latency warning tracking the evening traffic ramp.",
+        "result": "correct",
+        "queries": 2,
+        "context": 10572
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "order-service p95 at the alert (129ms at 22:00) sits inside its own day band (114-136ms over the last 7h), error_rate flat ~0.003, dependency latency and cpu flat, and request_count is falling off the evening peak. No deployments or config changes touched order-service in the last 26h (only notification-worker items). Classic *_latency_high threshold blip (N1).",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search, inventory, notification-worker, order-service are almost always false alarms (8+). Flavors: (a) evening PT ramp ~18:30-20:30 UTC lifts p95 ~15-20% with flat err/cpu/dep; (b) blip - newest p95 inside day's band (search 61-80, notif 195-226, order 114-138, inventory 82-98ms) while req_count falls. No ERROR logs, no deploy/config on that service in 26h. Dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: 2 queries usually suffice. (1) deployments+config_changes last ~26h (nothing on that service => vendor or noise); (2) one time_bucket(15m) pivot of p95/error_rate/request_count/dep_latency/cpu over ~7h (metrics lag ~16min). Flat err/dep/cpu and p95 in band or tracking req_count = dismiss; only then pull logs. Closed p-008, p-009, p-010 in 1-3 queries.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-011",
+      "day": 9.5036,
+      "when": "day 9, Wed 2026-09-09 12:05 PT",
+      "incident": "inc-day-09",
+      "monitor": "checkout_error_rate_high",
+      "service": "checkout-api",
+      "naive": {
+        "action": "resolve",
+        "answer": "vendor-payrail-20260909T192000Z",
+        "result": "correct",
+        "queries": 5,
+        "context": 14130
+      },
+      "memory": {
+        "action": "resolve",
+        "answer": "vendor-payrail-20260909T192000Z",
+        "result": "correct",
+        "queries": 4
+      },
+      "edits": [
+        {
+          "op": "add",
+          "id": "L13",
+          "text": "Vendor outages: the PayRail/Courierly status snapshot lands ~10-20 min AFTER our metrics break (p-011: onset 19:00 UTC, snapshot 19:17 flipping operational->investigating, \"Elevated API errors in US West\"), so query vendor_snapshots up to now, not just before the alert, and resolve with the snapshot event_id (vendor-<name>-<ts>). Status: worked.",
+          "evidence": [
+            "p-011"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L14",
+          "text": "Cosmetic deploys minutes before a critical page are planted decoys: judge by changed_components/commit_subject and whether the deploy could touch the broken signal. p-011: checkout-api \"receipt-footer\" at 18:50 vs PayRail dep-latency blowup at 19:00 - unrelated. p-005: banner/copy deploy 25 min before pool exhaustion. Status: standard filter.",
+          "evidence": [
+            "p-005",
+            "p-011"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L7",
+          "text": "checkout_error_rate_high: one pivot of checkout error_rate with payment-orchestrator pool_util/pool_wait/payment_success_rate/dependency_latency/payments_db_cpu decides it. Internal (p-005): pool 0.24->0.99, wait 11->4800ms, success normal. Vendor (p-011): dep_latency 330->8000ms, success 0.996->0.60, pool+db_cpu flat => check vendor_snapshots. Status: worked twice.",
+          "evidence": [
+            "p-005",
+            "p-011"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-012",
+      "day": 9.6321,
+      "when": "day 9, Wed 2026-09-09 15:10 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "search-service p95 stayed in its normal 63-79ms band (66.7ms at 22:00) while traffic ramped 1455 → 2726 and receded; error_rate ~0.006 and cpu ~0.40 flat, logs only CACHE_HIT + one QUERY_SLOW. Unrelated to today's PayRail incident (UPSTREAM_TIMEOUTs were confined to checkout-api/payment-orchestrator and stopped at 20:05). Recurring benign 15:10 PT latency warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 16084
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 at the alert time (22:00 bucket, 66.7ms) is at the low end of the day's own band (62-85ms, mean ~74ms); error_rate (~0.006), cpu (~0.40) and memory flat all day, and request_count is falling off the evening peak. No deployments or config changes touched search-service in the prior 26h (only a notification-worker template tweak and a checkout-api receipt-footer deploy). Threshold blip / known-noise latency warning.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search, inventory, notification-worker, order-service are almost always false alarms (10+, incl p-010, p-012). Flavors: (a) evening PT ramp ~18:30-20:30 UTC lifts p95 15-20% with flat err/cpu/dep; (b) blip - newest p95 inside day's band (search 62-85, notif 195-226, order 114-138, inventory 82-98ms) while req_count falls. No deploy/config on that service in 26h.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: 2 independent queries, send both at once. (1) deployments+config_changes last ~26h (nothing on that service => vendor or noise); (2) one time_bucket(15m) pivot of p95/error_rate/request_count/cpu over ~8h (metrics lag ~16min). Flat err/cpu and p95 inside the day's band or tracking req_count = dismiss; only then pull logs. Closed p-008..p-010, p-012 in 1-2 queries.",
+          "evidence": [
+            "p-003",
+            "p-004",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L14",
+          "text": "Cosmetic deploys near a page are planted decoys: judge by changed_components/commit_subject and whether they could touch the broken signal. p-011: checkout \"receipt-footer\" 18:50 vs PayRail dep-latency blowup 19:00. p-005: banner/copy deploy 25 min before pool exhaustion. p-012: same receipt-footer deploy is the only recent change on a search page. Status: standard filter.",
+          "evidence": [
+            "p-005",
+            "p-011",
+            "p-012"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-013",
+      "day": 10.3474,
+      "when": "day 10, Thu 2026-09-10 08:20 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Pure noise: search-service p95 stayed in its normal 62-77ms band all morning (76.9ms at 15:00, within normal jitter), request_count steady ~1450-1570, error_rate ~0.006, cpu ~0.40, memory ~0.61 all flat. Logs show only CACHE_HIT plus one QUERY_SLOW, no ERRORs. No deploys or config changes affecting search-service since v5.6.0 on 09-06, which caused no shift.",
+        "result": "correct",
+        "queries": 2,
+        "context": 18135
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 at 15:15 was 75ms, squarely inside the day's band (62-77ms over the last 9h); error_rate (~0.006), request_count (~1500), cpu and memory are all flat. No deployment or config change touched search-service in the prior 26h (only a checkout-api receipt-footer cosmetic deploy). Classic false-alarm latency blip (N1/L3).",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search, inventory, notification-worker, order-service are almost always false alarms (11+, incl p-010, p-012, p-013). Flavors: (a) evening PT ramp ~18:30-20:30 UTC lifts p95 15-20% with flat err/cpu/dep; (b) blip - newest p95 inside day's band (search 62-85, notif 195-226, order 114-138, inventory 82-98ms) with flat err/cpu/req. No deploy/config on that service in 26h.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L14",
+          "text": "Cosmetic deploys near a page are planted decoys: judge by changed_components/commit_subject and whether they could touch the broken signal. Day 9's checkout-api \"receipt footer wording\" deploy (2026-09-09 18:50) was the only recent change on p-011, p-012 and p-013 and innocent each time. Same pattern p-005 (banner/copy). Status: 4 confirmations, standard filter.",
+          "evidence": [
+            "p-005",
+            "p-011",
+            "p-012",
+            "p-013"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: check the metric is really elevated vs its own band. Send 2 queries at once: (1) deploy+config last ~26h on that service; (2) time_bucket(15m) pivot of p95/err/req/cpu over ~9h (metrics lag ~16min). Newest p95 inside the day's band (p-003: 70 in 64-78; p-013 search: 75 in 62-77) or tracking req with flat err/cpu => dismiss. Closed p-003, p-008..p-010, p-012, p-013.",
+          "evidence": [
+            "p-003",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-014",
+      "day": 10.6321,
+      "when": "day 10, Thu 2026-09-10 15:10 PT",
+      "incident": null,
+      "monitor": "inventory_latency_high",
+      "service": "inventory-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 rose from ~86ms to a peak of 105ms in lockstep with the evening traffic ramp (781 → 1384 rps) and was already back to 88ms at 22:00; error_rate flat ~0.004, cpu ~0.25 unchanged. Only STOCK_READ logs plus one QUERY_SLOW, no ERRORs. Recurring benign 15:10 PT latency warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 19618
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "No deployments or config changes anywhere in the prior 26h. inventory-service p95 tracked the traffic ramp (req 733->1400 then falling) within its own day band (82-105ms) and the newest bucket at 22:00 is 88ms — back to baseline — with error_rate flat ~0.004 and cpu flat ~0.25. Classic evening-ramp latency warning false alarm (N1).",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high warnings on search, inventory, notification-worker, order-service are almost always false alarms (12+, incl p-010, p-012, p-013, p-014). Flavors: (a) evening PT ramp ~17:30-20:30 UTC lifts p95 with flat err/cpu and p95 tracking req_count; (b) blip - newest p95 inside day's band (search 62-85, notif 195-226, order 114-138, inventory 82-105ms). No deploy/config on that service in 26h.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: list deployments+config_changes for the prior ~26h (all services, one UNION query). Empty list => noise or vendor; dismiss latency warnings fast (p-014). Changes on other services are decoys (order-service tax deploy vs inventory page p-002; search synonym deploy p-008). Even a same-service change needs a metric step change aligned to its timestamp (p-001) before blaming it.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-004",
+            "p-007",
+            "p-008",
+            "p-014"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: check the metric vs its own band. Send 2 queries at once: (1) deploy+config last ~26h (all services); (2) time_bucket(15m) pivot of p95/err/req/cpu over ~9h (metrics lag ~16min). Newest p95 inside the day's band (p-003: 70 in 64-78; p-013 search 75 in 62-77; p-014 inventory 88 in 82-105) or tracking req with flat err/cpu => dismiss. 2 queries suffice.",
+          "evidence": [
+            "p-003",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-015",
+      "day": 11.6321,
+      "when": "day 11, Fri 2026-09-11 15:10 PT",
+      "incident": null,
+      "monitor": "notification_latency_high",
+      "service": "notification-worker",
+      "naive": {
+        "action": "dismiss",
+        "answer": "notification-worker p95 stayed in its normal band, peaking at 227ms during the evening send ramp (481 → 845) and back to 206ms at 22:00; error_rate flat ~0.008 and Courierly dependency_latency only moved 250 → 279ms with volume. No ERROR logs (only MESSAGE_QUEUED). Recurring benign 15:10 PT latency warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 21156
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "Textbook N1 evening-ramp false alarm: notification-worker p95 stayed in its 193–227 ms band all day, peaking with the 18:00–19:45 UTC request ramp (447→858 req) and already receding to 206 ms by 22:00 while error_rate (~0.008), cpu (~0.18) and dependency_latency (~265 ms) were flat. No deploy or config change on notification-worker in the prior 26h (only an order-service \"invoice footnote\" deploy, a decoy).",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: compare the metric to its own band. Send 2 queries at once: (1) deploy+config last ~26h (all services); (2) time_bucket(15m) pivot of p95/err/req/cpu/dep_latency over ~9h (metrics lag ~16min). Newest p95 inside the day's band (see N1) or tracking req_count with flat err/cpu => dismiss. Status: 2 queries sufficed every time, incl. p-013, p-014, p-015.",
+          "evidence": [
+            "p-003",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014",
+            "p-015"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always a false alarm (15+, incl. p-014, p-015). Flavors: (a) evening PT ramp ~17:00-20:30 UTC lifts p95, err/cpu flat, p95 tracks req_count (p-015: req 447->858, p95 200->227, back to 206 by 22:00); (b) blip inside day's band. No change on that service in 26h => dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014",
+            "p-015"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: list deployments+config_changes for the prior ~26h (all services, one UNION). Empty => noise or vendor; dismiss latency warnings fast (p-014). Changes on OTHER services are decoys (order-service tax deploy vs inventory p-002; search synonym p-008; order-service invoice-footnote vs notification p-015). Same-service change still needs a step change aligned in time (p-001).",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-004",
+            "p-007",
+            "p-008",
+            "p-014",
+            "p-015"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-016",
+      "day": 12.6321,
+      "when": "day 12, Sat 2026-09-12 15:10 PT",
+      "incident": null,
+      "monitor": "order_latency_high",
+      "service": "order-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "order-service p95 flat in its normal 110-127ms band all day (122ms at 22:00) with only a mild weekend traffic ramp (423 → 811); error_rate ~0.003 and cpu ~0.22 unchanged, no ERROR logs. Yesterday's deploy-day11-order-service (v2.3.4 invoice footnote) produced no latency shift. Recurring benign 15:10 PT latency warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 22875
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "order-service p95 has been flat in its normal band all day (109-127 ms, newest bucket 122 at 22:00 UTC), with error_rate ~0.003, cpu ~0.22 and dependency_latency 33-48 ms unchanged; request_count is just coming down off the evening ramp. No deploy or config change on order-service in the prior 26h (only an inventory-service cache_ttl tweak at 11:15 by inventory-oncall, unrelated and not reflected in order-service dep latency). Classic false-alarm latency warning (N1).",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always a false alarm (16+, incl. p-014, p-015, p-016). Flavors: (a) evening PT ramp ~17:00-20:30 UTC lifts p95, err/cpu flat, p95 tracks req_count (p-015); (b) blip inside day's band with p95 dead flat even as req doubles (p-016: req 420->811->558, p95 109-127 all day). No change on that service in 26h => dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014",
+            "p-015",
+            "p-016"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: compare the metric to its own band. Send 2 queries at once: (1) deploy+config last ~26h (all services, one UNION); (2) time_bucket(15m) pivot of p95/err/req/cpu/dep_latency over ~9h (metrics lag ~16min). Newest p95 inside the day's band (see N1) or tracking req_count with flat err/cpu => dismiss. Status: 2 queries sufficed every time through p-016.",
+          "evidence": [
+            "p-003",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014",
+            "p-015",
+            "p-016"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: list deployments+config_changes for prior ~26h (all services, one UNION). Empty => noise or vendor; dismiss latency warnings fast (p-014). Changes on OTHER services are decoys (order tax deploy vs inventory p-002; search synonym p-008; invoice-footnote vs notification p-015; inventory cache_ttl vs order p-016). Same-service change still needs a step change aligned in time (p-001).",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-004",
+            "p-007",
+            "p-008",
+            "p-014",
+            "p-015",
+            "p-016"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-017",
+      "day": 13.6321,
+      "when": "day 13, Sun 2026-09-13 15:10 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "search-service p95 stayed inside its normal 62-76ms band all day (69.4ms at 22:00) during the usual evening traffic ramp (1072 → 2034 and back down); error_rate ~0.006 and cpu ~0.40 flat; logs only CACHE_HIT + one QUERY_SLOW, no ERRORs. No search-service changes. Recurring benign 15:10 PT latency warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 24584
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "No deployments or config changes anywhere in the prior 26h. search-service p95 is dead flat all day (60-80ms, newest bucket 69ms) with error_rate ~0.006 and cpu ~0.40 unchanged; request_count just rode the evening ramp (1040 -> 2050 -> 1332). Textbook false-alarm latency warning inside the day's band.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always a false alarm (17+, incl. p-014..p-017). Flavors: (a) evening PT ramp ~17:00-20:30 UTC lifts p95, err/cpu flat, p95 tracks req_count (p-015); (b) p95 dead flat inside day's band even as req doubles (p-016; p-017 search p95 60-80ms all day while req 1040->2050). No change on that service in 26h => dismiss.",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-007",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014",
+            "p-015",
+            "p-016",
+            "p-017"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: compare the metric to its own band. Send 2 queries at once: (1) deploy+config last ~26h (all services, one UNION); (2) time_bucket(15m) pivot of p95/err/req/cpu/dep_latency over ~9h (metrics lag ~16min). Newest p95 inside the day's band (see N1) or tracking req_count with flat err/cpu => dismiss. Status: 2 queries sufficed every time through p-017.",
+          "evidence": [
+            "p-003",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014",
+            "p-015",
+            "p-016",
+            "p-017"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION). Empty => noise or vendor; dismiss latency warnings fast (p-014, p-017: zero changes, closed in 2 queries). Changes on OTHER services are decoys (order tax vs inventory p-002; search synonym p-008; invoice footnote vs notification p-015; inventory TTL vs order p-016). Same-service change needs aligned step (p-001).",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-004",
+            "p-007",
+            "p-008",
+            "p-014",
+            "p-015",
+            "p-016",
+            "p-017"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-018",
+      "day": 14.3474,
+      "when": "day 14, Mon 2026-09-14 08:20 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Noise: search-service p95 held its normal 62-77ms band through the morning (71.2ms at 15:00), traffic flat ~1450-1550, error_rate ~0.006 and cpu ~0.40 unchanged, no ERROR logs. Yesterday's only change was a checkout-api footer link deploy, unrelated to search.",
+        "result": "correct",
+        "queries": 2,
+        "context": 26228
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 is flat inside its normal band all day (62-78 ms, newest bucket 15:15 UTC = 70 ms), with error_rate ~0.006, cpu ~0.40 and memory ~0.62 all flat while request_count sits steady at ~1450-1550. No deployment or config change touched search-service in the prior 26h (only a cosmetic checkout-api footer-link deploy). Classic false-alarm search_latency_high.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L14",
+          "text": "Cosmetic deploys near a page are planted decoys: judge by changed_components/commit_subject and whether they could touch the broken signal. Day 9 checkout \"receipt footer wording\" (p-011..p-013), day 11 order \"invoice footnote\" (p-015), day 13/14 checkout v4.20.0 \"footer link\" (fired near p-017 and still the only change in p-018's window) - all innocent. Status: 7 confirmations.",
+          "evidence": [
+            "p-005",
+            "p-011",
+            "p-012",
+            "p-013",
+            "p-015",
+            "p-017",
+            "p-018"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always a false alarm (18+, incl. p-014..p-018). Flavors: (a) evening PT ramp ~17:00-20:30 UTC lifts p95, err/cpu flat, p95 tracks req (p-015); (b) p95 dead flat in day's band while req flat or doubles (p-016, p-017; p-018 search p95 62-78ms, err .006, cpu .40). No change on that service in 26h => dismiss.",
+          "evidence": [
+            "p-001",
+            "p-003",
+            "p-004",
+            "p-006",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014",
+            "p-015",
+            "p-016",
+            "p-017",
+            "p-018"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: compare the metric to its own band. Send 2 queries at once: (1) deploy+config last ~26h (all services, one UNION); (2) time_bucket(15m) pivot of p95/err/req/cpu/mem (+dep_latency) over ~9h (metrics lag ~16min). Newest p95 inside the day's band (see N1) or tracking req with flat err/cpu => dismiss. Status: 2 queries sufficed through p-018.",
+          "evidence": [
+            "p-003",
+            "p-008",
+            "p-009",
+            "p-010",
+            "p-012",
+            "p-013",
+            "p-014",
+            "p-015",
+            "p-016",
+            "p-017",
+            "p-018"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-019",
+      "day": 14.6321,
+      "when": "day 14, Mon 2026-09-14 15:10 PT",
+      "incident": null,
+      "monitor": "inventory_latency_high",
+      "service": "inventory-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 rose only from ~89ms to a 103ms peak while traffic ramped 804 → 1405, and is back to 93ms at 22:00; error_rate flat ~0.004, cpu ~0.25 unchanged, no ERROR logs (only STOCK_READ + one QUERY_SLOW). The 09-12 cache_ttl 60→30 config produced no step change. Recurring benign 15:10 PT latency warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 27663
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 is dead flat in its normal band (82-103ms) all day through 22:00 UTC, error_rate ~0.004, cpu ~0.25, memory flat; request_count rose and already fell back from the evening ramp. The only change in the last 26h is checkout-api v4.20.0 \"footer link\" (different service, cosmetic). Textbook false-alarm latency warning.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: compare the metric to its own band. Send 2 queries at once: (1) deploy+config last ~26h (all services, one UNION); (2) time_bucket(15m) pivot of p95/err/req/cpu/mem (+dep_latency) over ~9h (metrics lag ~16min). Newest p95 inside the day's band (see N1) or tracking req with flat err/cpu => dismiss. Status: 2 queries sufficed through p-019.",
+          "evidence": [
+            "p-003",
+            "p-012",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L14",
+          "text": "Cosmetic deploys near a page are planted decoys: judge by changed_components/commit_subject and whether they could touch the broken signal. Day 9 checkout \"receipt footer wording\" (p-011..p-013), day 11 order \"invoice footnote\" (p-015), day 13/14 checkout v4.20.0 \"footer link\" (sole change in p-017..p-019 windows) - all innocent. Status: 8 confirmations.",
+          "evidence": [
+            "p-005",
+            "p-011",
+            "p-013",
+            "p-015",
+            "p-017",
+            "p-018",
+            "p-019"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always a false alarm (19+, incl. p-014..p-019). Flavors: (a) evening PT ramp 17:00-20:30 UTC lifts p95, err/cpu flat, p95 tracks req (p-015); (b) p95 flat in day's band while req swings (p-016..p-019; p-019 inventory p95 82-103ms, err .004, cpu .25, req 730->1410->946). No change on that service in 26h => dismiss.",
+          "evidence": [
+            "p-003",
+            "p-014",
+            "p-015",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-020",
+      "day": 15.6321,
+      "when": "day 15, Tue 2026-09-15 15:10 PT",
+      "incident": null,
+      "monitor": "notification_latency_high",
+      "service": "notification-worker",
+      "naive": {
+        "action": "dismiss",
+        "answer": "notification-worker p95 peaked at 226ms during the evening send ramp (498 → 837) and is back to 212ms at 22:00, all within the normal ~195-230ms band; error_rate flat ~0.008 and Courierly dependency_latency only 250 → 277ms tracking volume. No ERROR logs. Recurring benign 15:10 PT latency warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 29210
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "Classic evening-ramp false alarm (N1). notification-worker p95 stayed in its day band (195-226ms) with error_rate flat ~0.008, cpu ~0.18, dependency_latency ~250-280ms; p95 merely tracked the 17:00-20:30 UTC request ramp (440->837) and is already receding. Only change in 26h was an inventory-service SKU-label deploy — a different service, unrelated.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (22+). (a) evening ramp 17:00-20:30 UTC lifts p95, err/cpu flat, p95 tracks req (p-020: p95 195->226ms, req 440->837, err .008); (b) p95 flat in band while req swings (p-019). No same-service change in 26h => dismiss. (evidence: p-003, p-014, p-016..p-020)",
+          "evidence": [
+            "p-003",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high warning: compare the metric to its own band. Send 2 queries at once: (1) deploy+config last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem(+dep) over ~10h (metrics lag ~16min). Newest p95 in the day's band (N1) or tracking req with flat err/cpu => dismiss. 2 queries sufficed every time thru day 15. (evidence: p-003, p-012, p-014, p-016..p-020)",
+          "evidence": [
+            "p-003",
+            "p-012",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION). Empty => noise or vendor; dismiss latency warnings fast (p-014, p-017). Changes on OTHER services are decoys (order tax vs inventory p-002; search synonym p-008; invoice footnote vs notif p-015; inventory SKU deploy vs notif p-020). Same-service change needs an aligned step (p-001).",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-008",
+            "p-014",
+            "p-015",
+            "p-016",
+            "p-020"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-021",
+      "day": 16.6321,
+      "when": "day 16, Wed 2026-09-16 15:10 PT",
+      "incident": null,
+      "monitor": "order_latency_high",
+      "service": "order-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "order-service p95 stayed in its normal 115-134ms band (122ms at 22:00) while evening traffic ramped 638 → 1145 and receded; error_rate ~0.003 and cpu ~0.22 flat, no ERROR logs. Yesterday's inventory-service v8.1.0 deploy shows no knock-on effect (order dep/latency unchanged). Recurring benign 15:10 PT latency warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 30771
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "Textbook N1 evening-ramp false alarm: order-service p95 stayed in its own day band (112-138ms, latest 122ms at 22:00) and tracked request_count (578->1145->742), with error_rate flat ~0.003, cpu ~0.22, memory ~0.40 and dependency_latency ~40ms unchanged. Only change in 26h was a checkout-api log_sample_rate tweak (different service, cannot affect order latency). No real problem.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (23+). (a) evening ramp 16:30-20:30 UTC lifts p95 while err/cpu/mem/dep flat and p95 tracks req (p-020 195->226ms, req 440->837; p-021 112->138ms, req 578->1145); (b) p95 flat in band while req swings (p-019). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-003",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch: (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep_latency over ~10h (metrics lag ~16min). Newest p95 inside the day's band or tracking request_count with flat err/cpu => dismiss (N1). Status: 2 queries sufficed every time thru day 16.",
+          "evidence": [
+            "p-003",
+            "p-012",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-022",
+      "day": 17.6321,
+      "when": "day 17, Thu 2026-09-17 15:10 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Noise / expected evening traffic ramp. search-service p95 stayed inside its normal 62-84ms band (72ms at 22:00) while request_count ramped to ~2800 and had already declined by alert time; error_rate (0.0056-0.0065), cpu (~0.40) and memory (~0.61) were flat at baseline. Logs in the window are INFO CACHE_HIT plus a single WARN QUERY_SLOW, no ERRORs, and no deployment or config change correlates. Same pattern as p-001/003/007/012/013/017/018.",
+        "result": "correct",
+        "queries": 2,
+        "context": 31215
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 is flat in its own band all day (63-84ms, latest bucket 22:00 = 72ms) with error_rate ~0.006, cpu ~0.40, memory ~0.62 all flat; request_count merely rose and fell with the evening ramp (1450 -> 2820 -> 1856). No deployments or config changes on any service in the prior 26h. Classic N1 false latency warning.",
+        "result": "correct",
+        "queries": 4
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (24+). (a) evening ramp 16:30-20:30 UTC lifts p95 while err/cpu/mem/dep flat and p95 tracks req (p-020 195->226ms, req 440->837; p-021 112->138ms, req 578->1145); (b) p95 flat in band while req swings (p-019; p-022 search 63-84ms all day, req 1450->2820->1856). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-003",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021",
+            "p-022"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L9",
+          "text": "Query shapes: now() is REAL wall-clock, not sim time - \"now() - 26h\" windows silently return ZERO rows (p-022). Always use literal UTC timestamps from the page header. Metrics go per-minute near now, so always time_bucket(INTERVAL '15 minutes', event_time)+avg(CASE WHEN signal=...) (raw pivots blow the 50-row cap). vendor_snapshots.published_at errors with \"pytz\"; omit or cast it.",
+          "evidence": [
+            "p-005",
+            "p-009",
+            "p-011",
+            "p-022"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep_latency over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). Sufficed every time thru day 17.",
+          "evidence": [
+            "p-003",
+            "p-012",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021",
+            "p-022"
+          ]
+        }
+      ],
+      "summarized": true
+    },
+    {
+      "id": "p-023",
+      "day": 18.6321,
+      "when": "day 18, Fri 2026-09-18 15:10 PT",
+      "incident": null,
+      "monitor": "inventory_latency_high",
+      "service": "inventory-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Noise. inventory-service p95 stayed within its normal 81-106ms band (92ms at 22:00, already declining), tracking the evening request_count ramp (972→1429→960). error_rate ~0.004, cpu ~0.25, memory ~0.45 all flat at baseline; logs show only INFO STOCK_READ plus one WARN QUERY_SLOW, no ERRORs, and no deploy/config change today. Identical to p-002/008/014/019.",
+        "result": "correct",
+        "queries": 2,
+        "context": 7309
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 stayed in its normal day band (83-106ms; latest bucket 92ms at 22:00) with error_rate ~0.004, cpu ~0.25, memory ~0.44 and dependency_latency ~30ms all flat; the only movement was request_count tracking the evening ramp (760 -> 1429 -> 960). No inventory-service deploy or config change in the prior 26h (only a search-service typo-tolerance deploy). Matches known-noise pattern N1.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (25+). (a) evening ramp 16:30-20:30 UTC lifts p95 while err/cpu/mem/dep flat and p95 tracks req (p-020 195->226ms, req 440->837; p-021 112->138ms); (b) p95 flat in band while req swings (p-019; p-022 search 63-84ms; p-023 inventory 83-106ms, req 760->1429->960). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-023"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). Sufficed every time thru day 18 in 2 queries.",
+          "evidence": [
+            "p-012",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-023"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION). Empty => noise or vendor; dismiss latency warnings fast (p-014, p-017). Changes on OTHER services are decoys (order tax vs inventory p-002; search synonym p-008; invoice footnote vs notif p-015; search typo-tolerance vs inventory p-023). Same-service change needs an aligned step (p-001).",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-008",
+            "p-014",
+            "p-015",
+            "p-020",
+            "p-023"
+          ]
+        }
+      ],
+      "summarized": true
+    },
+    {
+      "id": "p-024",
+      "day": 19.3474,
+      "when": "day 19, Sat 2026-09-19 08:20 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Flat-line noise, the recurring 15:20 UTC search warning. p95 sat in the usual 62-77ms band across the whole window (65ms at 14:00) with traffic flat ~1050-1100, error_rate ~0.006, cpu ~0.40, memory ~0.63 at baseline. No step across yesterday's search-service v5.6.2 deploy (20:15 UTC 09-18) — p95 before and after is indistinguishable. Logs are INFO CACHE_HIT plus a single WARN QUERY_SLOW, no ERRORs.",
+        "result": "correct",
+        "queries": 2,
+        "context": 8923
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 is flat inside its own band all day (60-78ms, newest bucket 15:15 = 70.6ms, indistinguishable from the 05:00-15:00 range) with error_rate ~0.006, request_count ~1080 and cpu/mem flat. No same-service change in the last 26h except a day-18 20:15 UTC typo-tolerance deploy that produced no step in any signal. Classic N1 false alarm.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). Sufficed every time thru day 19 in 2 queries.",
+          "evidence": [
+            "p-012",
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-023",
+            "p-024"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (26+). (a) evening ramp 16:30-20:30 UTC lifts p95 while err/cpu/mem/dep flat and p95 tracks req (p-020 195->226ms; p-021 112->138ms); (b) p95 flat in band while req swings or is flat (p-022 search 63-84ms; p-023 inventory 83-106; p-024 search 60-78ms). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-014",
+            "p-016",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-023",
+            "p-024"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION). Empty => noise or vendor; dismiss latency warnings fast (p-014, p-017). Changes on OTHER services are decoys (order tax vs inventory p-002; search synonym p-008; invoice footnote vs notif p-015). Even a SAME-service change (search typo-tolerance) is innocent without an aligned step in the pivot (p-023, p-024).",
+          "evidence": [
+            "p-001",
+            "p-002",
+            "p-008",
+            "p-014",
+            "p-015",
+            "p-020",
+            "p-023",
+            "p-024"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-025",
+      "day": 19.6321,
+      "when": "day 19, Sat 2026-09-19 15:10 PT",
+      "incident": null,
+      "monitor": "notification_latency_high",
+      "service": "notification-worker",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Benign. notification-worker p95 stayed in its normal 190-215ms band (202ms at 22:00) with send volume ramping modestly (421→609→389), error_rate ~0.008 and Courierly dependency_latency 250-264ms — all baseline. No ERROR logs (only INFO MESSAGE_QUEUED), no deploy/config change. Same daily rotation warning as p-004/009/015/020.",
+        "result": "correct",
+        "queries": 2,
+        "context": 10275
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "Textbook N1 false alarm: notification-worker p95 stayed in its own band all day (186-214ms; newest bucket 202ms), tracking the evening request ramp (326->609 req) while error_rate (~0.008), cpu (~0.18), memory (~0.35) and dependency_latency (236-264ms) were flat. Only change in the prior 26h was a search-service typo-tolerance deploy (different service). No incident.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (27+). (a) evening ramp 16:30-21:00 UTC lifts p95 while err/cpu/mem/dep flat and p95 tracks req (p-020 195->226; p-021 112->138; p-025 notif 186->214 as req 326->609); (b) p95 flat in band while req swings (p-022, p-023, p-024). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-023",
+            "p-024",
+            "p-025"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 19.",
+          "evidence": [
+            "p-016",
+            "p-018",
+            "p-020",
+            "p-022",
+            "p-023",
+            "p-024",
+            "p-025"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION). Empty or only other-service rows => noise/vendor; dismiss latency warnings fast. Other-service changes are decoys (order tax vs inventory p-002; search synonym p-008; invoice footnote vs notif p-015; search typo-tolerance vs notif p-025). Same-service change is innocent without an aligned step in pivot (p-023/24).",
+          "evidence": [
+            "p-002",
+            "p-008",
+            "p-015",
+            "p-023",
+            "p-024",
+            "p-025"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-026",
+      "day": 20.6321,
+      "when": "day 20, Sun 2026-09-20 15:10 PT",
+      "incident": null,
+      "monitor": "order_latency_high",
+      "service": "order-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Noise. order-service p95 flat inside the normal 110-136ms band (116-129ms all evening) with the usual weekend traffic ramp (553→799→540), error_rate ~0.003 and cpu ~0.22 at baseline. No ERROR logs anywhere, no deployments or config changes. Same daily rotation warning as p-006/010/016/021.",
+        "result": "correct",
+        "queries": 2,
+        "context": 11623
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "False alarm (N1 pattern). Zero deployments or config changes across all services in the prior 26h. order-service p95 at 22:00 UTC was 125.8 ms, squarely inside its all-day band of 108-131 ms, with error_rate ~0.003, cpu ~0.22, memory ~0.40 and dependency_latency ~38 ms all flat, and request_count falling off its 19:00 peak. No user-visible impact.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (28+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020 195->226; p-021 112->138; p-025 186->214); (b) p95 flat in band while req swings/declines (p-022/23/24; p-026 order 108-131 all day). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION). Empty (p-026: zero rows anywhere) or only other-service rows => noise/vendor; dismiss latency warnings fast. Other-service changes are decoys (p-002 order tax vs inventory; p-008 search synonym; p-015 invoice vs notif; p-025 search typo vs notif). Same-service change is innocent without an aligned step (p-023/24).",
+          "evidence": [
+            "p-002",
+            "p-008",
+            "p-015",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 20.",
+          "evidence": [
+            "p-016",
+            "p-018",
+            "p-020",
+            "p-022",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-027",
+      "day": 21.6321,
+      "when": "day 21, Mon 2026-09-21 15:10 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Noise. search-service p95 stayed in the usual 65-83ms band (77ms at 22:00) tracking the evening request ramp (1833→2781→1803); error_rate ~0.006, cpu ~0.40, memory ~0.63 all flat at baseline. Logs are INFO CACHE_HIT plus one WARN QUERY_SLOW, no ERRORs; no change today and no step from the earlier search v5.6.2 deploy. Same daily rotation warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 13089
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "N1(b) pattern: search-service p95 has stayed flat in its normal band all day (62-83 ms, latest 22:00 bucket 77 ms) while error_rate (~0.006), cpu (~0.40) and memory (~0.62) are flat and request_count is actually declining off the evening peak (2781 -> 1803). No search-service deploy or config change in the prior 26h (only a notification-worker quiet-hours copy deploy). False alarm.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 21.",
+          "evidence": [
+            "p-016",
+            "p-018",
+            "p-020",
+            "p-022",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026",
+            "p-027"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty (p-026) or only other-service rows (p-027: just a notification-worker copy deploy) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page.",
+          "evidence": [
+            "p-002",
+            "p-008",
+            "p-015",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026",
+            "p-027"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (29+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020 195->226; p-021 112->138; p-025 186->214); (b) p95 flat in band while req swings/declines (p-022/23/24; p-026 order 108-131; p-027 search 62-83 as req fell 2781->1803). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026",
+            "p-027"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-028",
+      "day": 22.5036,
+      "when": "day 22, Tue 2026-09-22 12:05 PT",
+      "incident": "inc-day-22",
+      "monitor": "checkout_error_rate_high",
+      "service": "checkout-api",
+      "naive": {
+        "action": "resolve",
+        "answer": "config-day22-reduce",
+        "result": "correct",
+        "queries": 4,
+        "context": 16117
+      },
+      "memory": {
+        "action": "resolve",
+        "answer": "config-day22-reduce",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L14",
+          "text": "Decoys near a page: deploys touching only copy/UI/banner or another service, AND config changes touching only observability (day16 checkout.log_sample_rate 1->0.2). None move p95/err/cpu. Judge by changed_components/commit_subject/key. Day 9 receipt footer, 11 invoice footnote, 13/14 footer link, 15 inventory SKU, 22 analytics-banner+checkout-copy 25min pre-page. 11 confirmations, none guilty.",
+          "evidence": [
+            "p-005",
+            "p-011",
+            "p-013",
+            "p-015",
+            "p-017",
+            "p-018",
+            "p-019",
+            "p-020",
+            "p-021",
+            "p-028"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L7",
+          "text": "checkout_error_rate_high: ONE pivot of checkout error_rate/p95 + payment-orchestrator pool_util/pool_wait/payment_success_rate/dep_latency/payments_db_cpu decides it. Internal (p-005, p-028): pool 0.24->0.99, wait 12->4800ms, success/dep/db_cpu flat => blame payments.max_connections cut. Vendor (p-011): dep_latency 330->8000ms, success 0.996->0.60, pool flat => vendor_snapshots. 3/3.",
+          "evidence": [
+            "p-005",
+            "p-011",
+            "p-028"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L8",
+          "text": "cost-optimizer is a serial offender and its change bites hours later; use a ~24h config window, don't prefer the nearest deploy. p-005 and p-028 identical: payments.max_connections 100->20 at 09:00 UTC (02:00 PT); fine until ~19:00 UTC when concurrency passed 20, then pool 0.99 / wait 4800ms. Both times a checkout deploy ~25min pre-page touched only banner/copy. Confirmed.",
+          "evidence": [
+            "p-005",
+            "p-028"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-029",
+      "day": 22.6321,
+      "when": "day 22, Tue 2026-09-22 15:10 PT",
+      "incident": null,
+      "monitor": "inventory_latency_high",
+      "service": "inventory-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Benign daily-rotation warning. inventory-service p95 stayed in its normal 86-101ms band (95ms at 22:00) tracking the evening ramp (934→1382→962), error_rate ~0.004 and cpu ~0.25 flat. No ERROR logs — the earlier CONNECTION_POOL_TIMEOUT burst on checkout-api stopped after 19:20 and never touched inventory-service, so this is unrelated to p-028.",
+        "result": "correct",
+        "queries": 2,
+        "context": 17930
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 has sat in its normal 82-104ms band all day (12:00-22:15 UTC); the newest buckets (90-101ms) are no higher than the midday baseline, error_rate (~0.004), cpu (~0.25), memory (~0.44) and dependency_latency (~30ms) are flat, and request_count is already declining off the evening peak (1382 -> 962). No inventory-service deploy or config change in the last 26h (only a payment-orchestrator max_connections cut/restore and a checkout copy/banner deploy). Classic N1 evening-ramp latency false alarm.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L8",
+          "text": "cost-optimizer is a serial offender and its change bites hours later; use a ~24h config window, don't prefer the nearest deploy. Recurring pattern seen on days 5, 21(p-028) and again day 22: payments.max_connections 100->20 at 09:00 UTC, pool exhausts ~19:00 UTC, oncall restores 100 at ~19:25 + pod recycle. A checkout deploy ~25min pre-page touching only banner/copy is the decoy. Confirmed 3x.",
+          "evidence": [
+            "p-005",
+            "p-028",
+            "p-029"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 22.",
+          "evidence": [
+            "p-016",
+            "p-018",
+            "p-020",
+            "p-022",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020 195->226; p-021 112->138; p-025 186->214); (b) p95 flat in band while req swings/falls (p-022/23/24; p-026; p-027 62-83; p-029 inventory 82-104, req 1382->962). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-030",
+      "day": 23.6321,
+      "when": "day 23, Wed 2026-09-23 15:10 PT",
+      "incident": null,
+      "monitor": "notification_latency_high",
+      "service": "notification-worker",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Benign. notification-worker p95 peaked at 221ms inside the normal 192-230ms band and was already down to 199ms at 22:00, tracking the evening send ramp (580→835→576). error_rate ~0.008 and Courierly dependency_latency ≤280ms are at baseline; logs show only INFO MESSAGE_QUEUED, no ERRORs, and no change today. Same recurring rotation warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 19554
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "Textbook N1 evening ramp on notification-worker: zero deployments or config changes anywhere in the prior 26h; p95 stayed in its daily band (193-222ms) tracking request_count (436->839->576) while error_rate (~0.008), cpu (~0.18), memory (~0.35) and dependency_latency (245-279ms) were flat, and p95 was already back to 199ms by 22:00 UTC. No real problem.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty result (p-026, p-030: zero rows anywhere) or only other-service rows (p-027) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change is innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page. Status: reliable.",
+          "evidence": [
+            "p-002",
+            "p-008",
+            "p-015",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-030"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95 with err/cpu/mem/dep flat, p95 tracks req (p-020, p-021, p-025; p-030 197->222 as req 436->839, back to 199 by page time); (b) p95 flat in band while req swings/falls (p-022/23/24, p-026, p-027, p-029). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-021",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 23.",
+          "evidence": [
+            "p-016",
+            "p-018",
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-031",
+      "day": 24.5036,
+      "when": "day 24, Thu 2026-09-24 12:05 PT",
+      "incident": "inc-day-24",
+      "monitor": "checkout_error_rate_high",
+      "service": "checkout-api",
+      "naive": {
+        "action": "resolve",
+        "answer": "deploy-day24-enrichment",
+        "result": "correct",
+        "queries": 4,
+        "context": 22487
+      },
+      "memory": {
+        "action": "resolve",
+        "answer": "deploy-day24-enrichment",
+        "result": "correct",
+        "queries": 4
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L7",
+          "text": "checkout_error_rate_high: ONE pivot of checkout err/p95 + payment-orch pool_util/pool_wait/success/dep_latency/payments_db_cpu picks the mode. (a) pool~1, wait>4s, db_cpu FLAT ~0.30 => payments.max_connections cut (p-005, p-028). (b) pool~1, wait>4s AND db_cpu 0.30->0.85 => a payment-orchestrator deploy added a heavy query (p-031). (c) dep_latency/success broken, pool flat => vendor (p-011). 4/4.",
+          "evidence": [
+            "p-005",
+            "p-011",
+            "p-028",
+            "p-031"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L8",
+          "text": "On checkout/payment error pages, first grep config_changes ~24h for payments.max_connections: cost-optimizer cut 100->20 at 09:00 UTC on days 5, 21, 22; pool exhausts ~19:00 UTC, page 19:05, oncall restores at 19:25 (remediation, not cause). If that key is ABSENT (p-031, day24), look instead for a payment-orchestrator deploy in the prior hour touching a query/DB component. 4x.",
+          "evidence": [
+            "p-005",
+            "p-028",
+            "p-031"
+          ]
+        },
+        {
+          "op": "add",
+          "id": "L15",
+          "text": "A deploy can bite ~25 min later: p-031 payment-orchestrator v9.4.2 18:35 UTC (changed_components=payment-enrichment-query) broke at 19:00. So don't reject a same-service deploy just because the step isn't instant; check changed_components for query/DB work and confirm with logs (QUERY_SLOW at payment-orch + CONNECTION_POOL_TIMEOUT at checkout). 4 queries total. Status: worked.",
+          "evidence": [
+            "p-031"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-032",
+      "day": 24.6321,
+      "when": "day 24, Thu 2026-09-24 15:10 PT",
+      "incident": null,
+      "monitor": "order_latency_high",
+      "service": "order-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Benign rotation warning. order-service p95 stayed inside the normal 110-139ms band (123ms at 22:00) tracking the evening ramp (742→1150→734); error_rate ~0.003 and cpu ~0.21 flat. No ERROR logs after 20:00 — the p-031 payment-orchestrator QUERY_SLOW / checkout CONNECTION_POOL_TIMEOUT burst ended by 19:20 and never affected order-service.",
+        "result": "correct",
+        "queries": 2,
+        "context": 24329
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "order-service p95 at 22:00 UTC was 123ms, squarely inside the day's band (112-139ms); error_rate (~0.003), cpu (~0.22), memory (~0.40) and dependency_latency (~46ms) are flat, and request_count is already falling off the evening peak (1150 -> 734). No order-service deploy or config change in the prior 26h (only checkout log_level and the payment-orchestrator v9.4.2 deploy + its 19:22 rollback, other services). Classic N1 evening-ramp latency noise.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/21/25/30); (b) p95 flat in band while req swings or falls off peak (p-022/23/24, p-026/27/29; p-032: p95 123ms in 112-139 band, req 1150->734). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 24.",
+          "evidence": [
+            "p-016",
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-033",
+      "day": 25.6321,
+      "when": "day 25, Fri 2026-09-25 15:10 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Noise. search-service p95 stayed in the usual 66-81ms band (68ms at 22:00) tracking the evening request ramp (1916→2762→1866); error_rate ~0.006, cpu ~0.40, memory ~0.62 all at baseline. Logs are INFO CACHE_HIT plus one WARN QUERY_SLOW, no ERRORs, and no change today. Same recurring 22:10 rotation warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 25972
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "No deployments or config changes anywhere in the prior 26h. search-service p95 sits squarely in its own day band (66-82ms all day; newest bucket 22:00 = 68ms, one of the lowest), with error_rate flat ~0.006, cpu ~0.40, memory ~0.62 unchanged, and request_count already declining off the 19:45 peak (2860 -> 1866). Textbook false alarm (N1).",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 25.",
+          "evidence": [
+            "p-016",
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-033"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty result (p-026, p-030, p-033: zero rows anywhere) or only other-service rows (p-027) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change is innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page. Reliable.",
+          "evidence": [
+            "p-002",
+            "p-008",
+            "p-015",
+            "p-023",
+            "p-024",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-030",
+            "p-033"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/21/25/30); (b) p95 flat in band while req swings or falls off peak (p-022/23/24, p-026/27/29; p-032 123ms in 112-139; p-033 68ms in 66-82, req 2860->1866). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-033"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-034",
+      "day": 26.6321,
+      "when": "day 26, Sat 2026-09-26 15:10 PT",
+      "incident": null,
+      "monitor": "inventory_latency_high",
+      "service": "inventory-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Noise. inventory-service p95 flat in the 85-94ms range (91ms at 22:00), well inside the 81-106ms baseline band, with the usual weekend evening ramp (660→1028→691); error_rate ~0.004 and cpu ~0.25 unchanged. Only INFO STOCK_READ plus one WARN QUERY_SLOW in logs, no ERRORs, and no deploy/config change today.",
+        "result": "correct",
+        "queries": 2,
+        "context": 27316
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "N1 pattern: inventory-service p95 has sat in an 81-97ms band all day and the latest bucket (22:00) is 91ms — squarely in band — while error_rate (~0.004), cpu (~0.25), memory (~0.43) and dependency_latency (~30ms) are flat and request_count is falling off the 19:15 peak (1031 -> 691). No inventory-service deploy or config change in the prior 26h; the only change anywhere is an order-service packing-slip deploy at 17:40 UTC (other service, UI-only decoy). No real problem.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 26.",
+          "evidence": [
+            "p-016",
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-033",
+            "p-034"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/21/25/30); (b) p95 flat in its day band while req swings or falls off peak (p-022/23/24, p-026/27/29; p-032 123 in 112-139; p-034 91 in 81-97, req 1031->691). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-033",
+            "p-034"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty result (p-026, p-030, p-033) or only other-service rows (p-027; p-034 order-svc packing-slip) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change is innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page.",
+          "evidence": [
+            "p-002",
+            "p-008",
+            "p-015",
+            "p-023",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-030",
+            "p-033",
+            "p-034"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-035",
+      "day": 27.3474,
+      "when": "day 27, Sun 2026-09-27 08:20 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Flat-line noise, the recurring 15:20 UTC search warning. p95 oscillated 60-73ms all day (66ms at 15:00) — entirely inside the 62-79ms baseline — with traffic flat ~1050-1110, error_rate ~0.006, cpu ~0.40, memory ~0.62 unchanged. No ERROR logs and no search-service change; yesterday's order-service v2.4.0 packing-slip deploy is a different service with no effect here.",
+        "result": "correct",
+        "queries": 2,
+        "context": 29104
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 at 15:15 UTC was 71ms, squarely inside the day's band (59-75ms over the prior 11h); error_rate ~0.006, req ~1090, cpu ~0.40, mem ~0.62 all flat. Only change in the prior 26h was an order-service packing-slip deploy (different service, unrelated). Classic N1 false alarm.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/21/25/30); (b) p95 flat in its day band while req swings (p-022/23/24, p-026/27/29; p-032 123 in 112-139; p-034 91 in 81-97; p-035 search 71 in 59-75, everything flat). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-033",
+            "p-034",
+            "p-035"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 27.",
+          "evidence": [
+            "p-016",
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-033",
+            "p-034",
+            "p-035"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-036",
+      "day": 27.6321,
+      "when": "day 27, Sun 2026-09-27 15:10 PT",
+      "incident": null,
+      "monitor": "notification_latency_high",
+      "service": "notification-worker",
+      "naive": {
+        "action": "dismiss",
+        "answer": "Benign. notification-worker p95 stayed 194-212ms, inside the 192-230ms baseline (205ms at 22:00), tracking the weekend evening send ramp (414→594→396); error_rate ~0.008 and Courierly dependency_latency 246-265ms are normal. Only INFO MESSAGE_QUEUED logs, no ERRORs, no change today. Same recurring rotation warning.",
+        "result": "correct",
+        "queries": 2,
+        "context": 30402
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "notification_latency_high is within normal band: p95 186-211ms all day, newest buckets ~205 (peak 211 at 20:30, now declining with the evening request ramp 312->619->396). error_rate flat ~0.008, cpu/memory/dependency_latency flat. Zero deployments or config changes across all services in the prior 26h. Textbook N1 evening-ramp false alarm.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/21/25/30; p-036 notif p95 186-211 tracking req 312->619->396); (b) p95 flat in its day band while req swings (p-022/23/24, p-026/27/29, p-032, p-034, p-035). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-033",
+            "p-034",
+            "p-035",
+            "p-036"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 27 (p-036).",
+          "evidence": [
+            "p-016",
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-033",
+            "p-034",
+            "p-035",
+            "p-036"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty (p-026, p-030, p-033, p-036) or only other-service rows (p-027; p-034 order-svc packing-slip) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change is innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page.",
+          "evidence": [
+            "p-002",
+            "p-008",
+            "p-015",
+            "p-023",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-030",
+            "p-033",
+            "p-034",
+            "p-036"
+          ]
+        }
+      ],
+      "summarized": false
+    },
+    {
+      "id": "p-037",
+      "day": 28.6321,
+      "when": "day 28, Mon 2026-09-28 15:10 PT",
+      "incident": null,
+      "monitor": "order_latency_high",
+      "service": "order-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "order-service p95 never left baseline: 112-140ms all day (peak 139.8ms at 19:15, within the normal 110-139ms band) and only 117ms at the 22:00 point nearest the 22:10 alert. error_rate ~0.003, cpu ~0.22, memory ~0.40 all flat; request_count ramped and was already declining (1124 → 757). No ERROR logs anywhere in the fleet today (only INFO plus the usual few WARN QUERY_SLOW on inventory/search). Benign latency-monitor noise, same shape as the recurring daily rotation warnings.",
+        "result": "correct",
+        "queries": 2,
+        "context": 30812
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "Textbook N1 evening-ramp false alarm. No deployments or config changes anywhere in the prior 26h. order-service p95 stayed in its normal day band (112-140ms, peak 139.8 at 19:15 UTC) and simply tracked request_count (590 -> 1124 -> 757), while error_rate (~0.003), cpu (~0.22), memory (~0.40) and dependency_latency were flat. Latest bucket 22:00 is 117ms, the low end of the band. No real problem.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 28 (p-037).",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-026",
+            "p-029",
+            "p-032",
+            "p-034",
+            "p-035",
+            "p-036",
+            "p-037"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/25/30, p-036 notif; p-037 order p95 112-140 vs req 590->1124->757); (b) p95 flat in its day band while req swings (p-022/24, p-026/29, p-032, p-035). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-035",
+            "p-036",
+            "p-037"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty (p-026, p-030, p-033, p-036, p-037) or only other-service rows (p-027, p-034) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change is innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page.",
+          "evidence": [
+            "p-002",
+            "p-015",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-030",
+            "p-033",
+            "p-034",
+            "p-036",
+            "p-037"
+          ]
+        }
+      ],
+      "summarized": true
+    },
+    {
+      "id": "p-038",
+      "day": 29.6321,
+      "when": "day 29, Tue 2026-09-29 15:10 PT",
+      "incident": null,
+      "monitor": "search_latency_high",
+      "service": "search-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "search-service p95 stayed in its 60-85ms baseline band all day (peak 84.7ms at 20:00, back to 70ms by 22:00) while request_count nearly doubled 1450→2800 in the evening ramp. error_rate ~0.006, cpu ~0.40, memory ~0.62 all flat. No ERROR logs fleet-wide, only the usual INFO plus 2 WARN QUERY_SLOW. Same benign traffic-tracking latency warning as the recurring daily noise.",
+        "result": "correct",
+        "queries": 2,
+        "context": 9286
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "search-service p95 sat in its normal day band (64-85ms) for the full 10h before and through the alert, with error_rate flat (~0.006), cpu ~0.40 and memory ~0.62 flat, while request_count swung 1450->2816->1906 (evening ramp). No search-service deployment or config change in the prior 26h (only a day-28 checkout-api help-link deploy). Classic N1 false alarm.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/25/30, p-036, p-037); (b) p95 flat in its day band while req swings (p-022/24, p-026/29, p-032, p-035, p-038 search: p95 64-85ms all day while req 1450->2816). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-025",
+            "p-026",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-035",
+            "p-036",
+            "p-037",
+            "p-038"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 29 (p-038).",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-026",
+            "p-029",
+            "p-032",
+            "p-034",
+            "p-035",
+            "p-036",
+            "p-037",
+            "p-038"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty (p-026/30/33/36/37) or only other-service rows (p-027, p-034, p-038) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change is innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page.",
+          "evidence": [
+            "p-002",
+            "p-015",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-030",
+            "p-034",
+            "p-037",
+            "p-038"
+          ]
+        }
+      ],
+      "summarized": true
+    },
+    {
+      "id": "p-039",
+      "day": 30.6321,
+      "when": "day 30, Wed 2026-09-30 15:10 PT",
+      "incident": null,
+      "monitor": "inventory_latency_high",
+      "service": "inventory-service",
+      "naive": {
+        "action": "dismiss",
+        "answer": "inventory-service p95 stayed at baseline (83-101ms vs normal 81-106ms) while request_count roughly doubled 740→1416 on the evening ramp and was already falling to 922 by 22:00. error_rate ~0.004, cpu ~0.25, memory ~0.44 all flat. No ERROR logs anywhere, only INFO plus the routine 3 WARN QUERY_SLOW. Benign traffic-tracking latency warning, same shape as the recurring daily noise.",
+        "result": "correct",
+        "queries": 2,
+        "context": 11320
+      },
+      "memory": {
+        "action": "dismiss",
+        "answer": "Classic N1 false alarm: inventory-service p95 stayed within its usual 83-101ms band all day (newest bucket 96.6ms) while request_count varied 720->1419->922; error_rate (~0.004), cpu (~0.25), memory (~0.44) and dependency_latency all flat. Zero deployments or config changes for any service in the prior 26h, so nothing could have caused a regression.",
+        "result": "correct",
+        "queries": 2
+      },
+      "edits": [
+        {
+          "op": "update",
+          "id": "L3",
+          "text": "Lone *_latency_high: compare the metric to its own band. Two queries in ONE batch (literal UTC bounds, not now()): (1) deployments+config_changes last ~26h, all services, one UNION; (2) time_bucket(15m) pivot of p95/err/req/cpu/mem/dep over ~10h (metrics lag ~16min). Newest p95 in the day's band, or tracking req with flat err/cpu => dismiss (N1). 2 queries sufficed every time thru day 30 (p-039).",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-026",
+            "p-029",
+            "p-032",
+            "p-034",
+            "p-035",
+            "p-036",
+            "p-037",
+            "p-038",
+            "p-039"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "L6",
+          "text": "Opening filter: deployments+config_changes for prior ~26h (all services, one UNION, literal UTC). Empty (p-026/30/33/36/37, p-039) or only other-service rows (p-027, p-034, p-038) => noise/vendor; dismiss fast. Other-service changes are decoys (p-002, p-008, p-015, p-025). Same-service change is innocent without an aligned step (p-023/24). Ignore changes stamped AFTER the page.",
+          "evidence": [
+            "p-002",
+            "p-015",
+            "p-025",
+            "p-026",
+            "p-027",
+            "p-030",
+            "p-034",
+            "p-037",
+            "p-038",
+            "p-039"
+          ]
+        },
+        {
+          "op": "update",
+          "id": "N1",
+          "text": "*_latency_high on search, inventory, notification-worker, order-service is almost always false (30+). (a) evening ramp 16:30-21:00 UTC lifts p95, err/cpu/mem/dep flat, p95 tracks req (p-020/25/30, p-036/37); (b) p95 flat in its day band while req swings (p-022/24, p-026/29, p-032/35/38, p-039 inventory: p95 83-101ms all day, req 720->1419->922). No same-service change in 26h => dismiss.",
+          "evidence": [
+            "p-020",
+            "p-022",
+            "p-026",
+            "p-029",
+            "p-030",
+            "p-032",
+            "p-035",
+            "p-036",
+            "p-037",
+            "p-038",
+            "p-039"
+          ]
+        }
+      ],
+      "summarized": false
+    }
+  ],
+  "memory": [
+    {
+      "day": 1.6321,
+      "n": 1
+    },
+    {
+      "day": 1.6321,
+      "n": 2
+    },
+    {
+      "day": 1.6321,
+      "n": 3
+    },
+    {
+      "day": 2.6321,
+      "n": 3
+    },
+    {
+      "day": 2.6321,
+      "n": 4
+    },
+    {
+      "day": 2.6321,
+      "n": 5
+    },
+    {
+      "day": 3.3474,
+      "n": 5
+    },
+    {
+      "day": 3.3474,
+      "n": 6
+    },
+    {
+      "day": 3.6321,
+      "n": 6
+    },
+    {
+      "day": 3.6321,
+      "n": 6
+    },
+    {
+      "day": 3.6321,
+      "n": 7
+    },
+    {
+      "day": 4.5036,
+      "n": 8
+    },
+    {
+      "day": 4.5036,
+      "n": 9
+    },
+    {
+      "day": 4.5036,
+      "n": 10
+    },
+    {
+      "day": 4.6321,
+      "n": 10
+    },
+    {
+      "day": 4.6321,
+      "n": 11
+    },
+    {
+      "day": 4.75,
+      "n": 12
+    },
+    {
+      "day": 4.75,
+      "n": 13
+    },
+    {
+      "day": 4.75,
+      "n": 13
+    },
+    {
+      "day": 5.6321,
+      "n": 13
+    },
+    {
+      "day": 5.6321,
+      "n": 13
+    },
+    {
+      "day": 5.6321,
+      "n": 13
+    },
+    {
+      "day": 6.6321,
+      "n": 13
+    },
+    {
+      "day": 6.6321,
+      "n": 13
+    },
+    {
+      "day": 6.75,
+      "n": 13
+    },
+    {
+      "day": 7.6321,
+      "n": 13
+    },
+    {
+      "day": 7.6321,
+      "n": 13
+    },
+    {
+      "day": 7.6321,
+      "n": 13
+    },
+    {
+      "day": 7.75,
+      "n": 12
+    },
+    {
+      "day": 7.75,
+      "n": 12
+    },
+    {
+      "day": 8.6321,
+      "n": 12
+    },
+    {
+      "day": 8.6321,
+      "n": 12
+    },
+    {
+      "day": 8.75,
+      "n": 12
+    },
+    {
+      "day": 8.75,
+      "n": 12
+    },
+    {
+      "day": 8.75,
+      "n": 11
+    },
+    {
+      "day": 8.75,
+      "n": 10
+    },
+    {
+      "day": 9.5036,
+      "n": 11
+    },
+    {
+      "day": 9.5036,
+      "n": 12
+    },
+    {
+      "day": 9.5036,
+      "n": 12
+    },
+    {
+      "day": 9.6321,
+      "n": 12
+    },
+    {
+      "day": 9.6321,
+      "n": 12
+    },
+    {
+      "day": 9.6321,
+      "n": 12
+    },
+    {
+      "day": 9.75,
+      "n": 11
+    },
+    {
+      "day": 9.75,
+      "n": 11
+    },
+    {
+      "day": 9.75,
+      "n": 11
+    },
+    {
+      "day": 9.75,
+      "n": 11
+    },
+    {
+      "day": 10.3474,
+      "n": 11
+    },
+    {
+      "day": 10.3474,
+      "n": 11
+    },
+    {
+      "day": 10.3474,
+      "n": 11
+    },
+    {
+      "day": 10.6321,
+      "n": 11
+    },
+    {
+      "day": 10.6321,
+      "n": 11
+    },
+    {
+      "day": 10.6321,
+      "n": 11
+    },
+    {
+      "day": 10.75,
+      "n": 11
+    },
+    {
+      "day": 10.75,
+      "n": 11
+    },
+    {
+      "day": 11.6321,
+      "n": 11
+    },
+    {
+      "day": 11.6321,
+      "n": 11
+    },
+    {
+      "day": 11.6321,
+      "n": 11
+    },
+    {
+      "day": 11.75,
+      "n": 11
+    },
+    {
+      "day": 12.6321,
+      "n": 11
+    },
+    {
+      "day": 12.6321,
+      "n": 11
+    },
+    {
+      "day": 12.6321,
+      "n": 11
+    },
+    {
+      "day": 13.6321,
+      "n": 11
+    },
+    {
+      "day": 13.6321,
+      "n": 11
+    },
+    {
+      "day": 13.6321,
+      "n": 11
+    },
+    {
+      "day": 13.75,
+      "n": 11
+    },
+    {
+      "day": 14.3474,
+      "n": 11
+    },
+    {
+      "day": 14.3474,
+      "n": 11
+    },
+    {
+      "day": 14.3474,
+      "n": 11
+    },
+    {
+      "day": 14.6321,
+      "n": 11
+    },
+    {
+      "day": 14.6321,
+      "n": 11
+    },
+    {
+      "day": 14.6321,
+      "n": 11
+    },
+    {
+      "day": 14.75,
+      "n": 11
+    },
+    {
+      "day": 14.75,
+      "n": 11
+    },
+    {
+      "day": 15.6321,
+      "n": 11
+    },
+    {
+      "day": 15.6321,
+      "n": 11
+    },
+    {
+      "day": 15.6321,
+      "n": 11
+    },
+    {
+      "day": 15.75,
+      "n": 11
+    },
+    {
+      "day": 15.75,
+      "n": 11
+    },
+    {
+      "day": 16.6321,
+      "n": 11
+    },
+    {
+      "day": 16.6321,
+      "n": 11
+    },
+    {
+      "day": 16.75,
+      "n": 11
+    },
+    {
+      "day": 17.6321,
+      "n": 11
+    },
+    {
+      "day": 17.6321,
+      "n": 11
+    },
+    {
+      "day": 17.6321,
+      "n": 11
+    },
+    {
+      "day": 18.6321,
+      "n": 11
+    },
+    {
+      "day": 18.6321,
+      "n": 11
+    },
+    {
+      "day": 18.6321,
+      "n": 11
+    },
+    {
+      "day": 19.3474,
+      "n": 11
+    },
+    {
+      "day": 19.3474,
+      "n": 11
+    },
+    {
+      "day": 19.3474,
+      "n": 11
+    },
+    {
+      "day": 19.6321,
+      "n": 11
+    },
+    {
+      "day": 19.6321,
+      "n": 11
+    },
+    {
+      "day": 19.6321,
+      "n": 11
+    },
+    {
+      "day": 20.6321,
+      "n": 11
+    },
+    {
+      "day": 20.6321,
+      "n": 11
+    },
+    {
+      "day": 20.6321,
+      "n": 11
+    },
+    {
+      "day": 20.75,
+      "n": 11
+    },
+    {
+      "day": 21.6321,
+      "n": 11
+    },
+    {
+      "day": 21.6321,
+      "n": 11
+    },
+    {
+      "day": 21.6321,
+      "n": 11
+    },
+    {
+      "day": 22.5036,
+      "n": 11
+    },
+    {
+      "day": 22.5036,
+      "n": 11
+    },
+    {
+      "day": 22.5036,
+      "n": 11
+    },
+    {
+      "day": 22.6321,
+      "n": 11
+    },
+    {
+      "day": 22.6321,
+      "n": 11
+    },
+    {
+      "day": 22.6321,
+      "n": 11
+    },
+    {
+      "day": 22.75,
+      "n": 11
+    },
+    {
+      "day": 22.75,
+      "n": 11
+    },
+    {
+      "day": 23.6321,
+      "n": 11
+    },
+    {
+      "day": 23.6321,
+      "n": 11
+    },
+    {
+      "day": 23.6321,
+      "n": 11
+    },
+    {
+      "day": 24.5036,
+      "n": 11
+    },
+    {
+      "day": 24.5036,
+      "n": 11
+    },
+    {
+      "day": 24.5036,
+      "n": 12
+    },
+    {
+      "day": 24.6321,
+      "n": 12
+    },
+    {
+      "day": 24.6321,
+      "n": 12
+    },
+    {
+      "day": 24.75,
+      "n": 12
+    },
+    {
+      "day": 24.75,
+      "n": 12
+    },
+    {
+      "day": 25.6321,
+      "n": 12
+    },
+    {
+      "day": 25.6321,
+      "n": 12
+    },
+    {
+      "day": 25.6321,
+      "n": 12
+    },
+    {
+      "day": 26.6321,
+      "n": 12
+    },
+    {
+      "day": 26.6321,
+      "n": 12
+    },
+    {
+      "day": 26.6321,
+      "n": 12
+    },
+    {
+      "day": 27.3474,
+      "n": 12
+    },
+    {
+      "day": 27.3474,
+      "n": 12
+    },
+    {
+      "day": 27.6321,
+      "n": 12
+    },
+    {
+      "day": 27.6321,
+      "n": 12
+    },
+    {
+      "day": 27.6321,
+      "n": 12
+    },
+    {
+      "day": 27.75,
+      "n": 11
+    },
+    {
+      "day": 28.6321,
+      "n": 11
+    },
+    {
+      "day": 28.6321,
+      "n": 11
+    },
+    {
+      "day": 28.6321,
+      "n": 11
+    },
+    {
+      "day": 28.75,
+      "n": 11
+    },
+    {
+      "day": 29.6321,
+      "n": 11
+    },
+    {
+      "day": 29.6321,
+      "n": 11
+    },
+    {
+      "day": 29.6321,
+      "n": 11
+    },
+    {
+      "day": 30.6321,
+      "n": 11
+    },
+    {
+      "day": 30.6321,
+      "n": 11
+    },
+    {
+      "day": 30.6321,
+      "n": 11
+    }
+  ],
+  "memory_context": [
+    {
+      "day": 1.6321,
+      "v": 6893
+    },
+    {
+      "day": 1.75,
+      "v": 2792
+    },
+    {
+      "day": 2.6321,
+      "v": 7033
+    },
+    {
+      "day": 2.75,
+      "v": 3138
+    },
+    {
+      "day": 3.3474,
+      "v": 6174
+    },
+    {
+      "day": 3.6321,
+      "v": 7106
+    },
+    {
+      "day": 3.75,
+      "v": 3460
+    },
+    {
+      "day": 4.5036,
+      "v": 11564
+    },
+    {
+      "day": 4.6321,
+      "v": 6767
+    },
+    {
+      "day": 4.75,
+      "v": 6045
+    },
+    {
+      "day": 5.6321,
+      "v": 7180
+    },
+    {
+      "day": 5.75,
+      "v": 4409
+    },
+    {
+      "day": 6.6321,
+      "v": 8343
+    },
+    {
+      "day": 6.75,
+      "v": 5321
+    },
+    {
+      "day": 7.6321,
+      "v": 8465
+    },
+    {
+      "day": 7.75,
+      "v": 5631
+    },
+    {
+      "day": 8.6321,
+      "v": 6365
+    },
+    {
+      "day": 8.75,
+      "v": 6654
+    },
+    {
+      "day": 9.5036,
+      "v": 8839
+    },
+    {
+      "day": 9.6321,
+      "v": 7862
+    },
+    {
+      "day": 9.75,
+      "v": 6771
+    },
+    {
+      "day": 10.3474,
+      "v": 8705
+    },
+    {
+      "day": 10.6321,
+      "v": 6400
+    },
+    {
+      "day": 10.75,
+      "v": 5423
+    },
+    {
+      "day": 11.6321,
+      "v": 8523
+    },
+    {
+      "day": 11.75,
+      "v": 5220
+    },
+    {
+      "day": 12.6321,
+      "v": 7939
+    },
+    {
+      "day": 12.75,
+      "v": 4345
+    },
+    {
+      "day": 13.6321,
+      "v": 8524
+    },
+    {
+      "day": 13.75,
+      "v": 5516
+    },
+    {
+      "day": 14.3474,
+      "v": 8658
+    },
+    {
+      "day": 14.6321,
+      "v": 9114
+    },
+    {
+      "day": 14.75,
+      "v": 6342
+    },
+    {
+      "day": 15.6321,
+      "v": 9406
+    },
+    {
+      "day": 15.75,
+      "v": 6112
+    },
+    {
+      "day": 16.6321,
+      "v": 8138
+    },
+    {
+      "day": 16.75,
+      "v": 5503
+    },
+    {
+      "day": 17.6321,
+      "v": 9401
+    },
+    {
+      "day": 17.75,
+      "v": 4322
+    },
+    {
+      "day": 18.6321,
+      "v": 9422
+    },
+    {
+      "day": 18.75,
+      "v": 4387
+    },
+    {
+      "day": 19.3474,
+      "v": 8964
+    },
+    {
+      "day": 19.6321,
+      "v": 9693
+    },
+    {
+      "day": 19.75,
+      "v": 4301
+    },
+    {
+      "day": 20.6321,
+      "v": 9550
+    },
+    {
+      "day": 20.75,
+      "v": 5333
+    },
+    {
+      "day": 21.6321,
+      "v": 8484
+    },
+    {
+      "day": 21.75,
+      "v": 4327
+    },
+    {
+      "day": 22.5036,
+      "v": 9262
+    },
+    {
+      "day": 22.6321,
+      "v": 8690
+    },
+    {
+      "day": 22.75,
+      "v": 6514
+    },
+    {
+      "day": 23.6321,
+      "v": 9089
+    },
+    {
+      "day": 23.75,
+      "v": 4388
+    },
+    {
+      "day": 24.5036,
+      "v": 8468
+    },
+    {
+      "day": 24.6321,
+      "v": 9293
+    },
+    {
+      "day": 24.75,
+      "v": 4772
+    },
+    {
+      "day": 25.6321,
+      "v": 8718
+    },
+    {
+      "day": 25.75,
+      "v": 4624
+    },
+    {
+      "day": 26.6321,
+      "v": 9547
+    },
+    {
+      "day": 26.75,
+      "v": 4688
+    },
+    {
+      "day": 27.3474,
+      "v": 9408
+    },
+    {
+      "day": 27.6321,
+      "v": 8911
+    },
+    {
+      "day": 27.75,
+      "v": 6306
+    },
+    {
+      "day": 28.6321,
+      "v": 9894
+    },
+    {
+      "day": 28.75,
+      "v": 5677
+    },
+    {
+      "day": 29.6321,
+      "v": 8579
+    },
+    {
+      "day": 29.75,
+      "v": 4479
+    },
+    {
+      "day": 30.6321,
+      "v": 8975
+    },
+    {
+      "day": 30.75,
+      "v": 5225
+    }
+  ],
+  "naive_context": [
+    {
+      "day": 1.6321,
+      "v": 6752
+    },
+    {
+      "day": 2.6321,
+      "v": 10221
+    },
+    {
+      "day": 3.3474,
+      "v": 13306
+    },
+    {
+      "day": 3.6321,
+      "v": 17817
+    },
+    {
+      "day": 4.5036,
+      "v": 27774
+    },
+    {
+      "day": 4.6321,
+      "v": 31153
+    },
+    {
+      "day": 5.6321,
+      "v": 31784
+    },
+    {
+      "day": 6.6321,
+      "v": 7109
+    },
+    {
+      "day": 7.6321,
+      "v": 8884
+    },
+    {
+      "day": 8.6321,
+      "v": 10572
+    },
+    {
+      "day": 9.5036,
+      "v": 14130
+    },
+    {
+      "day": 9.6321,
+      "v": 16084
+    },
+    {
+      "day": 10.3474,
+      "v": 18135
+    },
+    {
+      "day": 10.6321,
+      "v": 19618
+    },
+    {
+      "day": 11.6321,
+      "v": 21156
+    },
+    {
+      "day": 12.6321,
+      "v": 22875
+    },
+    {
+      "day": 13.6321,
+      "v": 24584
+    },
+    {
+      "day": 14.3474,
+      "v": 26228
+    },
+    {
+      "day": 14.6321,
+      "v": 27663
+    },
+    {
+      "day": 15.6321,
+      "v": 29210
+    },
+    {
+      "day": 16.6321,
+      "v": 30771
+    },
+    {
+      "day": 17.6321,
+      "v": 31215
+    },
+    {
+      "day": 18.6321,
+      "v": 7309
+    },
+    {
+      "day": 19.3474,
+      "v": 8923
+    },
+    {
+      "day": 19.6321,
+      "v": 10275
+    },
+    {
+      "day": 20.6321,
+      "v": 11623
+    },
+    {
+      "day": 21.6321,
+      "v": 13089
+    },
+    {
+      "day": 22.5036,
+      "v": 16117
+    },
+    {
+      "day": 22.6321,
+      "v": 17930
+    },
+    {
+      "day": 23.6321,
+      "v": 19554
+    },
+    {
+      "day": 24.5036,
+      "v": 22487
+    },
+    {
+      "day": 24.6321,
+      "v": 24329
+    },
+    {
+      "day": 25.6321,
+      "v": 25972
+    },
+    {
+      "day": 26.6321,
+      "v": 27316
+    },
+    {
+      "day": 27.3474,
+      "v": 29104
+    },
+    {
+      "day": 27.6321,
+      "v": 30402
+    },
+    {
+      "day": 28.6321,
+      "v": 30812
+    },
+    {
+      "day": 29.6321,
+      "v": 9286
+    },
+    {
+      "day": 30.6321,
+      "v": 11320
+    }
+  ],
+  "resets": [
+    5.6321,
+    6.6321,
+    17.6321,
+    18.6321,
+    28.6321,
+    29.6321
+  ]
+}
