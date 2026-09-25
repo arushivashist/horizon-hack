@@ -349,7 +349,7 @@ function kpis() {
 
 let selected = null;
 const markers = {};
-function timelineStatic() {
+function timeline() {
   const W = 1000, L = 60, R = 20, x = (d) => L + ((d - 1) / 30) * (W - L - R);
   const svg = el("svg", { viewBox: `0 0 ${W} 330`, role: "img", "aria-label": "Thirty-day timeline of pages, naive agent context and memory size." }, document.getElementById("timeline"));
   // naive context band
@@ -436,7 +436,7 @@ function select(id) {
   host.appendChild(cols);
 }
 
-function contextChartStatic() {
+function contextChart() {
   const W = 1000, H = 340, L = 60, R = 190, T = 24, B = 40, x = (d) => L + ((d - 1) / 30) * (W - L - R);
   const n = DATA.naive_context, m = DATA.memory_context;
   const maxV = Math.max(...n.map((p) => p.v), DATA.totals.memory.max_context, ...(m || []).map((p) => p.v));
@@ -487,62 +487,36 @@ function finalMemory() {
     li.appendChild(h("span", null, m[2])); if (m[3]) li.appendChild(h("span", "ev", `evidence: ${m[3]}`)); host.appendChild(li);
   }
 }
-if (DATA) { kpis(); incidents(); finalMemory(); }
+if (DATA) { kpis(); timeline(); contextChart(); incidents(); finalMemory(); select(DATA.pages.find((p) => p.incident).id); }
 
-// RawTree-backed timeline + context/memory graphs.
-function rawTreeDay(run) {
-  const s = String(run.scenario || "").match(/day0?(\\d+)/i);
-  if (s) return Number(s[1]);
-  const t = Date.parse(run.simulated_at || "");
-  return Number.isFinite(t) ? new Date(t).getUTCDate() : 1;
+// Live RawTree overlay. The 30-day traced experiment remains the benchmark dataset;
+// these values are the durable agent state currently persisted in RawTree.
+async function refreshRawTree() {
+  const bar = document.getElementById("rawtree-live");
+  try {
+    const res = await fetch("/api/dashboard", {cache:"no-store"});
+    if (!res.ok) throw new Error(await res.text());
+    const live = await res.json();
+    const runs = live.runs || [];
+    if (!runs.length) throw new Error("No dejavu_agent_runs rows yet");
+    const last = runs[runs.length - 1];
+    document.getElementById("live-mem").textContent = last.total_memories ?? "—";
+    document.getElementById("live-ctx").textContent = last.context_tokens == null ? "—" : Number(last.context_tokens).toLocaleString()+" tokens";
+    document.getElementById("live-budget").textContent = last.context_budget == null ? "—" : Number(last.context_budget).toLocaleString()+" tokens";
+    document.getElementById("live-scenario").textContent = String(last.scenario || "—").replace(/^day0?/i,"Day ");
+    document.getElementById("rawtree-status").textContent = "LIVE · RawTree connected";
+    document.getElementById("rawtree-updated").textContent = "Updated "+new Date().toLocaleTimeString();
+    bar.className = "livebar ok";
+  } catch (e) {
+    document.getElementById("rawtree-status").textContent = "RawTree disconnected";
+    document.getElementById("rawtree-updated").textContent = e.message;
+    bar.className = "livebar bad";
+  }
 }
-function renderRawTreeTimeline(runs) {
-  const host=document.getElementById("timeline"); host.replaceChildren();
-  const jump=document.getElementById("jump"); jump.replaceChildren();
-  const W=1000,L=60,R=20,x=d=>L+((d-1)/30)*(W-L-R);
-  const svg=el("svg",{viewBox:`0 0 ${W} 330`,role:"img","aria-label":"RawTree-backed Dejavu runs, context tokens, and institutional memory."},host);
-  const vals=runs.map(r=>Number(r.context_tokens)||0), budgets=runs.map(r=>Number(r.context_budget)||0);
-  const max=Math.max(1,...vals,...budgets), cTop=20,cBot=120,cy=v=>cBot-(v/max)*(cBot-cTop);
-  for(const v of [0,max/2,max]){el("line",{x1:L,x2:W-R,y1:cy(v),y2:cy(v),class:v?"grid":"axis"},svg);txt(svg,L-8,cy(v)+4,"t-tick",fmtK(v),"end");}
-  txt(svg,L,cTop-6,"t-tick","DEJAVU AGENT · RAWTREE CONTEXT TOKENS");
-  if(runs.length) el("path",{d:runs.map((r,i)=>`${i?"L":"M"}${x(rawTreeDay(r)).toFixed(1)},${cy(Number(r.context_tokens)||0).toFixed(1)}`).join(" "),class:"l-mem"},svg);
-  const py=170; el("line",{x1:L,x2:W-R,y1:py,y2:py,class:"axis"},svg); txt(svg,L,py-22,"t-tick","RAWTREE AGENT RUNS");
-  for(const r of runs){const day=rawTreeDay(r),cx=x(day);el("circle",{cx,cy:py,r:7,class:"pg inc"},svg);txt(svg,cx,py+26,"t-ink",`Day ${day}`,"middle");}
-  const mems=runs.map(r=>Number(r.total_memories)||0), mTop=215,mBot=290,mMax=Math.max(1,...mems),my=v=>mBot-(v/mMax)*(mBot-mTop);
-  txt(svg,L,mTop-8,"t-tick","DEJAVU AGENT · INSTITUTIONAL MEMORIES IN RAWTREE");
-  el("line",{x1:L,x2:W-R,y1:my(0),y2:my(0),class:"axis"},svg);
-  if(runs.length) el("path",{d:runs.map((r,i)=>`${i?"L":"M"}${x(rawTreeDay(r)).toFixed(1)},${my(Number(r.total_memories)||0).toFixed(1)}`).join(" "),class:"l-mem"},svg);
-  txt(svg,L-8,my(mMax)+4,"t-tick",String(mMax),"end");
-  for(const dd of [1,5,10,15,20,25,30]) txt(svg,x(dd),318,"t-tick",`Day ${dd}`,"middle");
-  jump.appendChild(h("span","muted","Live points are agent runs persisted in RawTree."));
-}
-function renderRawTreeContext(runs) {
-  const host=document.getElementById("ctx");host.replaceChildren();
-  const legend=document.getElementById("ctx-legend");legend.replaceChildren();
-  const W=1000,H=340,L=60,R=190,T=24,B=40,x=d=>L+((d-1)/30)*(W-L-R);
-  const vals=runs.map(r=>Number(r.context_tokens)||0),budgets=runs.map(r=>Number(r.context_budget)||0),top=Math.max(1,...vals,...budgets);
-  const y=v=>H-B-(v/top)*(H-T-B),svg=el("svg",{viewBox:`0 0 ${W} ${H}`,role:"img","aria-label":"RawTree working-context tokens and configured context budget."},host);
-  for(const v of [0,top/2,top]){el("line",{x1:L,x2:W-R,y1:y(v),y2:y(v),class:v?"grid":"axis"},svg);txt(svg,L-8,y(v)+4,"t-tick",fmtK(v),"end");}
-  for(const dd of [1,5,10,15,20,25,30]) txt(svg,x(dd),H-B+20,"t-tick",`Day ${dd}`,"middle");
-  el("path",{d:runs.map((r,i)=>`${i?"L":"M"}${x(rawTreeDay(r)).toFixed(1)},${y(Number(r.context_tokens)||0).toFixed(1)}`).join(" "),class:"l-mem"},svg);
-  el("path",{d:runs.map((r,i)=>`${i?"L":"M"}${x(rawTreeDay(r)).toFixed(1)},${y(Number(r.context_budget)||0).toFixed(1)}`).join(" "),class:"ceil"},svg);
-  const a=h("span");a.appendChild(h("i","key mem"));a.appendChild(document.createTextNode("Dejavu context · RawTree"));legend.appendChild(a);
-  const b=h("span");b.appendChild(document.createTextNode("Dashed line: context budget · RawTree"));legend.appendChild(b);
-  document.getElementById("ctx-note").textContent="This graph is live from dejavu_agent_runs in RawTree. Each point is a persisted agent run; the dashed line is its configured context budget.";
-}
-async function refreshRawTree(){
-  const bar=document.getElementById("rt-live");
-  try{
-    const r=await fetch("/api/dashboard",{cache:"no-store"});if(!r.ok)throw Error(await r.text());
-    const d=await r.json(),runs=d.runs||[];if(!runs.length)throw Error("No agent runs yet");
-    const last=runs[runs.length-1];
-    document.getElementById("rt-status").textContent="LIVE · RawTree connected";
-    document.getElementById("rt-mem").textContent="Memories "+(last.total_memories??"—");
-    document.getElementById("rt-ctx").textContent="Context "+(last.context_tokens??"—")+" tokens";
-    document.getElementById("rt-budget").textContent="Budget "+(last.context_budget??"—")+" tokens";
-    document.getElementById("rt-updated").textContent="Updated "+new Date().toLocaleTimeString();bar.className="rt-live ok";
-    renderRawTreeTimeline(runs);renderRawTreeContext(runs);
-  }catch(e){document.getElementById("rt-status").textContent="RawTree disconnected";document.getElementById("rt-updated").textContent=e.message;bar.className="rt-live bad";}
-}
+refreshRawTree();
+setInterval(refreshRawTree, 5000);
+
+
+async function refreshRawTree(){const bar=document.getElementById("rt-live");try{const r=await fetch("/api/dashboard",{cache:"no-store"});if(!r.ok)throw Error(await r.text());const d=await r.json(),runs=d.runs||[];if(!runs.length)throw Error("No agent runs yet");const x=runs[runs.length-1];document.getElementById("rt-status").textContent="LIVE · RawTree connected";document.getElementById("rt-mem").textContent="Memories "+(x.total_memories??"—");document.getElementById("rt-ctx").textContent="Context "+(x.context_tokens??"—")+" tokens";document.getElementById("rt-budget").textContent="Budget "+(x.context_budget??"—")+" tokens";document.getElementById("rt-updated").textContent="Updated "+new Date().toLocaleTimeString();bar.className="rt-live ok"}catch(e){document.getElementById("rt-status").textContent="RawTree disconnected";document.getElementById("rt-updated").textContent=e.message;bar.className="rt-live bad"}}
 refreshRawTree();setInterval(refreshRawTree,5000);
 </script>
