@@ -1,10 +1,11 @@
-import json, os, sys
+import json, sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from src.dejavu.demo.mockdata import load_agent_world
 from src.dejavu.clients.tinybird import TinybirdClient
 
-SCENARIOS=[("day04","2026-09-04T19:20:00Z"),("day09","2026-09-09T19:20:00Z")]
+# Each snapshot is stored under its scenario label. The agent still enforces visible_at <= simulated now.
+SCENARIOS=[("day04","2026-09-04T19:20:00Z"),("day09","2026-09-09T19:20:00Z"),("day22","2026-09-22T19:20:00Z"),("day24","2026-09-24T19:20:00Z")]
 client=TinybirdClient()
 
 def normalize(event,scenario):
@@ -22,10 +23,11 @@ for scenario,now in SCENARIOS:
       ("dejavu_telemetry",telemetry),
       ("dejavu_incidents",[normalize(x,scenario) for x in world["jira_incidents.jsonl"]]),
       ("dejavu_runbooks",[normalize(x,scenario) for x in world["runbooks.jsonl"]])):
+        # RawTree snapshots may be re-ingested in CI; reads below use event_id de-duplication.
         result=client.ingest_events(table,rows)
-        print(table,result)
+        print(table,scenario,result)
 
 for table in ("dejavu_telemetry","dejavu_incidents","dejavu_runbooks"):
-    result=client.query(f"SELECT scenario, count() AS rows FROM {table} GROUP BY scenario ORDER BY scenario")
+    result=client.query(f"SELECT scenario, uniqExact(event_id) AS unique_rows FROM {table} GROUP BY scenario ORDER BY scenario")
     print("VERIFY",table,result.get("data",result))
 print("RawTree mock-data ingestion complete")
