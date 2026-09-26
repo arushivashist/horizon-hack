@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.dejavu.clients.nimble import NimbleClient
 from src.dejavu.clients.tinybird import TinybirdClient
 
-SCENARIO = "day35-nimble"
+SCENARIO = "day35-nimble"\nDEFAULT_CHANGELOG_URL = "https://raw.githubusercontent.com/arushivashist/horizon-hack/main/docs/payrail-changelog.html"
 SIMULATED_AT = "2026-10-05T19:20:00Z"
 OLD_MEMORY = {
     "memory_id": "payrail-regional-degradation-v1",
@@ -144,6 +144,34 @@ def main():
                "KNOWLEDGE CHANGED → Nimble found that wait-for-recovery is deprecated and regional failover is now supported.",
                context_tokens=840, extra={"nimble_source_url": url, "guidance_changed": True})
     time.sleep(args.delay)
+
+    # Persist both sides of the supersession to canonical institutional memory.
+    # RawTree is append-only, so the latest row per memory_id is the current state.
+    persisted_at = utcnow()
+    superseded_memory = {
+        **OLD_MEMORY,
+        "status": "SUPERSEDED",
+        "superseded_by": new_memory["memory_id"],
+        "superseded_at": persisted_at,
+        "nimble_source_url": url,
+    }
+    canonical_rows = [
+        {
+            "memory_id": superseded_memory["memory_id"],
+            "memory_json": json.dumps(superseded_memory, separators=(",", ":"), ensure_ascii=False),
+            "scenario": SCENARIO,
+            "simulated_at": SIMULATED_AT,
+            "created_at": persisted_at,
+        },
+        {
+            "memory_id": new_memory["memory_id"],
+            "memory_json": json.dumps(new_memory, separators=(",", ":"), ensure_ascii=False),
+            "scenario": SCENARIO,
+            "simulated_at": SIMULATED_AT,
+            "created_at": persisted_at,
+        },
+    ]
+    rawtree.ingest_events("dejavu_memories", canonical_rows)
 
     rawtree.ingest_events("dejavu_nimble_memory_updates", [{
         "record_id": f"{run_id}:supersede",
