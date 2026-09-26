@@ -6,6 +6,7 @@ It demonstrates the lifecycle: RETRIEVE -> STALE -> RESEARCH -> SUPERSEDE -> REV
 """
 import argparse
 import json
+import os
 import sys
 import time
 import uuid
