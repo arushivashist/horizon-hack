@@ -55,13 +55,12 @@ def first_url(obj):
     return None
 
 
-def research(nimble):
-    search = nimble.search(QUERY)
-    if search.get("mode") == "no-key":
+def research(nimble, changelog_url):
+    """Use Nimble extraction against the controlled public PayRail changelog."""
+    extracted = nimble.extract(changelog_url)
+    if extracted.get("mode") == "no-key":
         raise RuntimeError("NIMBLE_API_KEY is not loaded in this shell.")
-    url = first_url(search)
-    extracted = nimble.extract(url) if url else {}
-    return search, extracted, url
+    return extracted
 
 
 def write_step(rawtree, run_id, step, title, detail, memory_count=11, context_tokens=0, extra=None):
@@ -86,7 +85,7 @@ def write_step(rawtree, run_id, step, title, detail, memory_count=11, context_to
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--delay", type=float, default=3.0)
+    parser.add_argument("--delay", type=float, default=3.0)\n    parser.add_argument("--changelog-url", default=os.getenv("PAYRAIL_CHANGELOG_URL", DEFAULT_CHANGELOG_URL))
     args = parser.parse_args()
 
     rawtree = TinybirdClient()
@@ -110,33 +109,39 @@ def main():
     write_step(rawtree, run_id, 4, "Researching current guidance with Nimble",
                "NIMBLE → searching current external evidence before applying the stale recommendation.",
                context_tokens=620)
-    search, extracted, url = research(nimble)
+    url = args.changelog_url
+    extracted = research(nimble, url)
+    evidence_text = json.dumps(extracted, ensure_ascii=False)
+    changed = "regional failover" in evidence_text.lower() and "deprecated" in evidence_text.lower()
     rawtree.ingest_events("dejavu_nimble_evidence", [{
         "record_id": f"{run_id}:nimble",
         "run_id": run_id,
         "scenario": SCENARIO,
-        "query": QUERY,
-        "source_url": url or "",
-        "search_json": json.dumps(search, ensure_ascii=False),
-        "extract_json": json.dumps(extracted, ensure_ascii=False),
+        "query": "Extract current PayRail remediation guidance from the changelog",
+        "source_url": url,
+        "search_json": "{}",
+        "extract_json": evidence_text,
+        "guidance_changed": changed,
         "created_at": utcnow(),
     }])
+    if not changed:
+        raise RuntimeError("Nimble response did not contain the expected changed PayRail guidance; refusing to supersede memory.")
     time.sleep(args.delay)
 
-    # We preserve the raw Nimble response as evidence. The scenario's changed
-    # guidance is an experimental assertion, not a claim that Nimble proved it.
+    # The mutation below is gated on the actual Nimble extraction containing
+    # the controlled changelog's changed-guidance markers.
     new_memory = {
         "memory_id": "payrail-regional-degradation-v2",
         "subject": "PayRail regional degradation",
         "status": "ACTIVE",
         "supersedes": OLD_MEMORY["memory_id"],
-        "recommendation": "Use the newly validated current guidance for PayRail degradation.",
+        "recommendation": "Reduce retry pressure, route traffic to the backup region, and verify payment success after failover.",
         "last_validated_at": utcnow(),
-        "nimble_source_url": url or "",
+        "nimble_source_url": url,
     }
     write_step(rawtree, run_id, 5, "Comparing old memory with current evidence",
-               "KNOWLEDGE CHANGED → previous PayRail guidance is treated as stale; current evidence is now authoritative.",
-               context_tokens=840, extra={"nimble_source_url": url or ""})
+               "KNOWLEDGE CHANGED → Nimble found that wait-for-recovery is deprecated and regional failover is now supported.",
+               context_tokens=840, extra={"nimble_source_url": url, "guidance_changed": True})
     time.sleep(args.delay)
 
     rawtree.ingest_events("dejavu_nimble_memory_updates", [{
@@ -148,7 +153,7 @@ def main():
         "new_memory_id": new_memory["memory_id"],
         "old_memory_json": json.dumps(OLD_MEMORY, ensure_ascii=False),
         "new_memory_json": json.dumps(new_memory, ensure_ascii=False),
-        "evidence_url": url or "",
+        "evidence_url": url,
         "created_at": utcnow(),
     }])
     write_step(rawtree, run_id, 6, "Updating institutional memory",
