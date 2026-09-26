@@ -173,6 +173,18 @@ def main():
     ]
     rawtree.ingest_events("dejavu_memories", canonical_rows)
 
+    # Also write the canonical memory lifecycle event used by the rest of DejaVu.
+    rawtree.ingest_events("dejavu_memory_events", [{
+        "run_id": run_id,
+        "simulated_at": SIMULATED_AT,
+        "scenario": SCENARIO,
+        "operation": "SUPERSEDE",
+        "target_id": OLD_MEMORY["memory_id"],
+        "reason": "Nimble revalidation found current PayRail guidance supersedes the stale wait-for-recovery recommendation.",
+        "evidence_ids": json.dumps([f"{run_id}:nimble"]),
+        "created_at": persisted_at,
+    }])
+
     rawtree.ingest_events("dejavu_nimble_memory_updates", [{
         "record_id": f"{run_id}:supersede",
         "run_id": run_id,
